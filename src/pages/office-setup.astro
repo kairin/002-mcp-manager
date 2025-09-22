@@ -1,0 +1,91 @@
+---
+// Office Setup Guide Page
+import Layout from '../layouts/Layout.astro';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const officeSetupPath = resolve(__dirname, '../../OFFICE_SETUP.md');
+
+let officeSetupContent = '';
+try {
+  officeSetupContent = readFileSync(officeSetupPath, 'utf-8');
+} catch (error) {
+  console.warn('Could not read OFFICE_SETUP.md:', error);
+  officeSetupContent = '# Office Setup Guide\n\nContent not available.';
+}
+
+// Convert markdown to HTML (basic conversion)
+const markdownToHtml = (md: string) => {
+  return md
+    // Headers
+    .replace(/^# (.*$)/gm, '<h1 class="text-4xl font-bold mb-6 text-foreground">$1</h1>')
+    .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-semibold mb-4 mt-8 text-foreground">$2</h2>')
+    .replace(/^### (.*$)/gm, '<h3 class="text-xl font-medium mb-3 mt-6 text-foreground">$3</h3>')
+
+    // Code blocks
+    .replace(/```bash\n([\s\S]*?)\n```/g, '<pre class="bg-muted p-4 rounded-lg overflow-x-auto mb-4"><code class="text-sm">$1</code></pre>')
+    .replace(/```([\s\S]*?)```/g, '<pre class="bg-muted p-4 rounded-lg overflow-x-auto mb-4"><code class="text-sm">$1</code></pre>')
+
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code class="bg-muted px-2 py-1 rounded text-sm">$1</code>')
+
+    // Bold text
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+
+    // Bullet points
+    .replace(/^- (.*$)/gm, '<li class="mb-1">$1</li>')
+    .replace(/(<li.*<\/li>)/s, '<ul class="list-disc list-inside mb-4 space-y-1 text-muted-foreground">$1</ul>')
+
+    // Numbered lists
+    .replace(/^\d+\. (.*$)/gm, '<li class="mb-1">$1</li>')
+
+    // Checkmarks and emojis
+    .replace(/✅/g, '<span class="text-green-500">✅</span>')
+    .replace(/🚀/g, '<span class="text-blue-500">🚀</span>')
+    .replace(/🔧/g, '<span class="text-gray-600">🔧</span>')
+    .replace(/📋/g, '<span class="text-orange-500">📋</span>')
+    .replace(/🤖/g, '<span class="text-purple-500">🤖</span>')
+    .replace(/🌐/g, '<span class="text-blue-600">🌐</span>')
+    .replace(/🎯/g, '<span class="text-red-500">🎯</span>')
+    .replace(/🔄/g, '<span class="text-indigo-500">🔄</span>')
+    .replace(/🏗️/g, '<span class="text-yellow-600">🏗️</span>')
+    .replace(/🏁/g, '<span class="text-green-600">🏁</span>')
+    .replace(/📚/g, '<span class="text-blue-700">📚</span>')
+    .replace(/🏢/g, '<span class="text-gray-700">🏢</span>')
+
+    // Paragraphs
+    .replace(/\n\n/g, '</p><p class="mb-4 text-muted-foreground">')
+    .replace(/^(?!<[hul]|<pre|<\/[hul]|<\/pre)(.*$)/gm, '<p class="mb-4 text-muted-foreground">$1</p>')
+
+    // Clean up empty paragraphs
+    .replace(/<p class="mb-4 text-muted-foreground"><\/p>/g, '');
+};
+
+const htmlContent = markdownToHtml(officeSetupContent);
+---
+
+<Layout title="Office Setup Guide - MCP Manager">
+  <main class="container mx-auto px-6 py-8 max-w-4xl">
+    <div class="prose prose-lg dark:prose-invert max-w-none">
+      <div set:html={htmlContent} />
+    </div>
+
+    <div class="mt-12 p-6 bg-primary/10 border border-primary/20 rounded-lg">
+      <h3 class="text-lg font-semibold mb-3 text-foreground">Quick Access</h3>
+      <div class="flex flex-wrap gap-4">
+        <a href="/" class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+          ← Back to Home
+        </a>
+        <a href="https://github.com/kairin/mcp-manager" class="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors">
+          View on GitHub
+        </a>
+        <a href="https://github.com/kairin/mcp-manager/blob/main/OFFICE_SETUP.md" class="inline-flex items-center px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-muted/80 transition-colors">
+          Raw Markdown
+        </a>
+      </div>
+    </div>
+  </main>
+</Layout>
