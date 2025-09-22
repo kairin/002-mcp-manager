@@ -36,7 +36,8 @@ class ClaudeAgentManager:
         self.global_agents_dirs = [
             self.home_dir / "Apps" / "claude-guardian-agents",
             self.home_dir / "Apps" / "deep-research",
-            self.home_dir / "Apps" / "DeepResearchAgent"
+            self.home_dir / "Apps" / "DeepResearchAgent",
+            self.home_dir / ".claude" / "agents"  # Claude Code global agents
         ]
 
         # Global agent registry
@@ -51,23 +52,22 @@ class ClaudeAgentManager:
             if not agents_dir.exists():
                 continue
 
-            # Scan for agent files
-            for agent_file in agents_dir.rglob("*-guardian.md"):
-                try:
-                    agent = self._parse_agent_file(agent_file)
-                    if agent:
-                        agents[agent.agent_id] = agent
-                except Exception as e:
-                    self.console.print(f"[yellow]Warning: Could not parse {agent_file}: {e}[/yellow]")
+            # Scan for different types of agent files
+            agent_patterns = [
+                "*-guardian.md",
+                "*-agent.md",
+                "*-specialist.md",
+                "*.md"  # Catch all other .md files
+            ]
 
-            # Scan for research agents
-            for agent_file in agents_dir.rglob("*-agent.md"):
-                try:
-                    agent = self._parse_agent_file(agent_file)
-                    if agent:
-                        agents[agent.agent_id] = agent
-                except Exception as e:
-                    self.console.print(f"[yellow]Warning: Could not parse {agent_file}: {e}[/yellow]")
+            for pattern in agent_patterns:
+                for agent_file in agents_dir.rglob(pattern):
+                    try:
+                        agent = self._parse_agent_file(agent_file)
+                        if agent and agent.agent_id not in agents:  # Avoid duplicates
+                            agents[agent.agent_id] = agent
+                    except Exception as e:
+                        self.console.print(f"[yellow]Warning: Could not parse {agent_file}: {e}[/yellow]")
 
         self._update_agent_registry(agents)
         return agents
@@ -279,20 +279,53 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                 if end_frontmatter != -1:
                     frontmatter = content[3:end_frontmatter]
                     metadata = {}
+
+                    # Parse YAML-style frontmatter
+                    current_key = None
+                    current_value = []
+
                     for line in frontmatter.split("\n"):
-                        if ":" in line:
+                        line = line.strip()
+                        if not line:
+                            continue
+
+                        if ":" in line and not line.startswith(" "):
+                            # Save previous key-value if exists
+                            if current_key:
+                                metadata[current_key] = " ".join(current_value).strip().strip('"')
+
+                            # Start new key-value
                             key, value = line.split(":", 1)
-                            metadata[key.strip()] = value.strip().strip('"')
+                            current_key = key.strip()
+                            current_value = [value.strip()]
+                        else:
+                            # Continuation of previous value (multi-line)
+                            if current_key:
+                                current_value.append(line)
+
+                    # Save last key-value
+                    if current_key:
+                        metadata[current_key] = " ".join(current_value).strip().strip('"')
 
                     # Extract from filename if not in frontmatter
                     filename_parts = agent_file.stem.split("-")
 
+                    # Determine specialization based on agent type
+                    specialization = metadata.get("specialization", "")
+                    if not specialization:
+                        if "specialist" in agent_file.stem:
+                            specialization = "deployment specialist"
+                        elif "guardian" in agent_file.stem:
+                            specialization = "guardian agent"
+                        else:
+                            specialization = " ".join(filename_parts[1:-1]) if len(filename_parts) > 2 else ""
+
                     return ClaudeAgent(
                         name=metadata.get("name", agent_file.stem),
-                        description=metadata.get("description", ""),
-                        agent_id=metadata.get("agent_id", agent_file.stem),
-                        department=metadata.get("department", filename_parts[0] if len(filename_parts) > 1 else "unknown"),
-                        specialization=metadata.get("specialization", " ".join(filename_parts[1:-1]) if len(filename_parts) > 2 else ""),
+                        description=metadata.get("description", "")[:200] + "..." if len(metadata.get("description", "")) > 200 else metadata.get("description", ""),
+                        agent_id=metadata.get("name", agent_file.stem),
+                        department=metadata.get("department", filename_parts[0] if len(filename_parts) > 1 else "specialist"),
+                        specialization=specialization,
                         file_path=agent_file,
                         tools=metadata.get("tools", "").split(",") if metadata.get("tools") else [],
                         status=metadata.get("status", "active")
@@ -300,6 +333,11 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
 
             # Fallback parsing from filename
             filename_parts = agent_file.stem.split("-")
+
+            # Skip if this looks like a non-agent file
+            if len(filename_parts) < 2:
+                return None
+
             return ClaudeAgent(
                 name=agent_file.stem,
                 description="",
