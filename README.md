@@ -1,11 +1,11 @@
-# 🤖 MCP Manager
+# 🚀 MCP Manager - Complete System Management
 
 <div align="center">
-    <h3><em>Centralized MCP Server Management for Claude Code</em></h3>
+    <h3><em>Comprehensive Project Standardization & Fleet Management System</em></h3>
 </div>
 
 <p align="center">
-    <strong>A comprehensive tool for managing Model Context Protocol (MCP) servers globally across all Claude Code projects with automated configuration, monitoring, and maintenance capabilities.</strong>
+    <strong>A unified management system for MCP servers, project standardization, Claude agents, and Ubuntu 25.04 fleet consistency with zero-cost local CI/CD workflows.</strong>
 </p>
 
 ---
@@ -26,73 +26,97 @@
 
 ## 🤔 What is MCP Manager?
 
-MCP Manager is a **centralized management system** for Model Context Protocol (MCP) servers used by Claude Code. It automates the installation, configuration, and maintenance of MCP servers, ensuring consistent availability across all your projects while providing monitoring, auditing, and troubleshooting capabilities.
+MCP Manager is a **comprehensive system management platform** that unifies:
+
+- **🔧 MCP Server Management**: Centralized Model Context Protocol servers for Claude Code
+- **📋 Project Standardization**: 6 automated standards enforcement across all repositories
+- **🤖 Global Claude Agent Access**: 174+ discovered agents including deployment specialists
+- **🌐 Fleet Management**: Ubuntu 25.04 consistency across development environments
+- **💰 Zero-Cost Operations**: Local CI/CD workflows preventing GitHub billing
+
+It transforms your development workflow into a standardized, automated system that works identically across home, office, and any new environment.
 
 ## ⚡ Get started
 
-### 1. Install MCP Manager
+### 🚀 One-Command Setup
+
+When you arrive at any new environment, run this single command:
 
 ```bash
-# Clone the repository
-git clone https://github.com/kairin/mcp-manager.git
-cd mcp-manager
-
-# Install using pip
-pip install -e .
-
-# Or install from PyPI (coming soon)
-pip install mcp-manager
+# Clone and setup everything
+git clone https://github.com/kairin/mcp-manager.git ~/Apps/mcp-manager && \
+cd ~/Apps/mcp-manager && \
+uv venv .venv && \
+source .venv/bin/activate && \
+uv pip install -e . && \
+python -m mcp_manager.cli init
 ```
 
-### 2. Initialize MCP configuration
+### 🎯 Immediate Access
+
+After setup, you'll have:
 
 ```bash
-# Audit current MCP setup
-mcp-manager audit
+# Check comprehensive system status
+python -m mcp_manager.cli status
 
-# Initialize global configuration
-mcp-manager init --global
+# Verify 5 MCP servers (context7, shadcn, github, playwright, hf-mcp-server)
+python -m mcp_manager.cli mcp status
 
-# Add MCP servers
-mcp-manager add context7 --type http --url https://mcp.context7.com/mcp --header "CONTEXT7_API_KEY: your_key"
-mcp-manager add shadcn --type stdio --command "npx shadcn@latest mcp"
+# Access 174+ Claude agents including astro-deploy-specialist
+python -m mcp_manager.cli agent discover
+
+# Enforce project standards across repositories
+python -m mcp_manager.cli project audit
+
+# Deploy current project to GitHub Pages
+python -m mcp_manager.cli agent deploy astro-deploy-specialist
 ```
 
-### 3. Monitor and maintain
+### 🌐 Fleet Management
 
 ```bash
-# Check server health
-mcp-manager status
+# Register office machine in fleet
+python -m mcp_manager.cli fleet register office-machine 192.168.1.100
 
-# Update servers
-mcp-manager update --all
+# Sync configurations across all environments
+python -m mcp_manager.cli fleet sync
 
-# Troubleshoot issues
-mcp-manager diagnose
+# Audit Ubuntu 25.04 + Python 3.13 compliance
+python -m mcp_manager.cli fleet audit
 ```
 
-## 🤖 Features
+## 🤖 System Components
 
-### MCP Server Management
-- **Global Configuration**: Centralized MCP server setup for all Claude Code projects
-- **Health Monitoring**: Real-time status checking and connectivity validation
-- **Automated Updates**: Intelligent updating of MCP servers and dependencies
-- **Configuration Audit**: Complete analysis of project-specific vs global configurations
+### 🔧 MCP Server Management (5 Critical Servers)
+| Server | Type | Status | Purpose |
+|--------|------|--------|---------|
+| [Context7](https://context7.com) | HTTP | ✅ Global | Library documentation and code examples |
+| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Global | UI component registry and tooling |
+| [GitHub MCP](https://github.com) | HTTP | ✅ Global | GitHub API integration and management |
+| [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
+| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global | AI model access and inference |
 
-### Integration Support
-| MCP Server | Type | Support | Notes |
-|------------|------|---------|-------|
-| [Context7](https://context7.com) | HTTP | ✅ | Library documentation and code examples |
-| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ | UI component registry and tooling |
-| [GitHub Copilot MCP](https://github.com) | HTTP | ✅ | GitHub API integration |
-| [Playwright MCP](https://playwright.dev) | stdio | ✅ | Browser automation testing |
-| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ | AI model access and inference |
+### 📋 Project Standardization (6 Automated Standards)
+1. **Branch Strategy**: YYYYMMDD-HHMMSS-type-description naming, preserve all branches
+2. **Astro Pages**: Automatic .nojekyll generation for GitHub Pages compatibility
+3. **Local CI/CD**: Zero-cost workflows executed before GitHub deployment
+4. **UV Python**: Python 3.13+ environment management with modern tooling
+5. **Spec-Kit**: AGENTS.md integration with CLAUDE.md/GEMINI.md symlinks
+6. **Design System**: shadcn/ui + Tailwind CSS consistency
 
-### Management Features
-- **Conflict Resolution**: Automatic migration from project-specific to global configs
-- **Backup & Recovery**: Configuration backup and rollback capabilities
-- **Security Management**: Secure credential storage and rotation
-- **Performance Monitoring**: Server response time and reliability tracking
+### 🤖 Claude Agent Management (174+ Agents)
+- **Guardian Agents**: 52 agents from /home/kkk/Apps/claude-guardian-agents
+- **Research Specialists**: Deep research and analysis agents
+- **Deployment Specialists**: Including astro-deploy-specialist for GitHub Pages
+- **Department Organization**: Engineering, research, security, and more
+- **Global Access**: Available across all projects and environments
+
+### 🌐 Fleet Management Features
+- **Ubuntu 25.04 Compliance**: Consistent OS version across all nodes
+- **Python 3.13 Standardization**: Unified development environment
+- **Multi-Node Synchronization**: Configuration sync across environments
+- **Cost Prevention**: Local-first workflows prevent GitHub billing overages
 
 ## 🔧 Prerequisites
 
