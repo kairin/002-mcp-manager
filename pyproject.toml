@@ -1,7 +1,7 @@
 [project]
 name = "mcp-manager"
 version = "0.1.0"
-description = "Centralized MCP Server Management for Claude Code - A comprehensive tool for managing Model Context Protocol servers globally across all Claude Code projects."
+description = "🚀 MCP Manager - Comprehensive Project Standardization & Fleet Management System. Ensures consistency across Ubuntu 25.04 development environments with MCP servers, project standards, Astro.build deployment, local CI/CD, uv Python management, spec-kit integration, and Claude agent orchestration."
 requires-python = ">=3.11"
 dependencies = [
     "typer>=0.12.0",
@@ -11,6 +11,7 @@ dependencies = [
     "platformdirs>=4.0.0",
     "psutil>=5.9.0",
     "click>=8.1.0",
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
