@@ -8,6 +8,11 @@
     <strong>A unified management system for MCP servers, project standardization, Claude agents, and Ubuntu 25.04 fleet consistency with zero-cost local CI/CD workflows.</strong>
 </p>
 
+<div align="center">
+    <img src="docs/images/homepage-hero.png" alt="MCP Manager Homepage" width="800">
+    <p><em>Live at: <a href="https://kairin.github.io/mcp-manager/">https://kairin.github.io/mcp-manager/</a></em></p>
+</div>
+
 ---
 
 ## Table of Contents
@@ -88,6 +93,11 @@ python -m mcp_manager.cli fleet audit
 
 ## 🤖 System Components
 
+<div align="center">
+    <img src="docs/images/features-overview.png" alt="MCP Manager Features Overview" width="800">
+    <p><em>Complete development environment standardization</em></p>
+</div>
+
 ### 🔧 MCP Server Management (5 Critical Servers)
 | Server | Type | Status | Purpose |
 |--------|------|--------|---------|
@@ -96,6 +106,11 @@ python -m mcp_manager.cli fleet audit
 | [GitHub MCP](https://github.com) | HTTP | ✅ Global | GitHub API integration and management |
 | [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
 | [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global + Auth | AI model access with HF CLI integration |
+
+<div align="center">
+    <img src="docs/images/mcp-servers.png" alt="Supported MCP Servers" width="800">
+    <p><em>All major Model Context Protocol servers with comprehensive integration</em></p>
+</div>
 
 #### 🤗 Hugging Face MCP Setup
 ```bash
@@ -202,10 +217,16 @@ MCP Manager Architecture:
 
 ## 📖 Learn more
 
+- **[🏢 Office Setup Guide](https://kairin.github.io/mcp-manager/office-setup/)** - Complete office deployment workflow
 - **[Configuration Guide](docs/configuration.md)** - Detailed setup instructions
 - **[Server Management](docs/servers.md)** - Adding and managing MCP servers
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[API Reference](docs/api.md)** - Python API documentation
+
+<div align="center">
+    <img src="docs/images/office-setup-guide.png" alt="Office Setup Guide" width="600">
+    <p><em><a href="https://kairin.github.io/mcp-manager/office-setup/">🏢 Complete Office Setup Guide</a> - One-command deployment for office environments</em></p>
+</div>
 
 ## 🔍 Troubleshooting
 

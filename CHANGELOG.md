@@ -5,6 +5,40 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-09-24
+
+### 📸 Visual Documentation Enhancement
+
+#### 🎨 Added GitHub Pages Screenshots
+- **Complete Visual Documentation**: High-quality screenshots of live website
+  - Homepage hero section showcase
+  - Features overview with system components
+  - MCP servers grid display
+  - Office setup guide complete page
+- **Organized Screenshot Structure**:
+  - `docs/images/` - Primary documentation images
+  - `screenshots/` - Reusable screenshot assets
+  - Properly sized and optimized PNG files
+- **Enhanced README**: Integration of live website visuals
+  - Homepage hero banner with live site link
+  - Features overview visual representation
+  - MCP servers comprehensive display
+  - Office setup guide preview and navigation
+- **Automated Screenshot Workflow**: Playwright-powered screenshot automation
+  - Full-page captures for documentation
+  - Section-specific screenshots for detailed views
+  - Consistent branding and visual presentation
+
+#### 🌐 Live Website Integration
+- **GitHub Pages Deployment**: https://kairin.github.io/mcp-manager/
+- **Visual Navigation**: Screenshots linked to live functionality
+- **Documentation Enhancement**: Visual proof of system capabilities
+
+### 🛡️ Critical Requirements Enhancement
+- **AGENTS.md Strengthening**: Added mandatory GitHub Pages deployment requirements
+- **Automated Protection**: Pre-commit hooks for build verification
+- **Zero-Tolerance Policy**: Preventing future 404 deployment errors
+
 ## [1.1.0] - 2025-09-23
 
 ### ✨ Added
