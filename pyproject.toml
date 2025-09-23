@@ -12,6 +12,7 @@ dependencies = [
     "psutil>=5.9.0",
     "click>=8.1.0",
     "pyyaml>=6.0.0",
+    "huggingface-hub[cli]>=0.20.0",
 ]
 
 [project.optional-dependencies]

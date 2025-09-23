@@ -1,13 +1,13 @@
 """Project Standardization Manager for MCP Manager."""
 
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 import json
-import subprocess
 import shutil
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
 from rich.console import Console
-from rich import print as rprint
 
 from .exceptions import MCPManagerError
 
@@ -15,24 +15,25 @@ from .exceptions import MCPManagerError
 @dataclass
 class ProjectStandard:
     """Represents a project standardization requirement."""
+
     name: str
     description: str
     check_command: str
     fix_command: str
     required: bool = True
-    files_to_create: List[str] = None
-    files_to_modify: List[str] = None
+    files_to_create: list[str] = None
+    files_to_modify: list[str] = None
 
 
 class ProjectStandardsManager:
     """Manages project standardization across all repositories."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         self.console = console or Console()
         self.home_dir = Path.home()
         self.standards = self._load_standards()
 
-    def _load_standards(self) -> Dict[str, ProjectStandard]:
+    def _load_standards(self) -> dict[str, ProjectStandard]:
         """Load project standardization requirements."""
         return {
             "branch_strategy": ProjectStandard(
@@ -40,28 +41,28 @@ class ProjectStandardsManager:
                 description="YYYYMMDD-HHMMSS-type-description branch naming",
                 check_command="git config --get branch.main.remote",
                 fix_command="mcp-manager project fix-branching",
-                files_to_create=[".github/branch-protection.yml"]
+                files_to_create=[".github/branch-protection.yml"],
             ),
             "astro_pages": ProjectStandard(
                 name="Astro GitHub Pages",
                 description="Astro.build with automatic .nojekyll generation",
                 check_command="test -f astro.config.mjs && test -f docs/.nojekyll",
                 fix_command="mcp-manager project setup-astro",
-                files_to_create=["astro.config.mjs", "package.json"]
+                files_to_create=["astro.config.mjs", "package.json"],
             ),
             "local_cicd": ProjectStandard(
                 name="Local CI/CD",
                 description="Zero-cost local workflows before GitHub push",
                 check_command="test -f local-infra/runners/gh-workflow-local.sh",
                 fix_command="mcp-manager project setup-local-cicd",
-                files_to_create=["local-infra/runners/gh-workflow-local.sh"]
+                files_to_create=["local-infra/runners/gh-workflow-local.sh"],
             ),
             "uv_python": ProjectStandard(
                 name="UV Python Management",
                 description="uv-based Python environment and dependency management",
                 check_command="test -f pyproject.toml && grep -q 'requires-python.*3.13' pyproject.toml",
                 fix_command="mcp-manager project setup-uv-python",
-                files_to_create=["pyproject.toml", ".python-version"]
+                files_to_create=["pyproject.toml", ".python-version"],
             ),
             "spec_kit": ProjectStandard(
                 name="Spec-Kit Integration",
@@ -69,27 +70,23 @@ class ProjectStandardsManager:
                 check_command="test -f AGENTS.md && test -L CLAUDE.md && test -L GEMINI.md",
                 fix_command="mcp-manager project setup-spec-kit",
                 files_to_create=["AGENTS.md"],
-                files_to_modify=["CLAUDE.md", "GEMINI.md"]
+                files_to_modify=["CLAUDE.md", "GEMINI.md"],
             ),
             "shadcn_ui": ProjectStandard(
                 name="shadcn/ui + Tailwind",
                 description="Consistent design system with shadcn/ui and Tailwind CSS",
                 check_command="test -f components.json && test -f tailwind.config.mjs",
                 fix_command="mcp-manager project setup-design-system",
-                files_to_create=["components.json", "tailwind.config.mjs"]
-            )
+                files_to_create=["components.json", "tailwind.config.mjs"],
+            ),
         }
 
-    def audit_project(self, project_path: Path) -> Dict[str, Dict[str, Any]]:
+    def audit_project(self, project_path: Path) -> dict[str, dict[str, Any]]:
         """Audit a single project for compliance with standards."""
         results = {}
 
         for standard_id, standard in self.standards.items():
-            result = {
-                "compliant": False,
-                "issues": [],
-                "recommendations": []
-            }
+            result = {"compliant": False, "issues": [], "recommendations": []}
 
             try:
                 # Change to project directory for checks
@@ -103,13 +100,15 @@ class ProjectStandardsManager:
                         shell=True,
                         cwd=project_path,
                         capture_output=True,
-                        text=True
+                        text=True,
                     )
 
                     result["compliant"] = check_result.returncode == 0
 
                     if not result["compliant"]:
-                        result["issues"].append(f"Failed check: {standard.check_command}")
+                        result["issues"].append(
+                            f"Failed check: {standard.check_command}"
+                        )
                         result["recommendations"].append(f"Run: {standard.fix_command}")
 
                         # Check for missing files
@@ -117,7 +116,9 @@ class ProjectStandardsManager:
                             for file_path in standard.files_to_create:
                                 full_path = project_path / file_path
                                 if not full_path.exists():
-                                    result["issues"].append(f"Missing file: {file_path}")
+                                    result["issues"].append(
+                                        f"Missing file: {file_path}"
+                                    )
 
                 else:
                     result["issues"].append("Project directory does not exist")
@@ -129,13 +130,15 @@ class ProjectStandardsManager:
 
         return results
 
-    def audit_all_projects(self, scan_dirs: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+    def audit_all_projects(
+        self, scan_dirs: list[str] | None = None
+    ) -> dict[str, dict[str, Any]]:
         """Audit all projects in specified directories."""
         if scan_dirs is None:
             scan_dirs = [
                 str(self.home_dir / "Apps"),
                 str(self.home_dir / "projects"),
-                str(self.home_dir / "repos")
+                str(self.home_dir / "repos"),
             ]
 
         results = {}
@@ -179,7 +182,7 @@ class ProjectStandardsManager:
                     shell=True,
                     cwd=project_path,
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
                 return result.returncode == 0
 
@@ -199,12 +202,13 @@ class ProjectStandardsManager:
                     "naming_strategy": "YYYYMMDD-HHMMSS-type-description",
                     "preserve_branches": True,
                     "auto_merge_to_main": True,
-                    "require_pr": False
+                    "require_pr": False,
                 }
             }
 
             with open(github_dir / "branch-protection.yml", "w") as f:
                 import yaml
+
                 yaml.dump(branch_protection, f, default_flow_style=False)
 
             return True
@@ -263,8 +267,8 @@ class ProjectStandardsManager:
         """Set up uv-based Python environment."""
         try:
             # Create pyproject.toml
-            pyproject_content = """[project]
-name = "{project_name}"
+            pyproject_content = f"""[project]
+name = "{project_path.name}"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
@@ -297,7 +301,7 @@ line-length = 88
 [tool.mypy]
 python_version = "3.13"
 strict = true
-""".format(project_name=project_path.name)
+"""
 
             with open(project_path / "pyproject.toml", "w") as f:
                 f.write(pyproject_content)
@@ -399,12 +403,9 @@ Examples:
                     "config": "tailwind.config.mjs",
                     "css": "src/styles/globals.css",
                     "baseColor": "slate",
-                    "cssVariables": True
+                    "cssVariables": True,
                 },
-                "aliases": {
-                    "components": "src/components",
-                    "utils": "src/lib/utils"
-                }
+                "aliases": {"components": "src/components", "utils": "src/lib/utils"},
             }
 
             with open(project_path / "components.json", "w") as f:
@@ -429,13 +430,15 @@ export default {
             self.console.print(f"[red]Error setting up design system: {e}[/red]")
             return False
 
-    def get_compliance_summary(self, audit_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    def get_compliance_summary(
+        self, audit_results: dict[str, dict[str, Any]]
+    ) -> dict[str, Any]:
         """Generate a compliance summary from audit results."""
         total_projects = len(audit_results)
         compliant_projects = 0
         total_standards = len(self.standards)
 
-        standard_compliance = {standard_id: 0 for standard_id in self.standards.keys()}
+        standard_compliance = dict.fromkeys(self.standards.keys(), 0)
 
         for project_name, project_results in audit_results.items():
             project_compliant = True
@@ -451,7 +454,9 @@ export default {
         return {
             "total_projects": total_projects,
             "compliant_projects": compliant_projects,
-            "compliance_percentage": (compliant_projects / total_projects * 100) if total_projects > 0 else 0,
+            "compliance_percentage": (
+                (compliant_projects / total_projects * 100) if total_projects > 0 else 0
+            ),
             "standard_compliance": standard_compliance,
-            "total_standards": total_standards
+            "total_standards": total_standards,
         }

@@ -1,13 +1,13 @@
 """Claude Agent Management for global agent access and deployment."""
 
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
 import json
 import shutil
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
 from rich.console import Console
-from rich import print as rprint
 
 from .exceptions import MCPManagerError
 
@@ -15,20 +15,21 @@ from .exceptions import MCPManagerError
 @dataclass
 class ClaudeAgent:
     """Represents a Claude agent configuration."""
+
     name: str
     description: str
     agent_id: str
     department: str
     specialization: str
     file_path: Path
-    tools: List[str]
+    tools: list[str]
     status: str = "active"
 
 
 class ClaudeAgentManager:
     """Manages Claude agents globally across all projects."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         self.console = console or Console()
         self.home_dir = Path.home()
 
@@ -37,14 +38,16 @@ class ClaudeAgentManager:
             self.home_dir / "Apps" / "claude-guardian-agents",
             self.home_dir / "Apps" / "deep-research",
             self.home_dir / "Apps" / "DeepResearchAgent",
-            self.home_dir / ".claude" / "agents"  # Claude Code global agents
+            self.home_dir / ".claude" / "agents",  # Claude Code global agents
         ]
 
         # Global agent registry
-        self.agent_registry_path = self.home_dir / ".config" / "mcp-manager" / "claude-agents.json"
+        self.agent_registry_path = (
+            self.home_dir / ".config" / "mcp-manager" / "claude-agents.json"
+        )
         self.agent_registry_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def discover_agents(self) -> Dict[str, ClaudeAgent]:
+    def discover_agents(self) -> dict[str, ClaudeAgent]:
         """Discover all Claude agents from configured directories."""
         agents = {}
 
@@ -57,7 +60,7 @@ class ClaudeAgentManager:
                 "*-guardian.md",
                 "*-agent.md",
                 "*-specialist.md",
-                "*.md"  # Catch all other .md files
+                "*.md",  # Catch all other .md files
             ]
 
             for pattern in agent_patterns:
@@ -67,25 +70,31 @@ class ClaudeAgentManager:
                         if agent and agent.agent_id not in agents:  # Avoid duplicates
                             agents[agent.agent_id] = agent
                     except Exception as e:
-                        self.console.print(f"[yellow]Warning: Could not parse {agent_file}: {e}[/yellow]")
+                        self.console.print(
+                            f"[yellow]Warning: Could not parse {agent_file}: {e}[/yellow]"
+                        )
 
         self._update_agent_registry(agents)
         return agents
 
-    def get_agent_by_id(self, agent_id: str) -> Optional[ClaudeAgent]:
+    def get_agent_by_id(self, agent_id: str) -> ClaudeAgent | None:
         """Get a specific agent by ID."""
         agents = self.discover_agents()
         return agents.get(agent_id)
 
-    def get_agents_by_department(self, department: str) -> List[ClaudeAgent]:
+    def get_agents_by_department(self, department: str) -> list[ClaudeAgent]:
         """Get all agents from a specific department."""
         agents = self.discover_agents()
         return [agent for agent in agents.values() if agent.department == department]
 
-    def get_agents_by_specialization(self, specialization: str) -> List[ClaudeAgent]:
+    def get_agents_by_specialization(self, specialization: str) -> list[ClaudeAgent]:
         """Get all agents with a specific specialization."""
         agents = self.discover_agents()
-        return [agent for agent in agents.values() if specialization.lower() in agent.specialization.lower()]
+        return [
+            agent
+            for agent in agents.values()
+            if specialization.lower() in agent.specialization.lower()
+        ]
 
     def deploy_agent_to_project(self, agent_id: str, project_path: Path) -> bool:
         """Deploy a specific agent configuration to a project."""
@@ -112,13 +121,17 @@ class ClaudeAgentManager:
             self.console.print(f"[red]Error deploying agent {agent_id}: {e}[/red]")
             return False
 
-    def deploy_department_to_project(self, department: str, project_path: Path) -> Dict[str, bool]:
+    def deploy_department_to_project(
+        self, department: str, project_path: Path
+    ) -> dict[str, bool]:
         """Deploy all agents from a department to a project."""
         agents = self.get_agents_by_department(department)
         results = {}
 
         for agent in agents:
-            results[agent.agent_id] = self.deploy_agent_to_project(agent.agent_id, project_path)
+            results[agent.agent_id] = self.deploy_agent_to_project(
+                agent.agent_id, project_path
+            )
 
         return results
 
@@ -132,7 +145,9 @@ class ClaudeAgentManager:
 
             config = {
                 "version": "1.0",
-                "agent_directories": [str(d) for d in self.global_agents_dirs if d.exists()],
+                "agent_directories": [
+                    str(d) for d in self.global_agents_dirs if d.exists()
+                ],
                 "agents": {
                     agent_id: {
                         "name": agent.name,
@@ -141,16 +156,18 @@ class ClaudeAgentManager:
                         "specialization": agent.specialization,
                         "file_path": str(agent.file_path),
                         "tools": agent.tools,
-                        "status": agent.status
+                        "status": agent.status,
                     }
                     for agent_id, agent in agents.items()
-                }
+                },
             }
 
             with open(claude_config_path, "w") as f:
                 json.dump(config, f, indent=2)
 
-            self.console.print(f"[green]✅ Global agent access installed with {len(agents)} agents[/green]")
+            self.console.print(
+                f"[green]✅ Global agent access installed with {len(agents)} agents[/green]"
+            )
             return True
 
         except Exception as e:
@@ -215,7 +232,7 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
             self.console.print(f"[red]Error creating agent quick access: {e}[/red]")
             return False
 
-    def audit_agent_availability(self) -> Dict[str, Any]:
+    def audit_agent_availability(self) -> dict[str, Any]:
         """Audit agent availability across the system."""
         audit_results = {
             "total_agents": 0,
@@ -223,7 +240,7 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
             "missing_agents": [],
             "departments": {},
             "global_access": False,
-            "project_deployments": {}
+            "project_deployments": {},
         }
 
         try:
@@ -234,7 +251,9 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
             # Discover agents
             agents = self.discover_agents()
             audit_results["total_agents"] = len(agents)
-            audit_results["available_agents"] = len([a for a in agents.values() if a.status == "active"])
+            audit_results["available_agents"] = len(
+                [a for a in agents.values() if a.status == "active"]
+            )
 
             # Analyze by department
             for agent in agents.values():
@@ -243,7 +262,7 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                     audit_results["departments"][dept] = {
                         "total": 0,
                         "available": 0,
-                        "agents": []
+                        "agents": [],
                     }
 
                 audit_results["departments"][dept]["total"] += 1
@@ -260,17 +279,19 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                         agents_dir = project_dir / ".claude-agents"
                         if agents_dir.exists():
                             deployed_agents = len(list(agents_dir.glob("*.md")))
-                            audit_results["project_deployments"][project_dir.name] = deployed_agents
+                            audit_results["project_deployments"][
+                                project_dir.name
+                            ] = deployed_agents
 
         except Exception as e:
             self.console.print(f"[red]Error auditing agent availability: {e}[/red]")
 
         return audit_results
 
-    def _parse_agent_file(self, agent_file: Path) -> Optional[ClaudeAgent]:
+    def _parse_agent_file(self, agent_file: Path) -> ClaudeAgent | None:
         """Parse an agent file and extract metadata."""
         try:
-            with open(agent_file, "r", encoding="utf-8") as f:
+            with open(agent_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Extract metadata from frontmatter
@@ -292,7 +313,9 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                         if ":" in line and not line.startswith(" "):
                             # Save previous key-value if exists
                             if current_key:
-                                metadata[current_key] = " ".join(current_value).strip().strip('"')
+                                metadata[current_key] = (
+                                    " ".join(current_value).strip().strip('"')
+                                )
 
                             # Start new key-value
                             key, value = line.split(":", 1)
@@ -305,7 +328,9 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
 
                     # Save last key-value
                     if current_key:
-                        metadata[current_key] = " ".join(current_value).strip().strip('"')
+                        metadata[current_key] = (
+                            " ".join(current_value).strip().strip('"')
+                        )
 
                     # Extract from filename if not in frontmatter
                     filename_parts = agent_file.stem.split("-")
@@ -318,17 +343,36 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                         elif "guardian" in agent_file.stem:
                             specialization = "guardian agent"
                         else:
-                            specialization = " ".join(filename_parts[1:-1]) if len(filename_parts) > 2 else ""
+                            specialization = (
+                                " ".join(filename_parts[1:-1])
+                                if len(filename_parts) > 2
+                                else ""
+                            )
 
                     return ClaudeAgent(
                         name=metadata.get("name", agent_file.stem),
-                        description=metadata.get("description", "")[:200] + "..." if len(metadata.get("description", "")) > 200 else metadata.get("description", ""),
+                        description=(
+                            metadata.get("description", "")[:200] + "..."
+                            if len(metadata.get("description", "")) > 200
+                            else metadata.get("description", "")
+                        ),
                         agent_id=metadata.get("name", agent_file.stem),
-                        department=metadata.get("department", filename_parts[0] if len(filename_parts) > 1 else "specialist"),
+                        department=metadata.get(
+                            "department",
+                            (
+                                filename_parts[0]
+                                if len(filename_parts) > 1
+                                else "specialist"
+                            ),
+                        ),
                         specialization=specialization,
                         file_path=agent_file,
-                        tools=metadata.get("tools", "").split(",") if metadata.get("tools") else [],
-                        status=metadata.get("status", "active")
+                        tools=(
+                            metadata.get("tools", "").split(",")
+                            if metadata.get("tools")
+                            else []
+                        ),
+                        status=metadata.get("status", "active"),
                     )
 
             # Fallback parsing from filename
@@ -343,20 +387,24 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                 description="",
                 agent_id=agent_file.stem,
                 department=filename_parts[0] if len(filename_parts) > 1 else "unknown",
-                specialization=" ".join(filename_parts[1:-1]) if len(filename_parts) > 2 else "",
+                specialization=(
+                    " ".join(filename_parts[1:-1]) if len(filename_parts) > 2 else ""
+                ),
                 file_path=agent_file,
                 tools=[],
-                status="active"
+                status="active",
             )
 
         except Exception:
             return None
 
-    def _update_agent_registry(self, agents: Dict[str, ClaudeAgent]) -> None:
+    def _update_agent_registry(self, agents: dict[str, ClaudeAgent]) -> None:
         """Update the global agent registry."""
         registry_data = {
             "version": "1.0",
-            "last_updated": subprocess.run(["date", "-Iseconds"], capture_output=True, text=True).stdout.strip(),
+            "last_updated": subprocess.run(
+                ["date", "-Iseconds"], capture_output=True, text=True
+            ).stdout.strip(),
             "agents": {
                 agent_id: {
                     "name": agent.name,
@@ -365,19 +413,21 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
                     "specialization": agent.specialization,
                     "file_path": str(agent.file_path),
                     "tools": agent.tools,
-                    "status": agent.status
+                    "status": agent.status,
                 }
                 for agent_id, agent in agents.items()
-            }
+            },
         }
 
         with open(self.agent_registry_path, "w") as f:
             json.dump(registry_data, f, indent=2)
 
-    def _update_project_agent_registry(self, registry_path: Path, agent: ClaudeAgent) -> None:
+    def _update_project_agent_registry(
+        self, registry_path: Path, agent: ClaudeAgent
+    ) -> None:
         """Update a project's agent registry."""
         if registry_path.exists():
-            with open(registry_path, "r") as f:
+            with open(registry_path) as f:
                 registry_data = json.load(f)
         else:
             registry_data = {"agents": {}}
@@ -387,7 +437,9 @@ mcp-manager agent deploy-department "{department}" "${{1:-.}}"
             "description": agent.description,
             "department": agent.department,
             "specialization": agent.specialization,
-            "deployed_at": subprocess.run(["date", "-Iseconds"], capture_output=True, text=True).stdout.strip()
+            "deployed_at": subprocess.run(
+                ["date", "-Iseconds"], capture_output=True, text=True
+            ).stdout.strip(),
         }
 
         with open(registry_path, "w") as f:

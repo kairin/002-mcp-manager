@@ -91,11 +91,23 @@ python -m mcp_manager.cli fleet audit
 ### 🔧 MCP Server Management (5 Critical Servers)
 | Server | Type | Status | Purpose |
 |--------|------|--------|---------|
-| [Context7](https://context7.com) | HTTP | ✅ Global | Library documentation and code examples |
+| [Context7](https://context7.com) | HTTP | ✅ Global + Auth | Library documentation and code examples |
 | [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Global | UI component registry and tooling |
 | [GitHub MCP](https://github.com) | HTTP | ✅ Global | GitHub API integration and management |
 | [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
-| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global | AI model access and inference |
+| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global + Auth | AI model access with HF CLI integration |
+
+#### 🤗 Hugging Face MCP Setup
+```bash
+# Quick setup with HF CLI authentication
+./hf_quick_setup.sh
+
+# Or use MCP Manager CLI
+uv run python -m mcp_manager.cli mcp setup-hf --login
+
+# Setup all MCP servers at once
+uv run python -m mcp_manager.cli mcp setup-all
+```
 
 ### 📋 Project Standardization (6 Automated Standards)
 1. **Branch Strategy**: YYYYMMDD-HHMMSS-type-description naming, preserve all branches
