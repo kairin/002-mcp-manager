@@ -5,6 +5,43 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-09-23
+
+### ✨ Added
+
+#### 🤗 Hugging Face MCP Integration
+- **HF CLI Authentication Integration**: Seamless token management using `huggingface-hub[cli]`
+  - Automatic token retrieval from HF CLI cache
+  - Browser-based OAuth login flow support
+  - Secure token storage using HF's official mechanism
+- **New CLI Commands**:
+  - `mcp setup-hf` - Configure HF MCP server with authentication
+  - `mcp setup-all` - One-command setup for all required MCP servers
+- **UV Dependency Management**: All Python dependencies now managed via `uv`
+  - Added `huggingface-hub[cli]` to pyproject.toml
+  - Virtual environment management with `.venv`
+  - Consistent dependency resolution
+
+#### 🔧 Enhanced MCP Server Management
+- **Complete Global MCP Server Setup**: All 5 required servers now configured
+  - GitHub MCP server (HTTP) - GitHub API integration
+  - shadcn MCP server (stdio) - UI component tooling
+  - HF MCP server (HTTP) - Hugging Face model access with authentication
+- **Verification Tools**:
+  - `verify_mcp_servers.py` - Comprehensive server configuration verification
+  - `setup_hf_with_cli.py` - HF CLI integration setup script
+  - `hf_quick_setup.sh` - Quick setup script for HF authentication
+
+### 🔄 Changed
+- **HF Integration Module**: Enhanced to support HF CLI token management
+- **Core MCP Manager**: Added `get_global_servers()` method for better server management
+- **CLI Structure**: Integrated HF module into main MCP manager CLI
+
+### 📝 Documentation
+- **HF Integration Guide**: Complete documentation for HF CLI authentication
+- **MCP Server Status**: Updated verification and status reporting
+- **Setup Instructions**: Simplified setup process with automated scripts
+
 ## [1.0.0] - 2025-09-23
 
 ### 🚀 Major System Launch

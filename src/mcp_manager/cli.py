@@ -1,24 +1,25 @@
 """CLI interface for MCP Manager - Comprehensive Project Standardization System."""
 
+from pathlib import Path
+from typing import Any
+
 import typer
+from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
-from typing import Optional, List, Dict, Any
-from pathlib import Path
-import sys
 
-from .core import MCPManager
-from .project_standards import ProjectStandardsManager
-from .fleet_manager import FleetManager
 from .claude_agents import ClaudeAgentManager
+from .core import MCPManager
 from .exceptions import MCPManagerError
+from .fleet_manager import FleetManager
+from .hf_integration import HuggingFaceIntegration
+from .project_standards import ProjectStandardsManager
 
 # Initialize CLI app and console
 app = typer.Typer(
     name="mcp-manager",
     help="🚀 MCP Manager - Comprehensive Project Standardization & Fleet Management System",
-    rich_markup_mode="rich"
+    rich_markup_mode="rich",
 )
 console = Console()
 
@@ -38,10 +39,15 @@ app.add_typer(agent_app, name="agent")
 # MCP SERVER MANAGEMENT COMMANDS
 # =============================================================================
 
+
 @mcp_app.command("audit")
 def mcp_audit(
-    detailed: bool = typer.Option(False, "--detailed", help="Show detailed configuration analysis"),
-    format: str = typer.Option("table", "--format", help="Output format: table, json, yaml")
+    detailed: bool = typer.Option(
+        False, "--detailed", help="Show detailed configuration analysis"
+    ),
+    format: str = typer.Option(
+        "table", "--format", help="Output format: table, json, yaml"
+    ),
 ) -> None:
     """Audit all MCP server configurations across projects."""
     try:
@@ -52,6 +58,7 @@ def mcp_audit(
             _display_audit_table(results)
         elif format == "json":
             import json
+
             console.print_json(json.dumps(results, indent=2))
         else:
             rprint(f"[red]Unsupported format: {format}[/red]")
@@ -64,8 +71,12 @@ def mcp_audit(
 
 @mcp_app.command("init")
 def mcp_init(
-    global_config: bool = typer.Option(False, "--global", help="Initialize global configuration"),
-    force: bool = typer.Option(False, "--force", help="Force initialization even if config exists")
+    global_config: bool = typer.Option(
+        False, "--global", help="Initialize global configuration"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Force initialization even if config exists"
+    ),
 ) -> None:
     """Initialize MCP Manager configuration."""
     try:
@@ -73,10 +84,14 @@ def mcp_init(
 
         if global_config:
             manager.init_global_config(force=force)
-            rprint("[green]✅ Global MCP configuration initialized successfully[/green]")
+            rprint(
+                "[green]✅ Global MCP configuration initialized successfully[/green]"
+            )
         else:
             manager.init_project_config(force=force)
-            rprint("[green]✅ Project MCP configuration initialized successfully[/green]")
+            rprint(
+                "[green]✅ Project MCP configuration initialized successfully[/green]"
+            )
 
     except MCPManagerError as e:
         rprint(f"[red]Error: {e}[/red]")
@@ -87,12 +102,24 @@ def mcp_init(
 def mcp_add(
     name: str = typer.Argument(..., help="MCP server name"),
     type: str = typer.Option(..., "--type", "-t", help="Server type: http or stdio"),
-    url: Optional[str] = typer.Option(None, "--url", help="Server URL (for HTTP servers)"),
-    command: Optional[str] = typer.Option(None, "--command", help="Command to run (for stdio servers)"),
-    args: Optional[List[str]] = typer.Option(None, "--arg", help="Command arguments (can be used multiple times)"),
-    header: Optional[List[str]] = typer.Option(None, "--header", "-H", help="HTTP headers (format: 'Key: Value')"),
-    env: Optional[List[str]] = typer.Option(None, "--env", help="Environment variables (format: 'KEY=value')"),
-    global_config: bool = typer.Option(True, "--global/--local", help="Add to global or local configuration")
+    url: str | None = typer.Option(
+        None, "--url", help="Server URL (for HTTP servers)"
+    ),
+    command: str | None = typer.Option(
+        None, "--command", help="Command to run (for stdio servers)"
+    ),
+    args: list[str] | None = typer.Option(
+        None, "--arg", help="Command arguments (can be used multiple times)"
+    ),
+    header: list[str] | None = typer.Option(
+        None, "--header", "-H", help="HTTP headers (format: 'Key: Value')"
+    ),
+    env: list[str] | None = typer.Option(
+        None, "--env", help="Environment variables (format: 'KEY=value')"
+    ),
+    global_config: bool = typer.Option(
+        True, "--global/--local", help="Add to global or local configuration"
+    ),
 ) -> None:
     """Add a new MCP server."""
     try:
@@ -102,8 +129,8 @@ def mcp_add(
         headers = {}
         if header:
             for h in header:
-                if ':' in h:
-                    key, value = h.split(':', 1)
+                if ":" in h:
+                    key, value = h.split(":", 1)
                     headers[key.strip()] = value.strip()
                 else:
                     rprint(f"[red]Invalid header format: {h}. Use 'Key: Value'[/red]")
@@ -113,8 +140,8 @@ def mcp_add(
         env_vars = {}
         if env:
             for e in env:
-                if '=' in e:
-                    key, value = e.split('=', 1)
+                if "=" in e:
+                    key, value = e.split("=", 1)
                     env_vars[key.strip()] = value.strip()
                 else:
                     rprint(f"[red]Invalid env format: {e}. Use 'KEY=value'[/red]")
@@ -128,7 +155,7 @@ def mcp_add(
             args=args or [],
             headers=headers,
             env=env_vars,
-            global_config=global_config
+            global_config=global_config,
         )
 
         scope = "global" if global_config else "local"
@@ -142,15 +169,21 @@ def mcp_add(
 @mcp_app.command("remove")
 def mcp_remove(
     name: str = typer.Argument(..., help="MCP server name to remove"),
-    global_config: bool = typer.Option(True, "--global/--local", help="Remove from global or local configuration"),
-    force: bool = typer.Option(False, "--force", help="Force removal without confirmation")
+    global_config: bool = typer.Option(
+        True, "--global/--local", help="Remove from global or local configuration"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Force removal without confirmation"
+    ),
 ) -> None:
     """Remove an MCP server."""
     try:
         manager = MCPManager()
 
         if not force:
-            confirm = typer.confirm(f"Are you sure you want to remove MCP server '{name}'?")
+            confirm = typer.confirm(
+                f"Are you sure you want to remove MCP server '{name}'?"
+            )
             if not confirm:
                 rprint("[yellow]Operation cancelled[/yellow]")
                 raise typer.Exit(0)
@@ -158,7 +191,9 @@ def mcp_remove(
         manager.remove_server(name, global_config=global_config)
 
         scope = "global" if global_config else "local"
-        rprint(f"[green]✅ MCP server '{name}' removed from {scope} configuration[/green]")
+        rprint(
+            f"[green]✅ MCP server '{name}' removed from {scope} configuration[/green]"
+        )
 
     except MCPManagerError as e:
         rprint(f"[red]Error: {e}[/red]")
@@ -167,8 +202,10 @@ def mcp_remove(
 
 @mcp_app.command("status")
 def mcp_status(
-    name: Optional[str] = typer.Argument(None, help="Check specific server (default: all servers)"),
-    timeout: int = typer.Option(5, "--timeout", help="Connection timeout in seconds")
+    name: str | None = typer.Argument(
+        None, help="Check specific server (default: all servers)"
+    ),
+    timeout: int = typer.Option(5, "--timeout", help="Connection timeout in seconds"),
 ) -> None:
     """Check MCP server health status."""
     try:
@@ -188,9 +225,13 @@ def mcp_status(
 
 @mcp_app.command("update")
 def mcp_update(
-    name: Optional[str] = typer.Argument(None, help="Update specific server (default: all servers)"),
+    name: str | None = typer.Argument(
+        None, help="Update specific server (default: all servers)"
+    ),
     all_servers: bool = typer.Option(False, "--all", help="Update all servers"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be updated without making changes")
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be updated without making changes"
+    ),
 ) -> None:
     """Update MCP servers."""
     try:
@@ -214,8 +255,12 @@ def mcp_update(
 
 @mcp_app.command("diagnose")
 def mcp_diagnose(
-    name: Optional[str] = typer.Argument(None, help="Diagnose specific server (default: all servers)"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed diagnostic information")
+    name: str | None = typer.Argument(
+        None, help="Diagnose specific server (default: all servers)"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show detailed diagnostic information"
+    ),
 ) -> None:
     """Diagnose MCP server issues."""
     try:
@@ -235,9 +280,15 @@ def mcp_diagnose(
 
 @mcp_app.command("migrate")
 def mcp_migrate(
-    project_to_global: bool = typer.Option(False, "--project-to-global", help="Migrate project configs to global"),
-    backup: bool = typer.Option(True, "--backup/--no-backup", help="Create backup before migration"),
-    force: bool = typer.Option(False, "--force", help="Force migration without confirmation")
+    project_to_global: bool = typer.Option(
+        False, "--project-to-global", help="Migrate project configs to global"
+    ),
+    backup: bool = typer.Option(
+        True, "--backup/--no-backup", help="Create backup before migration"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Force migration without confirmation"
+    ),
 ) -> None:
     """Migrate MCP server configurations."""
     try:
@@ -245,7 +296,9 @@ def mcp_migrate(
 
         if project_to_global:
             if not force:
-                confirm = typer.confirm("Migrate all project-specific MCP configurations to global?")
+                confirm = typer.confirm(
+                    "Migrate all project-specific MCP configurations to global?"
+                )
                 if not confirm:
                     rprint("[yellow]Operation cancelled[/yellow]")
                     raise typer.Exit(0)
@@ -253,8 +306,150 @@ def mcp_migrate(
             results = manager.migrate_project_to_global(create_backup=backup)
             _display_migration_results(results)
         else:
-            rprint("[red]Error: No migration type specified. Use --project-to-global[/red]")
+            rprint(
+                "[red]Error: No migration type specified. Use --project-to-global[/red]"
+            )
             raise typer.Exit(1)
+
+    except MCPManagerError as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@mcp_app.command("setup-hf")
+def mcp_setup_hf(
+    login: bool = typer.Option(False, "--login", help="Login with HF CLI"),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be done without making changes"
+    ),
+) -> None:
+    """Setup Hugging Face MCP server with authentication."""
+    try:
+        hf_integration = HuggingFaceIntegration()
+
+        # Check current HF login status
+        user = hf_integration.get_current_hf_user()
+        if user:
+            rprint(f"[green]✓ Already logged in as: {user}[/green]")
+        elif login:
+            if not hf_integration.login_with_hf_cli():
+                rprint(
+                    "[yellow]Warning: HF CLI login failed, continuing with manual token entry[/yellow]"
+                )
+
+        # Configure HF MCP server
+        if hf_integration.update_claude_config(dry_run=dry_run):
+            rprint("[green]✅ HF MCP server configured successfully[/green]")
+        else:
+            rprint("[red]❌ Failed to configure HF MCP server[/red]")
+            raise typer.Exit(1)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@mcp_app.command("setup-all")
+def mcp_setup_all(
+    force: bool = typer.Option(
+        False, "--force", help="Force setup even if servers exist"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be done without making changes"
+    ),
+) -> None:
+    """Setup all required MCP servers (GitHub, shadcn, HF) globally."""
+    try:
+        manager = MCPManager()
+        hf_integration = HuggingFaceIntegration()
+
+        rprint("[bold cyan]Setting up all required MCP servers globally[/bold cyan]\n")
+
+        servers_to_add = []
+
+        # Check existing servers
+        existing = manager.get_global_servers()
+
+        # GitHub MCP server
+        if "github" not in existing or force:
+            servers_to_add.append(
+                {
+                    "name": "github",
+                    "type": "http",
+                    "url": "https://github.com/mcp",
+                    "headers": {},
+                }
+            )
+            rprint("[yellow]• Will add GitHub MCP server[/yellow]")
+        else:
+            rprint("[green]✓ GitHub MCP server already configured[/green]")
+
+        # shadcn MCP server
+        if "shadcn" not in existing or force:
+            servers_to_add.append(
+                {
+                    "name": "shadcn",
+                    "type": "stdio",
+                    "command": "npx",
+                    "args": ["shadcn@latest", "mcp"],
+                    "env": {},
+                }
+            )
+            rprint("[yellow]• Will add shadcn MCP server[/yellow]")
+        else:
+            rprint("[green]✓ shadcn MCP server already configured[/green]")
+
+        # HF MCP server (handled separately)
+        if "hf-mcp-server" not in existing or force:
+            rprint("[yellow]• Will add HF MCP server with authentication[/yellow]")
+        else:
+            rprint("[green]✓ HF MCP server already configured[/green]")
+
+        if dry_run:
+            rprint("\n[bold yellow]Dry run mode - no changes made[/bold yellow]")
+            return
+
+        # Add servers
+        for server in servers_to_add:
+            try:
+                manager.add_server(
+                    name=server["name"],
+                    server_type=server["type"],
+                    url=server.get("url"),
+                    command=server.get("command"),
+                    args=server.get("args", []),
+                    headers=server.get("headers", {}),
+                    env=server.get("env", {}),
+                    global_config=True,
+                )
+                rprint(f"[green]✅ Added {server['name']} MCP server[/green]")
+            except Exception as e:
+                rprint(f"[red]❌ Failed to add {server['name']}: {e}[/red]")
+
+        # Setup HF MCP server with authentication
+        if "hf-mcp-server" not in existing or force:
+            if hf_integration.update_claude_config(dry_run=False):
+                rprint("[green]✅ HF MCP server configured with authentication[/green]")
+            else:
+                rprint(
+                    "[yellow]⚠️ HF MCP server configuration needs manual attention[/yellow]"
+                )
+
+        # Final verification
+        rprint("\n[bold cyan]Verifying all MCP servers...[/bold cyan]")
+        final_servers = manager.get_global_servers()
+        required = ["context7", "playwright", "github", "shadcn", "hf-mcp-server"]
+
+        all_present = all(s in final_servers for s in required)
+        if all_present:
+            rprint(
+                f"[green]✅ All {len(required)} required MCP servers are now configured globally![/green]"
+            )
+            for server in required:
+                rprint(f"   • {server}")
+        else:
+            missing = [s for s in required if s not in final_servers]
+            rprint(f"[yellow]⚠️ Missing servers: {', '.join(missing)}[/yellow]")
 
     except MCPManagerError as e:
         rprint(f"[red]Error: {e}[/red]")
@@ -304,11 +499,9 @@ def _display_status_table(status_results: dict) -> None:
         response_time = f"{info.get('response_time', 0):.2f}s"
         details = info.get("details", "")
 
-        status_icon = {
-            "healthy": "✅",
-            "unhealthy": "❌",
-            "unknown": "⚠️"
-        }.get(status, "❓")
+        status_icon = {"healthy": "✅", "unhealthy": "❌", "unknown": "⚠️"}.get(
+            status, "❓"
+        )
 
         table.add_row(name, f"{status_icon} {status}", response_time, details)
 
@@ -388,11 +581,18 @@ def main() -> None:
 # PROJECT STANDARDIZATION COMMANDS
 # =============================================================================
 
+
 @project_app.command("audit")
 def project_audit(
-    project_path: Optional[str] = typer.Argument(None, help="Project path (default: current directory)"),
-    all_projects: bool = typer.Option(False, "--all", help="Audit all projects in home directory"),
-    detailed: bool = typer.Option(False, "--detailed", help="Show detailed compliance information")
+    project_path: str | None = typer.Argument(
+        None, help="Project path (default: current directory)"
+    ),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Audit all projects in home directory"
+    ),
+    detailed: bool = typer.Option(
+        False, "--detailed", help="Show detailed compliance information"
+    ),
 ) -> None:
     """Audit project compliance with standardization requirements."""
     try:
@@ -415,9 +615,15 @@ def project_audit(
 
 @project_app.command("fix")
 def project_fix(
-    standard: str = typer.Argument(..., help="Standard to fix (e.g., branch_strategy, astro_pages)"),
-    project_path: Optional[str] = typer.Argument(None, help="Project path (default: current directory)"),
-    all_projects: bool = typer.Option(False, "--all", help="Fix standard for all projects")
+    standard: str = typer.Argument(
+        ..., help="Standard to fix (e.g., branch_strategy, astro_pages)"
+    ),
+    project_path: str | None = typer.Argument(
+        None, help="Project path (default: current directory)"
+    ),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Fix standard for all projects"
+    ),
 ) -> None:
     """Fix a specific standard for a project or all projects."""
     try:
@@ -425,12 +631,18 @@ def project_fix(
 
         if all_projects:
             # Find all projects and fix the standard
-            scan_dirs = [Path.home() / "Apps", Path.home() / "projects", Path.home() / "repos"]
+            scan_dirs = [
+                Path.home() / "Apps",
+                Path.home() / "projects",
+                Path.home() / "repos",
+            ]
             for scan_dir in scan_dirs:
                 if scan_dir.exists():
                     for project_dir in scan_dir.iterdir():
                         if project_dir.is_dir() and (project_dir / ".git").exists():
-                            success = standards_manager.fix_project_standard(project_dir, standard)
+                            success = standards_manager.fix_project_standard(
+                                project_dir, standard
+                            )
                             status = "✅" if success else "❌"
                             rprint(f"{status} {project_dir.name}: {standard}")
         else:
@@ -466,10 +678,11 @@ def project_standards() -> None:
 # FLEET MANAGEMENT COMMANDS
 # =============================================================================
 
+
 @fleet_app.command("register")
 def fleet_register(
     hostname: str = typer.Argument(..., help="Hostname of the node"),
-    ip_address: str = typer.Argument(..., help="IP address of the node")
+    ip_address: str = typer.Argument(..., help="IP address of the node"),
 ) -> None:
     """Register a new node in the fleet."""
     try:
@@ -507,11 +720,13 @@ def fleet_status() -> None:
                 f"{status_icon} {node_info['status']}",
                 str(node_info["projects"]),
                 str(node_info["mcp_servers"]),
-                node_info.get("last_sync", "Never") or "Never"
+                node_info.get("last_sync", "Never") or "Never",
             )
 
         console.print(table)
-        rprint(f"\n[cyan]Total: {status['total_nodes']} nodes ({status['active_nodes']} active, {status['inactive_nodes']} inactive)[/cyan]")
+        rprint(
+            f"\n[cyan]Total: {status['total_nodes']} nodes ({status['active_nodes']} active, {status['inactive_nodes']} inactive)[/cyan]"
+        )
 
     except MCPManagerError as e:
         rprint(f"[red]Error: {e}[/red]")
@@ -538,7 +753,7 @@ def fleet_sync() -> None:
                 "✅" if result["mcp_servers"] else "❌",
                 "✅" if result["project_standards"] else "❌",
                 "✅" if result["claude_agents"] else "❌",
-                "✅" if result["python_environment"] else "❌"
+                "✅" if result["python_environment"] else "❌",
             )
 
         console.print(table)
@@ -570,7 +785,11 @@ def fleet_audit() -> None:
                 "✅" if compliance["python_version"] else "❌",
                 "✅" if compliance["mcp_servers"] else "❌",
                 "✅" if compliance["tools_installed"] else "❌",
-                "✅ Compliant" if compliance["overall_compliance"] else "❌ Non-compliant"
+                (
+                    "✅ Compliant"
+                    if compliance["overall_compliance"]
+                    else "❌ Non-compliant"
+                ),
             )
 
         console.print(table)
@@ -583,6 +802,7 @@ def fleet_audit() -> None:
 # =============================================================================
 # CLAUDE AGENT MANAGEMENT COMMANDS
 # =============================================================================
+
 
 @agent_app.command("discover")
 def agent_discover() -> None:
@@ -604,7 +824,7 @@ def agent_discover() -> None:
                 agent.name,
                 agent.department,
                 agent.specialization,
-                agent.status
+                agent.status,
             )
 
         console.print(table)
@@ -618,7 +838,9 @@ def agent_discover() -> None:
 @agent_app.command("deploy")
 def agent_deploy(
     agent_id: str = typer.Argument(..., help="Agent ID to deploy"),
-    project_path: Optional[str] = typer.Argument(None, help="Project path (default: current directory)")
+    project_path: str | None = typer.Argument(
+        None, help="Project path (default: current directory)"
+    ),
 ) -> None:
     """Deploy a specific agent to a project."""
     try:
@@ -639,8 +861,12 @@ def agent_deploy(
 
 @agent_app.command("deploy-department")
 def agent_deploy_department(
-    department: str = typer.Argument(..., help="Department to deploy (e.g., product, engineering)"),
-    project_path: Optional[str] = typer.Argument(None, help="Project path (default: current directory)")
+    department: str = typer.Argument(
+        ..., help="Department to deploy (e.g., product, engineering)"
+    ),
+    project_path: str | None = typer.Argument(
+        None, help="Project path (default: current directory)"
+    ),
 ) -> None:
     """Deploy all agents from a department to a project."""
     try:
@@ -688,10 +914,12 @@ def agent_audit() -> None:
         audit_results = agent_manager.audit_agent_availability()
 
         # Display summary
-        rprint(f"[cyan]Agent Availability Summary[/cyan]")
+        rprint("[cyan]Agent Availability Summary[/cyan]")
         rprint(f"Total Agents: {audit_results['total_agents']}")
         rprint(f"Available Agents: {audit_results['available_agents']}")
-        rprint(f"Global Access: {'✅ Enabled' if audit_results['global_access'] else '❌ Disabled'}")
+        rprint(
+            f"Global Access: {'✅ Enabled' if audit_results['global_access'] else '❌ Disabled'}"
+        )
 
         # Display by department
         if audit_results["departments"]:
@@ -707,17 +935,14 @@ def agent_audit() -> None:
                     agents_list += f" (+{len(info['agents']) - 3} more)"
 
                 table.add_row(
-                    dept,
-                    str(info["total"]),
-                    str(info["available"]),
-                    agents_list
+                    dept, str(info["total"]), str(info["available"]), agents_list
                 )
 
             console.print(table)
 
         # Display project deployments
         if audit_results["project_deployments"]:
-            rprint(f"\n[cyan]Project Deployments[/cyan]")
+            rprint("\n[cyan]Project Deployments[/cyan]")
             for project, count in audit_results["project_deployments"].items():
                 rprint(f"  {project}: {count} agents")
 
@@ -730,11 +955,14 @@ def agent_audit() -> None:
 # TOP-LEVEL COMMANDS
 # =============================================================================
 
+
 @app.command()
 def init() -> None:
     """Initialize MCP Manager with full project standardization setup."""
     try:
-        rprint("[cyan]🚀 Initializing MCP Manager - Comprehensive Project Standardization System[/cyan]")
+        rprint(
+            "[cyan]🚀 Initializing MCP Manager - Comprehensive Project Standardization System[/cyan]"
+        )
 
         # Initialize MCP configuration
         rprint("[yellow]1. Setting up MCP server management...[/yellow]")
@@ -749,6 +977,7 @@ def init() -> None:
         rprint("[yellow]3. Setting up fleet management...[/yellow]")
         fleet_manager = FleetManager(console)
         import socket
+
         hostname = socket.gethostname()
         ip_address = "127.0.0.1"  # Local node
         fleet_manager.register_node(hostname, ip_address)
@@ -789,20 +1018,28 @@ def status() -> None:
         standards_manager = ProjectStandardsManager(console)
         all_results = standards_manager.audit_all_projects()
         summary = standards_manager.get_compliance_summary(all_results)
-        rprint(f"  📊 {summary['compliant_projects']}/{summary['total_projects']} projects compliant ({summary['compliance_percentage']:.1f}%)")
+        rprint(
+            f"  📊 {summary['compliant_projects']}/{summary['total_projects']} projects compliant ({summary['compliance_percentage']:.1f}%)"
+        )
 
         # Fleet Status
         rprint("\n[yellow]Fleet Management:[/yellow]")
         fleet_manager = FleetManager(console)
         fleet_status = fleet_manager.get_fleet_status()
-        rprint(f"  🌐 {fleet_status['active_nodes']}/{fleet_status['total_nodes']} nodes active")
+        rprint(
+            f"  🌐 {fleet_status['active_nodes']}/{fleet_status['total_nodes']} nodes active"
+        )
 
         # Claude Agents Status
         rprint("\n[yellow]Claude Agents:[/yellow]")
         agent_manager = ClaudeAgentManager(console)
         agent_audit = agent_manager.audit_agent_availability()
-        rprint(f"  🤖 {agent_audit['available_agents']}/{agent_audit['total_agents']} agents available")
-        rprint(f"  🔧 Global access: {'✅ Enabled' if agent_audit['global_access'] else '❌ Disabled'}")
+        rprint(
+            f"  🤖 {agent_audit['available_agents']}/{agent_audit['total_agents']} agents available"
+        )
+        rprint(
+            f"  🔧 Global access: {'✅ Enabled' if agent_audit['global_access'] else '❌ Disabled'}"
+        )
 
     except Exception as e:
         rprint(f"[red]Error getting system status: {e}[/red]")
@@ -813,7 +1050,8 @@ def status() -> None:
 # HELPER FUNCTIONS FOR DISPLAY
 # =============================================================================
 
-def _display_compliance_summary(summary: Dict[str, Any]) -> None:
+
+def _display_compliance_summary(summary: dict[str, Any]) -> None:
     """Display project compliance summary."""
     table = Table(title="Project Compliance Summary")
     table.add_column("Metric", style="cyan")
@@ -826,14 +1064,18 @@ def _display_compliance_summary(summary: Dict[str, Any]) -> None:
     console.print(table)
 
 
-def _display_project_audit_results(results: Dict[str, Dict[str, Any]], detailed: bool) -> None:
+def _display_project_audit_results(
+    results: dict[str, dict[str, Any]], detailed: bool
+) -> None:
     """Display project audit results."""
     for project_name, project_results in results.items():
         _display_single_project_audit(project_name, project_results, detailed)
         console.print()
 
 
-def _display_single_project_audit(project_name: str, results: Dict[str, Any], detailed: bool) -> None:
+def _display_single_project_audit(
+    project_name: str, results: dict[str, Any], detailed: bool
+) -> None:
     """Display audit results for a single project."""
     table = Table(title=f"Project Audit: {project_name}")
     table.add_column("Standard", style="cyan")
