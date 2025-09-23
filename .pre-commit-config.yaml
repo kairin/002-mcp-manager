@@ -42,6 +42,14 @@ repos:
         pass_filenames: false
         stages: [push]
 
+      - id: verify-build
+        name: Verify GitHub Pages Build
+        entry: bash -c 'test -f docs/index.html && test -d docs/_astro && test -f docs/.nojekyll || (echo "❌ CRITICAL: GitHub Pages build verification failed!" && exit 1)'
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [push]
+
   # Branch naming enforcement
   - repo: local
     hooks:
