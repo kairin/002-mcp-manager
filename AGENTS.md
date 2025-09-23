@@ -45,6 +45,56 @@ git push origin main
 # NEVER: git branch -d "$BRANCH_NAME"
 ```
 
+### 🚨 CRITICAL: GitHub Pages Deployment (MANDATORY)
+
+#### Website Build Requirements (NON-NEGOTIABLE)
+- **NEVER DELETE** built website files from `docs/` directory without rebuilding
+- **ALWAYS BUILD** before committing any changes that affect the website
+- **MANDATORY VERIFICATION** that GitHub Pages deployment remains functional
+
+#### Build Process (MANDATORY WORKFLOW)
+```bash
+# CRITICAL: ALWAYS run before any commit that might affect the website
+npm run build                    # Build Astro website to docs/
+test -f docs/index.html || exit 1    # Verify main page exists
+test -d docs/_astro || exit 1        # Verify assets directory exists
+test -f docs/.nojekyll || exit 1     # Verify GitHub Pages config exists
+
+# MANDATORY: Verify build outputs before committing
+ls -la docs/                     # Must show: index.html, _astro/, favicon.svg
+git add docs/                    # Stage ALL built files
+git commit -m "fix: description" # Commit with descriptive message
+git push origin main             # Deploy to GitHub Pages
+```
+
+#### Deployment Validation (MANDATORY)
+- **BEFORE**: Always check that https://kairin.github.io/mcp-manager is accessible
+- **AFTER**: Verify website loads within 5 minutes of pushing to main
+- **ERROR RECOVERY**: If 404 occurs, immediately run `npm run build && git add docs/ && git commit && git push`
+
+#### Astro Configuration Requirements (NON-NEGOTIABLE)
+```javascript
+// astro.config.mjs MANDATORY settings
+export default defineConfig({
+  site: 'https://kairin.github.io',    // REQUIRED for GitHub Pages
+  base: '/mcp-manager',                // REQUIRED for correct routing
+  outDir: './docs',                    // REQUIRED for GitHub Pages source
+  output: 'static',                    // REQUIRED for static site generation
+});
+```
+
+#### Package.json Scripts (MANDATORY)
+```json
+{
+  "scripts": {
+    "clean-docs": "rm -rf ./docs/* || true",
+    "prebuild": "npm run clean-docs",
+    "build": "astro check && astro build",
+    "postbuild": "cp public/favicon.* docs/ || true"
+  }
+}
+```
+
 ### 🚨 CRITICAL: Python Development Standards (MANDATORY)
 
 #### Python Version & Dependencies
@@ -234,6 +284,9 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 
 ### DO NOT
 - Delete branches without explicit user permission
+- **Delete built website files from `docs/` directory without rebuilding**
+- **Commit changes that break GitHub Pages deployment**
+- **Push to main without verifying website build completion**
 - Break existing MCP server configurations
 - Store credentials in plain text without encryption
 - Skip type annotations in new code
@@ -243,6 +296,8 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 - Remove or modify global MCP configurations without backup
 
 ### DO NOT BYPASS
+- **GitHub Pages build and deployment verification**
+- **Website functionality validation before pushing**
 - Branch preservation requirements
 - Code quality standards (black, ruff, mypy, pytest)
 - Type annotation requirements
@@ -253,14 +308,18 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 ## ✅ MANDATORY ACTIONS
 
 ### Before Every Commit
-1. **Code Quality**: Run `black`, `ruff`, `mypy` checks
-2. **Testing**: Execute `pytest` with >80% coverage
-3. **Branch Creation**: Use datetime-based branch naming
-4. **Configuration Backup**: Backup configs before changes
-5. **Health Validation**: Verify MCP server connectivity
-6. **Documentation**: Update relevant docs if adding features
+1. **Website Build**: Run `npm run build` and verify `docs/` contains built files
+2. **Website Verification**: Confirm `docs/index.html` and `docs/_astro/` exist
+3. **Code Quality**: Run `black`, `ruff`, `mypy` checks
+4. **Testing**: Execute `pytest` with >80% coverage
+5. **Branch Creation**: Use datetime-based branch naming
+6. **Configuration Backup**: Backup configs before changes
+7. **Health Validation**: Verify MCP server connectivity
+8. **Documentation**: Update relevant docs if adding features
 
 ### Quality Gates
+- **GitHub Pages website builds successfully and deploys without 404 errors**
+- **All required files exist in `docs/`: index.html, _astro/, .nojekyll**
 - All tests pass with >80% coverage
 - Type checking passes without errors
 - Code formatting matches black standards
@@ -311,8 +370,8 @@ This project is prepared for spec-kit workflow integration:
 
 **CRITICAL**: These requirements are NON-NEGOTIABLE. All AI assistants must follow these guidelines exactly. Failure to comply may result in configuration corruption, broken MCP setups, or security vulnerabilities.
 
-**Version**: 1.0-2025
-**Last Updated**: 2025-09-23
+**Version**: 1.1-2025
+**Last Updated**: 2025-09-24
 **Status**: ACTIVE - MANDATORY COMPLIANCE
 **Target**: Python 3.11+ with modern development practices
 **Review**: Required before any major implementation changes
