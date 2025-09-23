@@ -1,0 +1,65 @@
+# Pre-commit hooks for MCP Manager
+# Automatically runs all checks before commit
+repos:
+  # Python formatting
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        files: ^(src/|tests/).*\.py$
+
+  # Python linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src/|tests/).*\.py$
+
+  # Python type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        files: ^src/.*\.py$
+        additional_dependencies: [pydantic, rich, typer]
+
+  # Astro/TypeScript checks
+  - repo: local
+    hooks:
+      - id: astro-check
+        name: Astro TypeScript Check
+        entry: npm run check
+        language: system
+        files: \.(astro|tsx?|jsx?)$
+        pass_filenames: false
+
+      - id: astro-build
+        name: Build Astro Site
+        entry: npm run build
+        language: system
+        files: \.(astro|tsx?|jsx?|css)$
+        pass_filenames: false
+        stages: [push]
+
+  # Branch naming enforcement
+  - repo: local
+    hooks:
+      - id: branch-naming
+        name: Check branch naming convention
+        entry: scripts/check-branch-name.sh
+        language: script
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
+  # Tests (runs on push)
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run Python tests
+        entry: python -m pytest tests/ --cov=mcp_manager --cov-fail-under=80
+        language: system
+        files: \.(py)$
+        pass_filenames: false
+        stages: [push]

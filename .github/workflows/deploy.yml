@@ -1,0 +1,3 @@
+# REMOVED - Using GitHub Pages directly from docs/ folder
+# No GitHub Actions needed = Zero cost
+# GitHub Pages serves the docs/ folder automatically when enabled in repo settings
