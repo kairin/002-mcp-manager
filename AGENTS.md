@@ -1,6 +1,8 @@
-# MCP Manager - Claude Code Integration
+# MCP Manager - AI Agent Instructions
 
-> 🤖 **CRITICAL**: This file contains NON-NEGOTIABLE requirements that ALL AI assistants (Claude, Gemini, ChatGPT, etc.) working on this repository MUST follow at ALL times.
+> 🤖 **CRITICAL**: This file (AGENTS.md) is the PRIMARY instruction document for ALL AI assistants (Claude, Gemini, ChatGPT, etc.) working on this repository. ALL requirements in this file are NON-NEGOTIABLE and MUST be followed at ALL times.
+
+> 📝 **NOTE**: CLAUDE.md, GEMINI.md, and other AI-specific files are symlinks to this AGENTS.md file to ensure consistent instructions across all AI platforms.
 
 ## 🎯 Project Overview
 
@@ -48,9 +50,12 @@ git push origin main
 ### 🚨 CRITICAL: GitHub Pages Deployment (MANDATORY)
 
 #### Website Build Requirements (NON-NEGOTIABLE)
+> ⚠️ **CRITICAL**: Failure to follow these requirements will cause 404 errors on GitHub Pages deployment
+
 - **NEVER DELETE** built website files from `docs/` directory without rebuilding
 - **ALWAYS BUILD** before committing any changes that affect the website
 - **MANDATORY VERIFICATION** that GitHub Pages deployment remains functional
+- **ZERO TOLERANCE** for commits that break the live website
 
 #### Build Process (MANDATORY WORKFLOW)
 ```bash
@@ -130,7 +135,9 @@ mcp-manager/
 ├── scripts/                  # Utility scripts
 ├── pyproject.toml            # Project configuration
 ├── README.md                 # Project documentation
-├── CLAUDE.md                 # This file - AI instructions
+├── AGENTS.md                 # Primary AI instruction file (this file)
+├── CLAUDE.md                 # Symlink to AGENTS.md
+├── GEMINI.md                 # Symlink to AGENTS.md
 └── LICENSE                   # MIT License
 ```
 
