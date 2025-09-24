@@ -5,6 +5,113 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-25
+
+### 🔧 Microsoft MarkItDown MCP Server Integration
+
+#### ✅ Successfully Added MarkItDown MCP Server
+- **File Format Support**: PDF, Office docs (DOCX, PPTX), Images with OCR, Audio & Video
+- **LLM-Optimized Markdown**: Converts complex documents to Claude-friendly format
+- **Server Configuration**: stdio type with `uv run markitdown-mcp` command
+- **Health Status**: ✅ Operational and healthy in system status
+
+#### 🐛 Critical Lessons Learned: The Importance of Following UV-First Instructions
+
+**PROBLEM**: Initial implementation attempted to use standard `pip install` approach, causing multiple cascading failures.
+
+**ROOT CAUSE**: Failure to strictly follow the project's **uv-first** requirements specified in AGENTS.md.
+
+##### ❌ Problems Encountered (Due to Ignoring UV-First Requirements):
+
+1. **Module Import Failures**:
+   ```bash
+   ModuleNotFoundError: No module named 'httpx'
+   ModuleNotFoundError: No module named 'markitdown_mcp'
+   ```
+
+2. **Command Not Found Errors**:
+   ```bash
+   command not found: markitdown-mcp
+   command not found: mcp-manager
+   ```
+
+3. **Python Path Issues**:
+   ```bash
+   Error while finding module specification for 'mcp_manager.cli'
+   ```
+
+4. **Environment Inconsistencies**: Multiple failed attempts to run CLI commands with various Python executables
+
+##### ✅ Solutions Applied (By Properly Following UV-First Requirements):
+
+1. **Correct Package Installation**:
+   ```bash
+   # ❌ WRONG (ignored uv-first requirement)
+   pip install markitdown-mcp
+
+   # ✅ CORRECT (following AGENTS.md instructions)
+   uv pip install markitdown-mcp
+   ```
+
+2. **Proper Command Execution**:
+   ```bash
+   # ❌ WRONG (bypassed uv environment)
+   markitdown-mcp --help
+
+   # ✅ CORRECT (used uv run as required)
+   uv run markitdown-mcp --help
+   ```
+
+3. **MCP Server Configuration**:
+   ```json
+   // ❌ WRONG (ignored uv-first execution)
+   "markitdown": {
+     "type": "stdio",
+     "command": "markitdown-mcp",
+     "args": []
+   }
+
+   // ✅ CORRECT (uv-first configuration)
+   "markitdown": {
+     "type": "stdio",
+     "command": "uv",
+     "args": ["run", "markitdown-mcp"]
+   }
+   ```
+
+4. **CLI Integration**:
+   ```bash
+   # ❌ WRONG (direct module execution)
+   python3 -m mcp_manager.cli status
+
+   # ✅ CORRECT (uv-managed execution)
+   uv run python -m mcp_manager.cli status
+   ```
+
+#### 🎯 Key Success Factors
+
+1. **Strict AGENTS.md Compliance**: Following the **NON-NEGOTIABLE** uv-first requirements
+2. **Context7 Documentation**: Used latest Microsoft MarkItDown documentation for proper implementation
+3. **Systematic Problem Resolution**: Identified each failure point and corrected with uv-first approach
+4. **Comprehensive Testing**: Verified health status and proper CLI integration
+
+#### 📚 Documentation Updates
+
+- **Updated Installation Instructions**: All documentation now shows `uv pip install` approach
+- **CLI Command Examples**: Updated to show `uv run markitdown-mcp` configuration
+- **Configuration Examples**: All server configs updated with uv-first execution
+- **Website Documentation**: GitHub Pages site reflects proper uv-first installation
+
+#### 🚨 Critical Takeaways for Future Development
+
+1. **AGENTS.md is NON-NEGOTIABLE**: Every instruction must be followed exactly
+2. **UV-First is Mandatory**: Never use `pip` directly, always use `uv pip install`
+3. **Command Execution**: Always use `uv run` for package executables
+4. **Configuration Consistency**: MCP server configs must use `uv run` for command execution
+5. **Testing Requirements**: Always test with `uv run` to verify proper environment
+
+This integration serves as a critical case study demonstrating that **following project instructions exactly** is essential for success. Deviating from the established uv-first workflow caused significant time loss and multiple failure points that were entirely preventable.
+
 ## [1.1.1] - 2025-09-24
 
 ### 📸 Visual Documentation Enhancement
