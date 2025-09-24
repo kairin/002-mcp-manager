@@ -134,10 +134,10 @@ mcp-manager init --global
 mcp-manager status</code></pre> </div> </div> </div> <!-- CLI Reference --> <div class="relative overflow-hidden rounded-2xl bg-card p-8 pb-12 shadow-sm ring-1 ring-border"> <div class="relative"> <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary"> <span class="text-primary-foreground text-lg">💻</span> </div> <h3 class="mt-4 text-lg font-semibold text-card-foreground">CLI Commands</h3> <p class="mt-2 text-sm text-muted-foreground">
 Comprehensive command-line interface for all operations.
 </p> <div class="mt-4"> <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add MarkItDown MCP server
-pip install markitdown-mcp
+uv pip install markitdown-mcp
 mcp-manager add markitdown \
   --type stdio \
-  --command markitdown-mcp
+  --command "uv run markitdown-mcp"
 
 # Update all servers
 mcp-manager update --all</code></pre> </div> </div> </div> </div> <div class="mt-16 text-center"> <a href="https://github.com/kairin/mcp-manager" class="inline-flex items-center gap-x-2 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">

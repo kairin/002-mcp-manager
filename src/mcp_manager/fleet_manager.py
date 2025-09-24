@@ -129,6 +129,7 @@ class FleetManager:
                 "github",
                 "playwright",
                 "hf-mcp-server",
+                "markitdown",
             ],
             "required_tools": ["uv", "gh", "astro"],
         }

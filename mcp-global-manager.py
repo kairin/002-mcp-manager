@@ -58,6 +58,11 @@ class MCPGlobalManager:
                 "type": "http",
                 "url": "https://huggingface.co/mcp",
                 "headers": {"Authorization": None}  # Will be preserved from existing config
+            },
+            "markitdown": {
+                "type": "stdio",
+                "command": "uv",
+                "args": ["run", "markitdown-mcp"]
             }
         }
         

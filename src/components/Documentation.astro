@@ -72,10 +72,10 @@ mcp-manager status</code></pre>
             </p>
             <div class="mt-4">
               <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add MarkItDown MCP server
-pip install markitdown-mcp
+uv pip install markitdown-mcp
 mcp-manager add markitdown \
   --type stdio \
-  --command markitdown-mcp
+  --command "uv run markitdown-mcp"
 
 # Update all servers
 mcp-manager update --all</code></pre>
