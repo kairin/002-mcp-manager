@@ -24,7 +24,8 @@
 - [📚 Core functionality](#-core-functionality)
 - [🌟 Architecture](#-architecture)
 - [📖 Learn more](#-learn-more)
-- [🔍 Troubleshooting](#-troubleshooting)
+- [🛠️ Troubleshooting](#-troubleshooting)
+- [📋 Following Instructions Guide](docs/FOLLOWING-INSTRUCTIONS.md)
 - [👥 Maintainers](#-maintainers)
 - [💬 Support](#-support)
 - [📄 License](#-license)
@@ -90,6 +91,74 @@ python -m mcp_manager.cli fleet sync
 # Audit Ubuntu 25.04 + Python 3.13 compliance
 python -m mcp_manager.cli fleet audit
 ```
+
+## 🚨 CRITICAL: UV-First Development Requirements
+
+> **⚠️ MANDATORY**: This project is **UV-ONLY**. Using standard `pip` commands will cause failures.
+
+### ✅ The UV-First Rule
+
+**ALL Python package operations MUST use UV:**
+
+```bash
+# ✅ CORRECT - Always use uv
+uv pip install package-name
+uv run python script.py
+uv run command-name
+
+# ❌ WRONG - Never use pip directly
+pip install package-name        # Will cause import errors
+python script.py               # Will cause module errors
+command-name                   # Will cause command not found
+```
+
+### 🐛 Common Problems from Ignoring UV-First Rules
+
+If you encounter these errors, you're not following the UV-first requirements:
+
+```bash
+# These errors indicate UV-first violations:
+ModuleNotFoundError: No module named 'package'
+command not found: package-command
+Error while finding module specification
+```
+
+### 📋 MarkItDown Integration Case Study
+
+**Recent integration of Microsoft MarkItDown MCP server demonstrated the critical importance of following UV-first requirements exactly.**
+
+#### ❌ Problems Caused by Ignoring UV-First:
+- Multiple `ModuleNotFoundError` for installed packages
+- `command not found` errors for installed executables
+- Python path resolution failures
+- MCP server configuration failures
+
+#### ✅ Solutions Applied by Following UV-First:
+```bash
+# Package Installation
+uv pip install markitdown-mcp  # Not: pip install
+
+# Command Execution
+uv run markitdown-mcp         # Not: markitdown-mcp
+
+# MCP Server Configuration
+"command": "uv", "args": ["run", "markitdown-mcp"]  # Not: "command": "markitdown-mcp"
+
+# CLI Execution
+uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
+```
+
+### 🎯 UV-First Success Checklist
+
+Before starting any work on this project:
+
+- [ ] **ALWAYS** use `uv pip install` instead of `pip install`
+- [ ] **ALWAYS** use `uv run` for executing installed packages
+- [ ] **ALWAYS** test CLI commands with `uv run python -m mcp_manager.cli`
+- [ ] **NEVER** use system Python or pip directly
+- [ ] **VERIFY** MCP server configurations use `uv run` commands
+
+**Following these rules exactly will prevent 100% of environment-related failures.**
 
 ## 🤖 System Components
 
@@ -228,29 +297,52 @@ MCP Manager Architecture:
     <p><em><a href="https://kairin.github.io/mcp-manager/office-setup/">🏢 Complete Office Setup Guide</a> - One-command deployment for office environments</em></p>
 </div>
 
-## 🔍 Troubleshooting
+## 🛠️ Troubleshooting
 
-### Common Issues
+> **⚠️ 90% of issues are caused by not following UV-first requirements**
 
-**MCP servers not connecting:**
+### Quick UV-First Diagnostic
+
 ```bash
-# Check server health
-mcp-manager diagnose
+# If you see these errors, you're not using UV:
+ModuleNotFoundError: No module named 'package'
+command not found: package-command
+Error while finding module specification
 
-# Verify Claude configuration
-claude mcp list
-
-# Reset configuration
-mcp-manager reset --confirm
+# Solution - Always use UV:
+uv pip install package-name    # Not: pip install
+uv run command-name           # Not: command-name
+uv run python script.py      # Not: python script.py
 ```
 
-**Project-specific configurations:**
-```bash
-# Audit all configurations
-mcp-manager audit --detailed
+### Comprehensive Troubleshooting Resources
 
-# Migrate to global
-mcp-manager migrate --project-to-global
+- **📋 [Complete Troubleshooting Guide](TROUBLESHOOTING.md)** - Detailed solutions for all common issues
+- **🎯 [Following Instructions Guide](docs/FOLLOWING-INSTRUCTIONS.md)** - Why AGENTS.md compliance is critical
+- **📖 [MarkItDown Case Study](CHANGELOG.md#120---2025-09-25)** - Real example of UV-first violations and solutions
+
+### Quick Fixes for Common Problems
+
+**Environment Issues:**
+```bash
+# Complete environment reset
+rm -rf .venv && uv venv .venv && source .venv/bin/activate
+uv pip install -e . && uv pip install markitdown-mcp
+uv run python -m mcp_manager.cli status
+```
+
+**MCP Server Health:**
+```bash
+# Fix unhealthy servers
+uv run python -m mcp_manager.cli mcp remove server-name
+uv run python -m mcp_manager.cli mcp add server-name --type stdio --command "uv" --arg "run" --arg "server-command"
+```
+
+**Missing Commands:**
+```bash
+# Always use uv run for installed packages
+uv run markitdown-mcp --help  # Not: markitdown-mcp --help
+uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
 ```
 
 ## 👥 Maintainers
