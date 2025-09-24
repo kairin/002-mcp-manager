@@ -99,6 +99,14 @@ Model access
 Inference API
 </li> <li class="flex gap-x-3"> <span class="text-primary">✓</span>
 Dataset integration
+</li> </ul> </div> </div> <!-- MarkItDown --> <div class="flex flex-col justify-between rounded-3xl bg-card p-8 ring-1 ring-border xl:p-10"> <div> <div class="flex items-center justify-between gap-x-4"> <h3 class="text-lg font-semibold leading-8 text-card-foreground">MarkItDown</h3> <p class="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold leading-5 text-secondary-foreground">stdio</p> </div> <p class="mt-4 text-sm leading-6 text-muted-foreground">
+Convert various file formats to Markdown optimized for LLMs.
+</p> <ul role="list" class="mt-8 space-y-3 text-sm leading-6 text-muted-foreground"> <li class="flex gap-x-3"> <span class="text-primary">✓</span>
+PDF & Office docs
+</li> <li class="flex gap-x-3"> <span class="text-primary">✓</span>
+Images with OCR
+</li> <li class="flex gap-x-3"> <span class="text-primary">✓</span>
+Audio & Video files
 </li> </ul> </div> </div> <!-- Add More --> <div class="flex flex-col justify-center items-center rounded-3xl bg-muted/50 p-8 ring-1 ring-border xl:p-10 text-center"> <div> <h3 class="text-lg font-semibold leading-8 text-muted-foreground">More Servers</h3> <p class="mt-4 text-sm leading-6 text-muted-foreground">
 Additional MCP servers can be easily added and managed through the CLI interface.
 </p> <div class="mt-8"> <a href="#documentation" class="text-sm font-semibold text-primary hover:text-primary/80">
@@ -125,10 +133,11 @@ mcp-manager init --global
 # Check server health
 mcp-manager status</code></pre> </div> </div> </div> <!-- CLI Reference --> <div class="relative overflow-hidden rounded-2xl bg-card p-8 pb-12 shadow-sm ring-1 ring-border"> <div class="relative"> <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary"> <span class="text-primary-foreground text-lg">💻</span> </div> <h3 class="mt-4 text-lg font-semibold text-card-foreground">CLI Commands</h3> <p class="mt-2 text-sm text-muted-foreground">
 Comprehensive command-line interface for all operations.
-</p> <div class="mt-4"> <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add new server
-mcp-manager add context7 \
-  --type http \
-  --url https://mcp.context7.com/mcp
+</p> <div class="mt-4"> <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add MarkItDown MCP server
+pip install markitdown-mcp
+mcp-manager add markitdown \
+  --type stdio \
+  --command markitdown-mcp
 
 # Update all servers
 mcp-manager update --all</code></pre> </div> </div> </div> </div> <div class="mt-16 text-center"> <a href="https://github.com/kairin/mcp-manager" class="inline-flex items-center gap-x-2 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">

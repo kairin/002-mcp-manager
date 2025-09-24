@@ -169,6 +169,7 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
 | github | HTTP | ✅ Required | High |
 | playwright | stdio | ✅ Required | High |
 | hf-mcp-server | HTTP | ✅ Required | High |
+| markitdown | stdio | ✅ Required | High |
 
 #### Configuration Management (MANDATORY)
 ```python
@@ -184,6 +185,12 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
             "type": "stdio",
             "command": "npx",
             "args": ["shadcn@latest", "mcp"],
+            "env": {}
+        },
+        "markitdown": {
+            "type": "stdio",
+            "command": "markitdown-mcp",
+            "args": [],
             "env": {}
         }
         # ... other servers
