@@ -5,6 +5,31 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-09-25
+
+### 🔧 MarkItDown MCP Server Cross-Directory Compatibility Fix
+
+#### ✅ Fixed MarkItDown MCP Server Failing in New Terminal Sessions
+- **Problem**: MarkItDown MCP server showed as "✘ failed" when Claude Code launched from different directories
+- **Root Cause**: MCP server configured with relative `uv run markitdown-mcp` command, which failed when executed from directories other than `/home/kkk/Apps/mcp-manager`
+- **Solution Applied**: Reconfigured with absolute UV path and working directory specification
+  ```bash
+  # Previous failing configuration:
+  "command": "uv", "args": ["run", "markitdown-mcp"]
+
+  # Fixed configuration:
+  "command": "/home/kkk/.local/bin/uv"
+  "args": ["run", "--directory", "/home/kkk/Apps/mcp-manager", "markitdown-mcp"]
+  ```
+- **Result**: ✅ MarkItDown now consistently shows as "✔ connected" from any directory
+- **Impact**: Ensures reliable MCP server functionality across all terminal sessions and working directories
+
+#### 📚 Comprehensive Documentation Enhancement
+- **Added**: Complete troubleshooting guide (`TROUBLESHOOTING.md`) with UV-first diagnostic procedures
+- **Created**: Instruction compliance guide (`docs/FOLLOWING-INSTRUCTIONS.md`) with MarkItDown case study
+- **Updated**: README.md with prominent UV-first requirements and prevention strategies
+- **Enhanced**: Website deployment with all latest documentation reflecting UV-first approach
+
 ## [1.2.0] - 2025-09-25
 
 ### 🔧 Microsoft MarkItDown MCP Server Integration
