@@ -22,7 +22,8 @@ def verify_mcp_servers():
         "github",
         "hf-mcp-server",
         "playwright",
-        "shadcn"
+        "shadcn",
+        "markitdown"
     ]
 
     # Load configuration using jq to handle large files

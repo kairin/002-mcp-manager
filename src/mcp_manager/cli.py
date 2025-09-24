@@ -438,7 +438,7 @@ def mcp_setup_all(
         # Final verification
         rprint("\n[bold cyan]Verifying all MCP servers...[/bold cyan]")
         final_servers = manager.get_global_servers()
-        required = ["context7", "playwright", "github", "shadcn", "hf-mcp-server"]
+        required = ["context7", "playwright", "github", "shadcn", "hf-mcp-server", "markitdown"]
 
         all_present = all(s in final_servers for s in required)
         if all_present:
