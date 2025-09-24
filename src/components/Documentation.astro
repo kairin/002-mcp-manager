@@ -71,10 +71,11 @@ mcp-manager status</code></pre>
               Comprehensive command-line interface for all operations.
             </p>
             <div class="mt-4">
-              <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add new server
-mcp-manager add context7 \
-  --type http \
-  --url https://mcp.context7.com/mcp
+              <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add MarkItDown MCP server
+pip install markitdown-mcp
+mcp-manager add markitdown \
+  --type stdio \
+  --command markitdown-mcp
 
 # Update all servers
 mcp-manager update --all</code></pre>
