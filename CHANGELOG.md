@@ -5,6 +5,49 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-09-30
+
+### 🔧 Critical Documentation Consistency Fixes
+
+#### ✅ Fixed GitHub MCP Server Type Documentation Error
+- **Problem**: GitHub MCP server incorrectly documented as "HTTP" type in both AGENTS.md and README.md
+- **Reality Check**: GitHub MCP Server v0.16.0 binary at `/home/kkk/bin/github-mcp-server` is `stdio` type
+- **Files Corrected**:
+  - `AGENTS.md` line 169: `github | HTTP` → `github | stdio` ✅
+  - `README.md` line 175: `GitHub MCP | HTTP` → `GitHub MCP | stdio` ✅
+- **Configuration Added**: Proper GitHub MCP stdio configuration with absolute binary path
+  ```json
+  "github": {
+    "type": "stdio",
+    "command": "/home/kkk/bin/github-mcp-server",
+    "args": [],
+    "env": {}
+  }
+  ```
+
+#### ✅ Created Comprehensive Following Instructions Guide
+- **New File**: `docs/FOLLOWING-INSTRUCTIONS.md` with complete compliance guidance
+- **Case Study 1**: MarkItDown MCP Integration v1.2.1 demonstrating UV-first importance
+- **Case Study 2**: GitHub MCP Configuration Evolution with type correction
+- **Content Includes**:
+  - Constitutional Foundation reference (Constitution v1.0.0)
+  - Real-world failure scenarios and solutions
+  - Best practices for MCP server integration
+  - Troubleshooting guide with UV-first solutions
+  - Validation checklist for deployment readiness
+- **Impact**: Resolves broken link in README.md line 28
+
+#### 📚 Documentation Alignment with Constitution v1.0.0
+- **Principle I Compliance**: All examples use UV-first development approach
+- **Principle III Compliance**: Zero downtime operations with pre-flight validation
+- **Principle V Compliance**: GitHub Pages protection with website rebuild
+- **Success Metrics**: Achieved 100% documentation consistency between AGENTS.md, README.md, and website
+
+#### 🌐 Website Update and GitHub Pages Deployment
+- **Astro Build**: Complete website rebuild with new FOLLOWING-INSTRUCTIONS.md
+- **GitHub Pages**: Verified deployment with all required files (index.html, _astro/, .nojekyll)
+- **Link Validation**: All internal documentation links now functional
+
 ## [1.2.1] - 2025-09-25
 
 ### 🔧 MarkItDown MCP Server Cross-Directory Compatibility Fix
