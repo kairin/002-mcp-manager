@@ -166,7 +166,7 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
 |--------|------|----------------|----------|
 | context7 | HTTP | ✅ Required | High |
 | shadcn | stdio | ✅ Required | High |
-| github | HTTP | ✅ Required | High |
+| github | stdio | ✅ Required | High |
 | playwright | stdio | ✅ Required | High |
 | hf-mcp-server | HTTP | ✅ Required | High |
 | markitdown | stdio | ✅ Required | High |
@@ -185,6 +185,12 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
             "type": "stdio",
             "command": "npx",
             "args": ["shadcn@latest", "mcp"],
+            "env": {}
+        },
+        "github": {
+            "type": "stdio",
+            "command": "/home/kkk/bin/github-mcp-server",
+            "args": [],
             "env": {}
         },
         "markitdown": {
