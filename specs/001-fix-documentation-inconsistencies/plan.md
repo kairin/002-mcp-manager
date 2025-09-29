@@ -121,76 +121,91 @@ mcp-manager/ (repository root)
 **Structure Decision**: Documentation-only feature affecting markdown files and generated website content. No source code changes required. Primary files: CLAUDE.md (line 169), README.md (line 176), and new docs/FOLLOWING-INSTRUCTIONS.md.
 
 ## Phase 0: Outline & Research
-1. **Extract unknowns from Technical Context** above:
-   - For each NEEDS CLARIFICATION → research task
-   - For each dependency → best practices task
-   - For each integration → patterns task
 
-2. **Generate and dispatch research agents**:
-   ```
-   For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
-   For each technology choice:
-     Task: "Find best practices for {tech} in {domain}"
-   ```
+**Status:** ✅ COMPLETE
 
-3. **Consolidate findings** in `research.md` using format:
-   - Decision: [what was chosen]
-   - Rationale: [why chosen]
-   - Alternatives considered: [what else evaluated]
+No NEEDS CLARIFICATION in Technical Context. All decisions made from existing evidence.
 
-**Output**: research.md with all NEEDS CLARIFICATION resolved
+**Research Completed:**
+1. **GitHub MCP Server Type Investigation** → Confirmed stdio type with binary at `/home/kkk/bin/github-mcp-server` v0.16.0
+2. **FOLLOWING-INSTRUCTIONS.md Structure** → Tutorial format with case studies validated
+3. **MarkItDown Cross-Directory Compatibility** → Documented UV-first solutions from v1.2.1
+4. **Astro Website Build Process** → Mandatory pre-commit validation established
+5. **UV-First Compliance Audit** → Scope defined for all documentation
+6. **Documentation Consistency Strategy** → Symlink approach with single source of truth
+
+**Output:** `research.md` created at `/home/kkk/Apps/mcp-manager/specs/001-fix-documentation-inconsistencies/research.md`
 
 ## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
 
-1. **Extract entities from feature spec** → `data-model.md`:
-   - Entity name, fields, relationships
-   - Validation rules from requirements
-   - State transitions if applicable
+**Status:** ✅ COMPLETE
 
-2. **Generate API contracts** from functional requirements:
-   - For each user action → endpoint
-   - Use standard REST/GraphQL patterns
-   - Output OpenAPI/GraphQL schema to `/contracts/`
+**1. Documentation Entities Extracted** → `data-model.md`:
+   - MCP Server Documentation Entry (CLAUDE.md, README.md)
+   - Compliance Guide Document (docs/FOLLOWING-INSTRUCTIONS.md)
+   - MarkItDown Configuration Documentation
+   - GitHub Pages Build Outputs (docs/ directory)
+   - Constitutional Reference citations
+   - Entity relationships and state transitions defined
 
-3. **Generate contract tests** from contracts:
-   - One test file per endpoint
-   - Assert request/response schemas
-   - Tests must fail (no implementation yet)
+**2. No API Contracts Required**:
+   - Documentation-only feature
+   - No REST/GraphQL endpoints
+   - No programmatic contracts needed
+   - Validation is manual inspection + link checking
 
-4. **Extract test scenarios** from user stories:
-   - Each story → integration test scenario
-   - Quickstart test = story validation steps
+**3. Test Scenarios Defined** → `quickstart.md`:
+   - 8 validation steps with success criteria
+   - Pre-fix state verification
+   - GitHub MCP type correction procedures
+   - FOLLOWING-INSTRUCTIONS.md creation template
+   - Website rebuild and deployment validation
+   - GitHub Pages live testing
+   - Estimated time: 70 minutes
 
-5. **Update agent file incrementally** (O(1) operation):
-   - Run `.specify/scripts/bash/update-agent-context.sh claude`
-     **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
-   - If exists: Add only NEW tech from current plan
-   - Preserve manual additions between markers
-   - Update recent changes (keep last 3)
-   - Keep under 150 lines for token efficiency
-   - Output to repository root
+**4. Agent File Update**:
+   - CLAUDE.md will be updated as part of the fix (line 169 correction)
+   - No incremental update script needed (documentation change is the deliverable)
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Outputs Created:**
+- `data-model.md` → `/home/kkk/Apps/mcp-manager/specs/001-fix-documentation-inconsistencies/data-model.md`
+- `quickstart.md` → `/home/kkk/Apps/mcp-manager/specs/001-fix-documentation-inconsistencies/quickstart.md`
+- No contracts/ directory (N/A for documentation feature)
+- No test files (manual validation via quickstart)
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Generate tasks from quickstart.md validation steps
+- Each documentation file → editing task
+- FOLLOWING-INSTRUCTIONS.md → creation task with template
+- Website rebuild → build and validation task
+- Deployment → commit and push task with branch preservation
+
+**Task Categories:**
+1. **Setup** (1 task): Verify feature branch and prerequisites
+2. **Documentation Fixes** (3-4 tasks): Edit CLAUDE.md, README.md, add config examples
+3. **Guide Creation** (1 task): Create docs/FOLLOWING-INSTRUCTIONS.md from template
+4. **Build & Validation** (2 tasks): `npm run build`, verify outputs
+5. **Deployment** (2 tasks): Git commit with co-authorship, merge to main preserving branch
+6. **Post-Deploy** (1 task): Validate GitHub Pages deployment
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+- Setup → Documentation fixes [P] → Guide creation → Build → Validation → Deploy → Verify
+- Most documentation edits can be parallel [P] (different files)
+- Build must wait for all documentation complete
+- Deploy must wait for validation
+- Final verification after deployment
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: 10-12 numbered, ordered tasks in tasks.md
+
+**Special Considerations:**
+- No TDD cycle (documentation-only)
+- No contract tests (manual validation)
+- GitHub Pages Protection principle enforced (Principle V)
+- Branch preservation required (Principle IV)
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -214,18 +229,18 @@ mcp-manager/ (repository root)
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 0: Research complete (/plan command) ✅
+- [x] Phase 1: Design complete (/plan command) ✅
+- [x] Phase 2: Task planning complete (/plan command - describe approach only) ✅
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [ ] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
-- [ ] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Initial Constitution Check: PASS ✅
+- [x] Post-Design Constitution Check: PASS ✅
+- [x] All NEEDS CLARIFICATION resolved (N/A - none existed) ✅
+- [x] Complexity deviations documented (N/A - no violations) ✅
 
 ---
 *Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
