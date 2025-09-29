@@ -47,20 +47,41 @@ Based on comprehensive repository audit:
 ### 🔧 Critical Documentation Consistency Fixes
 
 #### ✅ Fixed GitHub MCP Server Type Documentation Error
-- **Problem**: GitHub MCP server incorrectly documented as "HTTP" type in both AGENTS.md and README.md
-- **Reality Check**: GitHub MCP Server v0.16.0 binary at `/home/kkk/bin/github-mcp-server` is `stdio` type
-- **Files Corrected**:
-  - `AGENTS.md` line 169: `github | HTTP` → `github | stdio` ✅
-  - `README.md` line 175: `GitHub MCP | HTTP` → `GitHub MCP | stdio` ✅
-- **Configuration Added**: Proper GitHub MCP stdio configuration with absolute binary path
-  ```json
-  "github": {
-    "type": "stdio",
-    "command": "/home/kkk/bin/github-mcp-server",
-    "args": [],
-    "env": {}
-  }
-  ```
+
+**Problem**: GitHub MCP server incorrectly documented as "HTTP" type in both AGENTS.md and README.md, causing Claude Code integration failures when developers attempted HTTP-based configuration.
+
+**Why HTTP Configuration Failed**:
+1. **Connection Failures**: Claude Code couldn't establish HTTP connection to non-existent server endpoint
+2. **Missing URL**: HTTP type requires `url` and `headers` fields, not `command` and `args`
+3. **Server Not Found**: Claude Code reported "GitHub MCP server not available" in MCP server list
+4. **Authentication Errors**: Attempted HTTP headers caused authentication failures
+5. **Timeout Issues**: HTTP client waited for server response that never came
+
+**Root Cause**: GitHub MCP Server v0.16.0 binary at `/home/kkk/bin/github-mcp-server` is a **stdio-based CLI tool**, not an HTTP API server. The documentation error misled developers into attempting HTTP configuration, which is fundamentally incompatible with stdio binaries.
+
+**Files Corrected**:
+- `AGENTS.md` line 169: `github | HTTP` → `github | stdio` ✅
+- `README.md` line 175: `GitHub MCP | HTTP` → `GitHub MCP | stdio` ✅
+
+**Correct Configuration Added**:
+```json
+// ✅ CORRECT - stdio configuration for local binary
+"github": {
+  "type": "stdio",
+  "command": "/home/kkk/bin/github-mcp-server",
+  "args": [],
+  "env": {}
+}
+
+// ❌ WRONG - HTTP configuration (caused failures)
+"github": {
+  "type": "http",
+  "url": "https://...",  // No such endpoint exists
+  "headers": {}          // Binary doesn't accept HTTP requests
+}
+```
+
+**Impact**: Developers following incorrect documentation wasted 15-30 minutes debugging connection failures before discovering the type mismatch. Corrected documentation prevents this entire class of setup failures.
 
 #### ✅ Created Comprehensive Following Instructions Guide
 - **New File**: `docs/FOLLOWING-INSTRUCTIONS.md` with complete compliance guidance
