@@ -302,11 +302,46 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 
 ## 🚨 ABSOLUTE PROHIBITIONS
 
+### 🔒 CRITICAL: Security & Privacy Protection (MANDATORY)
+
+#### Secret Management (NON-NEGOTIABLE)
+- **NEVER commit secrets, API keys, or credentials to repository**
+- **ALWAYS use environment variables for sensitive configuration**
+- **MANDATORY verification**: No hardcoded secrets in any files before commit
+- **ZERO TOLERANCE** for exposed credentials in git history
+
+#### Acceptable Information Exposure
+- **Development paths**: `/home/kkk/Apps/mcp-manager` (local context only) ✅
+- **Binary locations**: `/home/kkk/bin/github-mcp-server` (deployment reference) ✅  
+- **Environment variable names**: `CONTEXT7_API_KEY`, `HUGGINGFACE_TOKEN` (template examples) ✅
+- **Privacy-protected email**: `678459+kairin@users.noreply.github.com` (GitHub standard) ✅
+
+#### Information Classification (MANDATORY)
+- **SAFE**: Development paths, binary locations, environment variable names, privacy-protected emails
+- **RESTRICTED**: API keys, tokens, passwords, actual credential values
+- **PROHIBITED**: Hardcoded secrets, real API keys, personal email addresses, private system information
+
+#### Security Validation (MANDATORY)
+```bash
+# MANDATORY: Security scan before every commit
+git ls-files | xargs grep -l -i -E "(sk-|ghp_|ghs_|api_key.*=|token.*=)" || echo "✅ No secrets found"
+grep -r "CONTEXT7_API_KEY.*=" . && echo "❌ Hardcoded key found" || echo "✅ Template only"
+test -f ~/.claude.json && echo "✅ Local config exists" || echo "❌ Missing local config"
+```
+
+#### Repository Security Standards (NON-NEGOTIABLE)
+- **`.gitignore` protection**: `*.env`, `*.key`, `secrets.json`, `.env.*` patterns mandatory
+- **Template-only approach**: Show `{"API_KEY": "..."}` never `{"API_KEY": "sk-real-key"}`
+- **Local configuration**: Real secrets in `~/.claude.json` (excluded from repository)
+- **Audit requirement**: Security scan mandatory before every commit
+
 ### DO NOT
 - Delete branches without explicit user permission
 - **Delete built website files from `docs/` directory without rebuilding**
 - **Commit changes that break GitHub Pages deployment**
 - **Push to main without verifying website build completion**
+- **Commit any files containing actual API keys, tokens, or credentials**
+- **Expose personal information beyond approved development context**
 - Break existing MCP server configurations
 - Store credentials in plain text without encryption
 - Skip type annotations in new code
@@ -316,6 +351,8 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 - Remove or modify global MCP configurations without backup
 
 ### DO NOT BYPASS
+- **Security audit and validation before every commit**
+- **Secret scanning and credential verification**
 - **GitHub Pages build and deployment verification**
 - **Website functionality validation before pushing**
 - Branch preservation requirements
@@ -328,16 +365,20 @@ CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
 ## ✅ MANDATORY ACTIONS
 
 ### Before Every Commit
-1. **Website Build**: Run `npm run build` and verify `docs/` contains built files
-2. **Website Verification**: Confirm `docs/index.html` and `docs/_astro/` exist
-3. **Code Quality**: Run `black`, `ruff`, `mypy` checks
-4. **Testing**: Execute `pytest` with >80% coverage
-5. **Branch Creation**: Use datetime-based branch naming
-6. **Configuration Backup**: Backup configs before changes
-7. **Health Validation**: Verify MCP server connectivity
-8. **Documentation**: Update relevant docs if adding features
+1. **Security Audit**: Run mandatory security scan for secrets and credentials
+2. **Secret Verification**: Confirm no hardcoded API keys, tokens, or passwords
+3. **Website Build**: Run `npm run build` and verify `docs/` contains built files
+4. **Website Verification**: Confirm `docs/index.html` and `docs/_astro/` exist
+5. **Code Quality**: Run `black`, `ruff`, `mypy` checks
+6. **Testing**: Execute `pytest` with >80% coverage
+7. **Branch Creation**: Use datetime-based branch naming
+8. **Configuration Backup**: Backup configs before changes
+9. **Health Validation**: Verify MCP server connectivity
+10. **Documentation**: Update relevant docs if adding features
 
 ### Quality Gates
+- **Security audit passes: No secrets, credentials, or prohibited information exposed**
+- **Local configuration verified: Real secrets stored in ~/.claude.json only**
 - **GitHub Pages website builds successfully and deploys without 404 errors**
 - **All required files exist in `docs/`: index.html, _astro/, .nojekyll**
 - All tests pass with >80% coverage
