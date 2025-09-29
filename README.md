@@ -172,7 +172,7 @@ Before starting any work on this project:
 |--------|------|--------|---------|
 | [Context7](https://context7.com) | HTTP | ✅ Global + Auth | Library documentation and code examples |
 | [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Global | UI component registry and tooling |
-| [GitHub MCP](https://github.com) | HTTP | ✅ Global | GitHub API integration and management |
+| [GitHub MCP](https://github.com) | stdio | ✅ Global | GitHub API integration and management |
 | [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
 | [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global + Auth | AI model access with HF CLI integration |
 
