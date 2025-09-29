@@ -24,7 +24,7 @@
             </div>
             <h3 class="mt-4 text-lg font-semibold text-card-foreground">Installation</h3>
             <p class="mt-2 text-sm text-muted-foreground">
-              Quick setup with uv for modern Python development.
+              Quick setup with uv for modern Python development and constitutional compliance.
             </p>
             <div class="mt-4">
               <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Install from source
@@ -45,10 +45,13 @@ uv pip install -e .</code></pre>
             </div>
             <h3 class="mt-4 text-lg font-semibold text-card-foreground">Quick Start</h3>
             <p class="mt-2 text-sm text-muted-foreground">
-              Initialize and audit your MCP configuration in minutes.
+              Initialize and audit your MCP configuration with security validation.
             </p>
             <div class="mt-4">
-              <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Audit current setup
+              <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Security audit first
+git ls-files | xargs grep -l -i -E "(sk-|ghp_|ghs_)" || echo "✅ No secrets"
+
+# Audit current setup
 mcp-manager audit
 
 # Initialize global config
@@ -60,25 +63,37 @@ mcp-manager status</code></pre>
           </div>
         </div>
 
-        <!-- CLI Reference -->
+        <!-- Documentation Links -->
         <div class="relative overflow-hidden rounded-2xl bg-card p-8 pb-12 shadow-sm ring-1 ring-border">
           <div class="relative">
             <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <span class="text-primary-foreground text-lg">💻</span>
+              <span class="text-primary-foreground text-lg">📚</span>
             </div>
-            <h3 class="mt-4 text-lg font-semibold text-card-foreground">CLI Commands</h3>
+            <h3 class="mt-4 text-lg font-semibold text-card-foreground">Documentation</h3>
             <p class="mt-2 text-sm text-muted-foreground">
-              Comprehensive command-line interface for all operations.
+              Comprehensive guides including security framework and constitutional compliance.
             </p>
-            <div class="mt-4">
-              <pre class="text-xs bg-muted p-3 rounded-md overflow-x-auto"><code># Add MarkItDown MCP server
-uv pip install markitdown-mcp
-mcp-manager add markitdown \
-  --type stdio \
-  --command "uv run markitdown-mcp"
-
-# Update all servers
-mcp-manager update --all</code></pre>
+            <div class="mt-4 space-y-2">
+              <div class="text-xs">
+                <a href="https://github.com/kairin/mcp-manager/blob/main/docs/FOLLOWING-INSTRUCTIONS.md" class="text-primary hover:text-primary/80">
+                  📋 Following Instructions Guide
+                </a>
+              </div>
+              <div class="text-xs">
+                <a href="https://github.com/kairin/mcp-manager/blob/main/AGENTS.md" class="text-primary hover:text-primary/80">
+                  🤖 Agent Instructions (AGENTS.md)
+                </a>
+              </div>
+              <div class="text-xs">
+                <a href="https://github.com/kairin/mcp-manager/blob/main/.specify/memory/constitution.md" class="text-primary hover:text-primary/80">
+                  📄 Constitution v1.0.0
+                </a>
+              </div>
+              <div class="text-xs">
+                <a href="https://github.com/kairin/mcp-manager/blob/main/TROUBLESHOOTING.md" class="text-primary hover:text-primary/80">
+                  🔧 Troubleshooting Guide
+                </a>
+              </div>
             </div>
           </div>
         </div>
