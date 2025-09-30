@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Commit Blocking**: Prevents commits if build fails
 
 #### 📦 Interactive Deployment Script
-- **File**: `scripts/deploy.sh`
+- **File**: `scripts/deployment/deploy.sh`
 - **Complete Pipeline**: Build → Stage → Commit → Push → Merge → Deploy
 - **Interactive Prompts**: User control at each step
 - **Branch Preservation**: YYYYMMDD-HHMMSS naming strategy maintained
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **README.md**: New "Local CI/CD Deployment" section with usage examples
 - **Usage Patterns**:
   - Automatic: `git commit` (pre-commit hook handles build)
-  - Manual: `./scripts/deploy.sh` (interactive workflow)
+  - Manual: `./scripts/deployment/deploy.sh` (interactive workflow)
   - Emergency: `npm run build && git add docs/ && git commit && git push`
 
 **Success Metrics**:
@@ -409,7 +409,7 @@ This integration serves as a critical case study demonstrating that **following 
 - **Verification Tools**:
   - `verify_mcp_servers.py` - Comprehensive server configuration verification
   - `setup_hf_with_cli.py` - HF CLI integration setup script
-  - `hf_quick_setup.sh` - Quick setup script for HF authentication
+  - `scripts/setup/hf_quick_setup.sh` - Quick setup script for HF authentication
 
 ### 🔄 Changed
 - **HF Integration Module**: Enhanced to support HF CLI token management
