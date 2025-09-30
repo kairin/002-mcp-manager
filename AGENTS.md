@@ -100,6 +100,38 @@ export default defineConfig({
 }
 ```
 
+#### Local CI/CD Workflow (MANDATORY - ZERO GITHUB ACTIONS COST)
+**🚨 CRITICAL**: ALL deployment operations MUST run locally to prevent GitHub Actions billing and workflow failures.
+
+**Pre-Commit Hook** (`.git/hooks/pre-commit`):
+- Automatically builds website when source files change
+- Verifies critical files exist (index.html, _astro/, .nojekyll)
+- Auto-stages built files to ensure docs/ is always up-to-date
+- Blocks commits if build fails
+
+**Deployment Script** (`scripts/deploy.sh`):
+- Complete local CI/CD workflow with interactive prompts
+- Build → Stage → Commit → Push → Merge → Deploy pipeline
+- Verifies GitHub Pages deployment after push
+- Zero GitHub Actions usage = Zero cost
+
+**Usage**:
+```bash
+# Automatic via pre-commit hook (recommended)
+git add . && git commit -m "your message"
+
+# Manual deployment workflow
+./scripts/deploy.sh
+
+# Emergency website fix
+npm run build && git add docs/ && git commit -m "fix: rebuild website" && git push
+```
+
+**GitHub Actions Status**:
+- ✅ `.github/workflows/` directory REMOVED to prevent workflow failures
+- ✅ GitHub Pages serves docs/ folder directly (configured in repo settings)
+- ✅ Zero GitHub Actions = Zero billing = Zero workflow failures
+
 ### 🚨 CRITICAL: Python Development Standards (MANDATORY)
 
 #### Python Version & Dependencies
