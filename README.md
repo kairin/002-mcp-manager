@@ -66,8 +66,8 @@ After setup, you'll have:
 # Check comprehensive system status
 python -m mcp_manager.cli status
 
-# Verify 5 MCP servers (context7, shadcn, github, playwright, hf-mcp-server)
-python -m mcp_manager.cli mcp status
+# Verify 6 MCP servers (all connected and operational)
+claude mcp list
 
 # Access 174+ Claude agents including astro-deploy-specialist
 python -m mcp_manager.cli agent discover
@@ -167,14 +167,15 @@ Before starting any work on this project:
     <p><em>Complete development environment standardization</em></p>
 </div>
 
-### 🔧 MCP Server Management (5 Critical Servers)
+### 🔧 MCP Server Management (6 Critical Servers)
 | Server | Type | Status | Purpose |
 |--------|------|--------|---------|
-| [Context7](https://context7.com) | HTTP | ✅ Global + Auth | Library documentation and code examples |
-| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Global | UI component registry and tooling |
-| [GitHub MCP](https://github.com) | stdio | ✅ Global | GitHub API integration and management |
-| [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
-| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global + Auth | AI model access with HF CLI integration |
+| [Context7](https://context7.com) | HTTP | ✅ Connected | Library documentation and code examples |
+| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Connected | UI component registry and tooling |
+| [GitHub MCP](https://github.com) | stdio | ✅ Connected | GitHub API integration and management |
+| [Playwright MCP](https://playwright.dev) | stdio | ✅ Connected | Browser automation and testing |
+| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Connected | AI model access with HF CLI integration |
+| [MarkItDown](https://github.com/microsoft/markitdown) | stdio | ✅ Connected | Document conversion to markdown (PDF, Office, images) |
 
 <div align="center">
     <img src="docs/images/mcp-servers.png" alt="Supported MCP Servers" width="800">

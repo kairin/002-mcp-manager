@@ -189,8 +189,8 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
         },
         "github": {
             "type": "stdio",
-            "command": "/home/kkk/bin/github-mcp-server",
-            "args": [],
+            "command": "sh",
+            "args": ["-c", "GH_TOKEN=$(gh auth token) /home/kkk/.nvm/versions/node/v24.8.0/bin/npx @modelcontextprotocol/server-github"],
             "env": {}
         },
         "markitdown": {
