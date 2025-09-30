@@ -109,7 +109,7 @@ export default defineConfig({
 - Auto-stages built files to ensure docs/ is always up-to-date
 - Blocks commits if build fails
 
-**Deployment Script** (`scripts/deploy.sh`):
+**Deployment Script** (`scripts/deployment/deploy.sh`):
 - Complete local CI/CD workflow with interactive prompts
 - Build → Stage → Commit → Push → Merge → Deploy pipeline
 - Verifies GitHub Pages deployment after push
@@ -121,7 +121,7 @@ export default defineConfig({
 git add . && git commit -m "your message"
 
 # Manual deployment workflow
-./scripts/deploy.sh
+./scripts/deployment/deploy.sh
 
 # Emergency website fix
 npm run build && git add docs/ && git commit -m "fix: rebuild website" && git push

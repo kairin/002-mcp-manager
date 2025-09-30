@@ -185,7 +185,7 @@ Before starting any work on this project:
 #### 🤗 Hugging Face MCP Setup
 ```bash
 # Quick setup with HF CLI authentication
-./hf_quick_setup.sh
+./scripts/setup/hf_quick_setup.sh
 
 # Or use MCP Manager CLI
 uv run python -m mcp_manager.cli mcp setup-hf --login
@@ -315,7 +315,7 @@ git push
 For interactive control over the entire deployment process:
 ```bash
 # Complete deployment pipeline with prompts
-./scripts/deploy.sh
+./scripts/deployment/deploy.sh
 ```
 
 ### Emergency Website Fix
