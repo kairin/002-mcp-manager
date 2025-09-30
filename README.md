@@ -136,13 +136,13 @@ Error while finding module specification
 #### ✅ Solutions Applied by Following UV-First:
 ```bash
 # Package Installation
-uv pip install markitdown-mcp  # Not: pip install
+uv tool install markitdown-mcp  # Not: pip install
 
 # Command Execution
-uv run markitdown-mcp         # Not: markitdown-mcp
+uv tool run markitdown-mcp     # Not: markitdown-mcp
 
 # MCP Server Configuration
-"command": "uv", "args": ["run", "markitdown-mcp"]  # Not: "command": "markitdown-mcp"
+"command": "uv", "args": ["tool", "run", "markitdown-mcp"]  # Not: "command": "markitdown-mcp"
 
 # CLI Execution
 uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
@@ -360,7 +360,7 @@ uv run python script.py      # Not: python script.py
 ```bash
 # Complete environment reset
 rm -rf .venv && uv venv .venv && source .venv/bin/activate
-uv pip install -e . && uv pip install markitdown-mcp
+uv pip install -e . && uv tool install markitdown-mcp
 uv run python -m mcp_manager.cli status
 ```
 
@@ -374,7 +374,7 @@ uv run python -m mcp_manager.cli mcp add server-name --type stdio --command "uv"
 **Missing Commands:**
 ```bash
 # Always use uv run for installed packages
-uv run markitdown-mcp --help  # Not: markitdown-mcp --help
+uv tool run markitdown-mcp --help  # Not: markitdown-mcp --help
 uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
 ```
 

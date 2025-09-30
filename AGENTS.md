@@ -228,7 +228,7 @@ This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) inte
         "markitdown": {
             "type": "stdio",
             "command": "uv",
-            "args": ["run", "markitdown-mcp"],
+            "args": ["tool", "run", "markitdown-mcp"],
             "env": {}
         }
         # ... other servers
