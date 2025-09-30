@@ -5,6 +5,35 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ✅ MCP Server Connectivity Verification
+
+#### 🔌 All 6 MCP Servers Confirmed Operational
+- **Connectivity Validation**: Verified all MCP servers are properly connected using `claude mcp list`
+- **Server Status** (as of 2025-09-30):
+  - ✅ **context7** (HTTP) - Connected to https://mcp.context7.com/mcp
+  - ✅ **playwright** (stdio) - Connected via `npx @playwright/mcp@latest`
+  - ✅ **github** (stdio) - Connected via `/home/kkk/.nvm/versions/node/v24.8.0/bin/npx @modelcontextprotocol/server-github`
+  - ✅ **shadcn** (stdio) - Connected via `npx shadcn@latest mcp`
+  - ✅ **hf-mcp-server** (HTTP) - Connected to https://huggingface.co/mcp
+  - ✅ **markitdown** (stdio) - Connected via `uv run markitdown-mcp`
+
+#### 📚 Documentation Updates
+- **README.md Updated**: Changed server count from 5 to 6 servers
+- **Server Status**: Updated status indicators from "✅ Global" to "✅ Connected" for clarity
+- **MarkItDown Addition**: Added MarkItDown server to official supported servers list
+- **Verification Command**: Updated recommended command to `claude mcp list` for direct validation
+
+#### 🔍 GitHub MCP Installation Analysis
+- **Current Implementation**: No server-specific installation logic found in `src/mcp_manager/core.py`
+- **Generic Configuration**: `add_server()` method accepts any type (HTTP/stdio) as specified
+- **Documentation Accuracy**: v1.2.3 already corrected GitHub MCP type from HTTP to stdio (CHANGELOG:63-64)
+- **Working Configuration**: Actual deployment uses stdio with `@modelcontextprotocol/server-github` npx package
+- **No Code Changes Needed**: Core functionality correctly implements generic server management
+
+**Impact**: Confirms successful implementation of all planned MCP servers with proper stdio/HTTP type assignments. GitHub MCP server type correction in v1.2.3 resolved earlier documentation inconsistency.
+
 ## [1.2.3] - 2025-09-30
 
 ### 🔒 Security & Privacy Protection Framework
