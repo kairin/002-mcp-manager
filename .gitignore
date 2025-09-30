@@ -144,6 +144,14 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+
 # MCP Manager specific
 *.backup
 .mcp-manager/
