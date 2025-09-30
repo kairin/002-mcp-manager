@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🚀 Local CI/CD Implementation (Zero GitHub Actions Cost)
+
+#### ✅ Complete Local Deployment Workflow
+- **Problem Solved**: 85 GitHub Actions workflow failures causing notification spam and potential billing
+- **Solution**: Removed `.github/workflows/` directory entirely - GitHub Pages serves `docs/` directly
+- **Impact**: Zero GitHub Actions usage = Zero cost = Zero workflow failures
+
+#### 🔧 Pre-Commit Hook Implementation
+- **File**: `.git/hooks/pre-commit`
+- **Automatic Build Detection**: Triggers rebuild only when source files change (src/, public/, astro.config.mjs)
+- **Build Verification**: Validates critical files exist (index.html, _astro/, .nojekyll)
+- **Auto-Staging**: Automatically stages built files to docs/ for commit
+- **Commit Blocking**: Prevents commits if build fails
+
+#### 📦 Interactive Deployment Script
+- **File**: `scripts/deploy.sh`
+- **Complete Pipeline**: Build → Stage → Commit → Push → Merge → Deploy
+- **Interactive Prompts**: User control at each step
+- **Branch Preservation**: YYYYMMDD-HHMMSS naming strategy maintained
+- **Deployment Verification**: Checks GitHub Pages HTTP 200 status after push
+
+#### 📚 Documentation Updates
+- **AGENTS.md**: Added mandatory local CI/CD workflow section
+- **README.md**: New "Local CI/CD Deployment" section with usage examples
+- **Usage Patterns**:
+  - Automatic: `git commit` (pre-commit hook handles build)
+  - Manual: `./scripts/deploy.sh` (interactive workflow)
+  - Emergency: `npm run build && git add docs/ && git commit && git push`
+
+**Success Metrics**:
+- ✅ Eliminated 85 GitHub Actions workflow failures
+- ✅ Zero GitHub Actions billing risk
+- ✅ Local build verification prevents broken deployments
+- ✅ Maintains constitutional requirement: Branch preservation + Zero-cost operations
+
 ### ✅ MCP Server Connectivity Verification
 
 #### 🔌 All 6 MCP Servers Confirmed Operational

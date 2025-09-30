@@ -298,6 +298,38 @@ MCP Manager Architecture:
     <p><em><a href="https://kairin.github.io/mcp-manager/office-setup/">🏢 Complete Office Setup Guide</a> - One-command deployment for office environments</em></p>
 </div>
 
+## 🚀 Local CI/CD Deployment
+
+**🎯 Zero GitHub Actions = Zero Cost = Zero Workflow Failures**
+
+### Automatic Deployment (Recommended)
+The pre-commit hook automatically builds and stages the website:
+```bash
+# Just commit normally - hook handles everything
+git add .
+git commit -m "docs: update documentation"
+git push
+```
+
+### Manual Deployment Workflow
+For interactive control over the entire deployment process:
+```bash
+# Complete deployment pipeline with prompts
+./scripts/deploy.sh
+```
+
+### Emergency Website Fix
+If GitHub Pages shows 404 errors:
+```bash
+npm run build && git add docs/ && git commit -m "fix: rebuild website" && git push
+```
+
+**Key Benefits**:
+- ✅ **Pre-commit hook** prevents broken deployments
+- ✅ **Local builds** verified before pushing
+- ✅ **Zero GitHub Actions** usage (no workflow failures)
+- ✅ **Branch preservation** (YYYYMMDD-HHMMSS naming)
+
 ## 🛠️ Troubleshooting
 
 > **⚠️ 90% of issues are caused by not following UV-first requirements**
