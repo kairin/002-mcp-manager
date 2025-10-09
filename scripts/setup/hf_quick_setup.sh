@@ -11,4 +11,4 @@ echo "3. Configure the HF MCP server with authentication"
 echo ""
 
 # Run the Python script
-uv run python setup_hf_with_cli.py
+uv run python scripts/setup/setup_hf_with_cli.py

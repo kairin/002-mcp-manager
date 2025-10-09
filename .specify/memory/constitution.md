@@ -1,23 +1,17 @@
 <!--
 Sync Impact Report:
-Version change: None → 1.0.0
-Modified principles: N/A (initial constitution creation)
+Version change: 1.0.0 → 1.1.0
+Modified principles: None
 Added sections:
-  - I. UV-First Development (new)
-  - II. Global Configuration First (new)
-  - III. Zero Downtime Operations (new)
-  - IV. Branch Preservation (new)
-  - V. GitHub Pages Protection (new)
-  - VI. Security by Design (new)
-  - VII. Cross-Platform Compatibility (new)
-  - Quality Standards section (new)
-  - Enforcement section (new)
-Removed sections: N/A
+  - VIII. Repository Organization (new principle)
+Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Updated constitution check section
-  ✅ spec-template.md - No changes required (implementation-agnostic)
-  ✅ tasks-template.md - No changes required (follows plan)
-Follow-up TODOs: None
+  ✅ plan-template.md - Add repository organization checks
+  ⚠ spec-template.md - May need file placement guidance
+  ⚠ tasks-template.md - Add organization validation tasks
+Follow-up TODOs:
+  - Review plan-template.md for "Repository Organization Check" section
+  - Verify tasks-template.md includes file placement validation
 -->
 
 # MCP Manager Constitution
@@ -222,6 +216,131 @@ mcp-manager fleet audit                 # Verify compliance
 3. Reproducible builds: Same Python/Node versions guarantee deterministic results
 4. Zero-cost operations: Local CI/CD prevents GitHub billing overages
 
+### VIII. Repository Organization (MANDATORY)
+
+**Files MUST be organized in structured directories to prevent code creep and maintain navigability.** Root folder clutter is prohibited.
+
+**Mandatory root folder structure:**
+```
+mcp-manager/
+├── AGENTS.md              # Primary AI instructions (MANDATORY in root)
+├── CLAUDE.md              # Symlink to AGENTS.md (MANDATORY in root)
+├── GEMINI.md              # Symlink to AGENTS.md (MANDATORY in root)
+├── README.md              # Project documentation (standard)
+├── LICENSE                # Open source license (standard)
+├── .gitignore             # Git exclusions (standard)
+├── .python-version        # Python version spec (standard)
+├── .pre-commit-config.yaml # Pre-commit hooks (standard)
+├── pyproject.toml         # Python metadata (standard)
+├── uv.lock                # Dependency lock (standard)
+├── package.json           # Node.js dependencies (Astro)
+├── astro.config.mjs       # Astro configuration (website)
+├── tailwind.config.mjs    # Tailwind CSS config (website)
+├── docs/                  # Documentation and built website
+│   ├── *.md              # ALL markdown documentation
+│   ├── guides/           # Reference guides
+│   ├── images/           # Documentation images
+│   └── _astro/           # Built website assets (GitHub Pages)
+├── src/                   # Source code
+│   ├── mcp_manager/      # Python package
+│   └── components/       # Astro components
+├── scripts/               # Utility and automation scripts
+│   ├── setup/            # Setup scripts (*.py)
+│   ├── verify/           # Verification utilities
+│   ├── deployment/       # Deployment automation
+│   └── legacy/           # Deprecated scripts
+├── tests/                 # Test suite
+└── .specify/              # Spec-kit workflow (constitution, templates)
+```
+
+**File placement rules (MANDATORY):**
+
+1. **Documentation files → `docs/`**
+   - CHANGELOG.md → docs/CHANGELOG.md
+   - TROUBLESHOOTING.md → docs/TROUBLESHOOTING.md
+   - *-guide.md → docs/guides/*-guide.md
+   - *-setup.md → docs/*-setup.md
+   - All reference documentation → docs/
+
+2. **Setup scripts → `scripts/setup/`**
+   - setup_*.py → scripts/setup/setup_*.py
+   - *_setup.py → scripts/setup/*_setup.py
+   - Installation utilities → scripts/setup/
+
+3. **Verification scripts → `scripts/verify/`**
+   - verify_*.py → scripts/verify/verify_*.py
+   - *_verify.py → scripts/verify/*_verify.py
+   - Health check utilities → scripts/verify/
+
+4. **Legacy/deprecated code → `scripts/legacy/`**
+   - Old standalone scripts → scripts/legacy/
+   - Pre-refactor utilities → scripts/legacy/
+   - Mark with deprecation notice
+
+5. **Build automation → `scripts/` or root (context-dependent)**
+   - Makefile: Can stay in root if widely used, otherwise → scripts/
+   - Build scripts: scripts/build/ if multiple, root if single
+
+**Prohibited patterns:**
+- ❌ Creating files in root when appropriate subdirectory exists
+- ❌ Creating new top-level directories without justification
+- ❌ Scattering related files across multiple locations
+- ❌ Duplicating documentation (e.g., OFFICE_SETUP.md when docs/OFFICE-DEPLOYMENT.md exists)
+- ❌ Leaving scripts in root after `scripts/` directory created
+
+**File relocation workflow (MANDATORY):**
+```bash
+# Use git mv to preserve history
+git mv old-location/file.py new-location/file.py
+
+# Update all references (imports, docs, README)
+grep -r "old-location/file" . --exclude-dir=node_modules --exclude-dir=.git
+
+# Test functionality after move
+uv run pytest tests/
+
+# Commit with clear message
+git commit -m "refactor: relocate file.py to new-location for organization"
+```
+
+**Enforcement rules:**
+- Pre-merge check: No new files in root unless justified
+- File placement validation: Automated check in pre-commit hook
+- Documentation updates: README must reflect current structure
+- Import updates: All Python imports adjusted after moves
+- Reference updates: All docs updated to new paths
+
+**Rationale:** Repository organization prevents:
+1. **Code creep:** Files accumulating in root without structure
+2. **Navigation difficulty:** Developers unable to locate utilities
+3. **Duplication:** Multiple files serving similar purposes
+4. **Import confusion:** Unclear which version of script to use
+5. **Maintenance burden:** Scattered files harder to update systematically
+
+Clear organization enables:
+1. **Instant location:** Developers know exactly where files belong
+2. **Scalability:** Structure supports growth without refactoring
+3. **Onboarding:** New contributors understand layout immediately
+4. **Automation:** Scripts can reliably locate dependencies
+5. **Auditing:** Easy to identify deprecated/redundant code
+
+**Examples of proper organization:**
+
+✅ **GOOD:**
+```
+docs/CHANGELOG.md              # Documentation in docs/
+scripts/setup/setup_hf_mcp.py  # Setup utility in scripts/setup/
+scripts/verify/verify_mcp.py   # Verification in scripts/verify/
+```
+
+❌ **BAD:**
+```
+CHANGELOG.md                   # Clutters root
+setup_hf_mcp.py               # Unclear purpose from root
+verify.py                      # Generic name in root
+mcp-thing.md                   # Ambiguous documentation
+```
+
 ## Quality Standards
 
 **Testing requirements (MANDATORY):**
@@ -259,12 +378,13 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 **Constitution compliance is MANDATORY for all changes.** Violations block merge to main branch.
 
 **Enforcement mechanisms:**
-1. **Automated checks:** Pre-commit hooks validate UV-first, code quality, tests, security scanning
+1. **Automated checks:** Pre-commit hooks validate UV-first, code quality, tests, security scanning, file placement
 2. **GitHub Actions:** CI pipeline verifies all quality gates (when enabled)
 3. **Local CI/CD:** Zero-cost workflows executed before GitHub deployment
 4. **Agent validation:** Claude Code agents verify AGENTS.md compliance
 5. **Security audit:** Mandatory credential scanning and information classification
-6. **Manual review:** Constitution violations require explicit justification
+6. **Organization audit:** File placement validation against repository structure rules
+7. **Manual review:** Constitution violations require explicit justification
 
 **Amendment procedure:**
 1. Propose changes in dedicated branch: `YYYYMMDD-HHMMSS-constitution-amendment`
@@ -288,6 +408,7 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Adding UV-first principle: v1.1.0 (MINOR - new principle)
 - Clarifying branch preservation rules: v1.0.1 (PATCH - clarification)
 - Removing principle entirely: v2.0.0 (MAJOR - breaking change)
+- Adding repository organization principle: v1.1.0 (MINOR - new principle)
 
 ## Governance
 
@@ -298,11 +419,12 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Complexity deviations require explicit justification
 - Integration tests validate zero downtime operations
 - Website deployment validates GitHub Pages protection
+- File placement validates repository organization rules
 
 **Reference documents:**
 - **Runtime guidance:** AGENTS.md (symlinked as CLAUDE.md, GEMINI.md)
-- **Troubleshooting:** TROUBLESHOOTING.md, docs/FOLLOWING-INSTRUCTIONS.md
-- **Case studies:** CHANGELOG.md (MarkItDown integration, v1.2.1)
+- **Troubleshooting:** docs/TROUBLESHOOTING.md, docs/FOLLOWING-INSTRUCTIONS.md
+- **Case studies:** docs/CHANGELOG.md (MarkItDown integration, v1.2.1)
 - **Templates:** .specify/templates/plan-template.md, spec-template.md, tasks-template.md
 
 **Success metrics:**
@@ -315,5 +437,6 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Performance: CLI commands complete in <2 seconds
 - Reliability: >99.9% uptime for monitoring operations
 - Security compliance: 0 exposed secrets, 100% template-only credential references
+- Organization compliance: 0 misplaced files, 100% adherence to directory structure
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-09-30
+**Version**: 1.1.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-10-10

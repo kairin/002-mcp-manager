@@ -67,13 +67,8 @@ After setup, you'll have:
 # Check comprehensive system status
 uv run python -m mcp_manager.cli status
 
-<<<<<<< HEAD
-# Verify 6 MCP servers (context7, shadcn, github, playwright, hf-mcp-server, markitdown)
-uv run python -m mcp_manager.cli mcp status
-=======
 # Verify 6 MCP servers (all connected and operational)
-claude mcp list
->>>>>>> b4e42b3527705b6adf860b55e99e4f7a59945575
+uv run python -m mcp_manager.cli mcp status
 
 # Access 174+ Claude agents including astro-deploy-specialist
 uv run python -m mcp_manager.cli agent discover
@@ -365,9 +360,9 @@ uv run python script.py      # Not: python script.py
 
 ### Comprehensive Troubleshooting Resources
 
-- **📋 [Complete Troubleshooting Guide](TROUBLESHOOTING.md)** - Detailed solutions for all common issues
+- **📋 [Complete Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Detailed solutions for all common issues
 - **🎯 [Following Instructions Guide](docs/FOLLOWING-INSTRUCTIONS.md)** - Why AGENTS.md compliance is critical
-- **📖 [MarkItDown Case Study](CHANGELOG.md#120---2025-09-25)** - Real example of UV-first violations and solutions
+- **📖 [MarkItDown Case Study](docs/CHANGELOG.md#120---2025-09-25)** - Real example of UV-first violations and solutions
 
 ### Quick Fixes for Common Problems
 
