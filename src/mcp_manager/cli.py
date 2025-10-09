@@ -13,6 +13,7 @@ from .core import MCPManager
 from .exceptions import MCPManagerError
 from .fleet_manager import FleetManager
 from .hf_integration import HuggingFaceIntegration
+from .office_deployment import OfficeDeploymentManager
 from .project_standards import ProjectStandardsManager
 
 # Initialize CLI app and console
@@ -28,11 +29,13 @@ mcp_app = typer.Typer(help="🔧 MCP Server Management")
 project_app = typer.Typer(help="📋 Project Standardization")
 fleet_app = typer.Typer(help="🌐 Fleet Management")
 agent_app = typer.Typer(help="🤖 Claude Agent Management")
+office_app = typer.Typer(help="🏢 Office Deployment Management")
 
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(project_app, name="project")
 app.add_typer(fleet_app, name="fleet")
 app.add_typer(agent_app, name="agent")
+app.add_typer(office_app, name="office")
 
 
 # =============================================================================
@@ -1096,6 +1099,320 @@ def _display_single_project_audit(
             table.add_row(standard_id, status)
 
     console.print(table)
+
+
+# =============================================================================
+# OFFICE DEPLOYMENT MANAGEMENT COMMANDS
+# =============================================================================
+
+
+@office_app.command("register")
+def office_register(
+    hostname: str = typer.Argument(..., help="Hostname of the office machine"),
+    ip_address: str = typer.Argument(..., help="IP address of the machine"),
+    ssh_user: str = typer.Option(..., "--user", "-u", help="SSH username"),
+    ssh_key: str | None = typer.Option(
+        None, "--key", "-k", help="Path to SSH private key"
+    ),
+) -> None:
+    """Register a new office machine for MCP deployment."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+        success = office_manager.register_office_node(
+            hostname, ip_address, ssh_user, ssh_key
+        )
+
+        if success:
+            rprint(
+                f"[green]✅ Registered office machine: {hostname} ({ip_address})[/green]"
+            )
+            rprint(
+                "[cyan]💡 Tip: Run 'mcp-manager office status' to check connectivity[/cyan]"
+            )
+        else:
+            rprint(f"[red]❌ Failed to register machine {hostname}[/red]")
+            raise typer.Exit(1)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("list")
+def office_list() -> None:
+    """List all registered office machines."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+        nodes = office_manager.list_office_nodes()
+
+        if not nodes:
+            rprint("[yellow]No office machines registered yet.[/yellow]")
+            rprint(
+                "[cyan]💡 Use 'mcp-manager office register' to add machines[/cyan]"
+            )
+            return
+
+        table = Table(title="Registered Office Machines")
+        table.add_column("Hostname", style="cyan")
+        table.add_column("IP Address", style="green")
+        table.add_column("SSH User", style="yellow")
+        table.add_column("Status", style="magenta")
+        table.add_column("Last Sync", style="dim")
+
+        for hostname, node in nodes.items():
+            status_icon = {
+                "active": "🟢 Active",
+                "unreachable": "🔴 Unreachable",
+                "unknown": "⚪ Unknown",
+            }.get(node.get("status", "unknown"), "⚪ Unknown")
+
+            table.add_row(
+                hostname,
+                node["ip_address"],
+                node["ssh_user"],
+                status_icon,
+                node.get("last_sync", "Never") or "Never",
+            )
+
+        console.print(table)
+        rprint(f"\n[cyan]Total: {len(nodes)} office machines[/cyan]")
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("remove")
+def office_remove(
+    hostname: str = typer.Argument(..., help="Hostname to remove"),
+    force: bool = typer.Option(False, "--force", help="Skip confirmation"),
+) -> None:
+    """Remove an office machine from management."""
+    try:
+        if not force:
+            confirm = typer.confirm(
+                f"Are you sure you want to remove office machine '{hostname}'?"
+            )
+            if not confirm:
+                rprint("[yellow]Operation cancelled[/yellow]")
+                raise typer.Exit(0)
+
+        office_manager = OfficeDeploymentManager(console)
+        success = office_manager.remove_office_node(hostname)
+
+        if not success:
+            raise typer.Exit(1)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("status")
+def office_status() -> None:
+    """Show deployment status for all office machines."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+        office_manager.display_office_status()
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("check")
+def office_check(
+    hostname: str = typer.Argument(..., help="Hostname to check connectivity"),
+) -> None:
+    """Check SSH connectivity to an office machine."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+
+        rprint(f"[cyan]🔍 Checking connectivity to {hostname}...[/cyan]")
+        is_reachable = office_manager.check_node_connectivity(hostname)
+
+        if is_reachable:
+            rprint(f"[green]✅ {hostname} is reachable via SSH[/green]")
+        else:
+            rprint(f"[red]❌ {hostname} is unreachable[/red]")
+            rprint(
+                "[yellow]💡 Check SSH configuration, firewall, and network connectivity[/yellow]"
+            )
+            raise typer.Exit(1)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("deploy")
+def office_deploy(
+    hostname: str | None = typer.Argument(
+        None, help="Deploy to specific machine (default: all machines)"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be deployed without making changes"
+    ),
+) -> None:
+    """Deploy MCP configuration to office machine(s)."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+
+        if hostname:
+            # Deploy to specific machine
+            rprint(f"[cyan]🚀 Deploying MCP configuration to {hostname}...[/cyan]")
+            success = office_manager.deploy_to_node(hostname, dry_run=dry_run)
+
+            if not success:
+                raise typer.Exit(1)
+
+        else:
+            # Deploy to all machines
+            rprint("[cyan]🚀 Deploying MCP configuration to all office machines...[/cyan]")
+            results = office_manager.deploy_to_all_nodes(dry_run=dry_run)
+
+            # Display results
+            table = Table(title="Deployment Results")
+            table.add_column("Hostname", style="cyan")
+            table.add_column("Status", style="green")
+
+            for node_hostname, success in results.items():
+                status = "✅ Success" if success else "❌ Failed"
+                table.add_row(node_hostname, status)
+
+            console.print(table)
+
+            # Summary
+            successful = sum(1 for s in results.values() if s)
+            total = len(results)
+            rprint(f"\n[cyan]Deployment complete: {successful}/{total} successful[/cyan]")
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("verify")
+def office_verify(
+    hostname: str | None = typer.Argument(
+        None, help="Verify specific machine (default: all machines)"
+    ),
+) -> None:
+    """Verify MCP configuration matches across machines."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+
+        if hostname:
+            # Verify specific machine
+            rprint(f"[cyan]🔍 Verifying {hostname}...[/cyan]")
+            result = office_manager.verify_node_configuration(hostname)
+
+            if result["status"] == "unreachable":
+                rprint(f"[red]❌ {result['message']}[/red]")
+                raise typer.Exit(1)
+            elif result["status"] == "error":
+                rprint(f"[red]❌ {result['message']}[/red]")
+                raise typer.Exit(1)
+            elif result["match"]:
+                rprint(
+                    f"[green]✅ Configuration matches ({result['local_servers']} servers)[/green]"
+                )
+            else:
+                rprint("[yellow]⚠️ Configuration mismatch detected[/yellow]")
+                rprint(
+                    f"   Local servers: {result['local_servers']}, Remote servers: {result['remote_servers']}"
+                )
+                rprint(
+                    "[cyan]💡 Run 'mcp-manager office deploy' to synchronize[/cyan]"
+                )
+
+        else:
+            # Verify all machines
+            rprint("[cyan]🔍 Verifying all office machines...[/cyan]")
+            results = office_manager.verify_all_nodes()
+
+            table = Table(title="Configuration Verification")
+            table.add_column("Hostname", style="cyan")
+            table.add_column("Status", style="green")
+            table.add_column("Servers (Local/Remote)", style="yellow")
+            table.add_column("Match", style="magenta")
+
+            for node_hostname, result in results.items():
+                if result["status"] == "unreachable":
+                    status = "🔴 Unreachable"
+                    servers = "N/A"
+                    match = "N/A"
+                elif result["status"] == "error":
+                    status = "❌ Error"
+                    servers = "N/A"
+                    match = "N/A"
+                else:
+                    status = "🟢 OK"
+                    servers = f"{result['local_servers']}/{result['remote_servers']}"
+                    match = "✅ Match" if result["match"] else "❌ Mismatch"
+
+                table.add_row(node_hostname, status, servers, match)
+
+            console.print(table)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("pull")
+def office_pull(
+    hostname: str = typer.Argument(..., help="Pull configuration from this machine"),
+) -> None:
+    """Pull MCP configuration from a remote office machine (reverse sync)."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+
+        rprint(f"[cyan]📥 Pulling MCP configuration from {hostname}...[/cyan]")
+        rprint("[yellow]⚠️ This will overwrite your local .claude.json[/yellow]")
+
+        confirm = typer.confirm("Continue?")
+        if not confirm:
+            rprint("[yellow]Operation cancelled[/yellow]")
+            raise typer.Exit(0)
+
+        success = office_manager.sync_from_node(hostname)
+
+        if not success:
+            raise typer.Exit(1)
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@office_app.command("info")
+def office_info() -> None:
+    """Show information about the current machine."""
+    try:
+        office_manager = OfficeDeploymentManager(console)
+        info = office_manager.get_current_machine_info()
+
+        table = Table(title="Current Machine Information")
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+
+        table.add_row("Hostname", info["hostname"])
+        table.add_row("IP Address", info["ip_address"])
+        table.add_row("SSH User", info["user"])
+
+        console.print(table)
+
+        rprint(
+            "\n[cyan]💡 Use these values when registering from another machine:[/cyan]"
+        )
+        rprint(
+            f"   [yellow]mcp-manager office register {info['hostname']} {info['ip_address']} --user {info['user']}[/yellow]"
+        )
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

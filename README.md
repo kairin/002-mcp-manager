@@ -37,6 +37,7 @@ MCP Manager is a **comprehensive system management platform** that unifies:
 - **🔧 MCP Server Management**: Centralized Model Context Protocol servers for Claude Code
 - **📋 Project Standardization**: 6 automated standards enforcement across all repositories
 - **🤖 Global Claude Agent Access**: 174+ discovered agents including deployment specialists
+- **🏢 Office Deployment**: SSH-based MCP configuration deployment across office machines
 - **🌐 Fleet Management**: Ubuntu 25.04 consistency across development environments
 - **💰 Zero-Cost Operations**: Local CI/CD workflows preventing GitHub billing
 
@@ -55,7 +56,7 @@ cd ~/Apps/mcp-manager && \
 uv venv .venv && \
 source .venv/bin/activate && \
 uv pip install -e . && \
-python -m mcp_manager.cli init
+uv run python -m mcp_manager.cli init
 ```
 
 ### 🎯 Immediate Access
@@ -64,32 +65,40 @@ After setup, you'll have:
 
 ```bash
 # Check comprehensive system status
-python -m mcp_manager.cli status
+uv run python -m mcp_manager.cli status
 
-# Verify 5 MCP servers (context7, shadcn, github, playwright, hf-mcp-server)
-python -m mcp_manager.cli mcp status
+# Verify 6 MCP servers (context7, shadcn, github, playwright, hf-mcp-server, markitdown)
+uv run python -m mcp_manager.cli mcp status
 
 # Access 174+ Claude agents including astro-deploy-specialist
-python -m mcp_manager.cli agent discover
+uv run python -m mcp_manager.cli agent discover
 
 # Enforce project standards across repositories
-python -m mcp_manager.cli project audit
+uv run python -m mcp_manager.cli project audit
 
-# Deploy current project to GitHub Pages
-python -m mcp_manager.cli agent deploy astro-deploy-specialist
+# Deploy MCP configuration across office machines
+uv run python -m mcp_manager.cli office status
 ```
 
-### 🌐 Fleet Management
+### 🌐 Fleet Management & Office Deployment
 
 ```bash
-# Register office machine in fleet
-python -m mcp_manager.cli fleet register office-machine 192.168.1.100
+# Register office machine for MCP deployment
+uv run python -m mcp_manager.cli office register office-pc-01 192.168.1.100 --user kkk
 
-# Sync configurations across all environments
-python -m mcp_manager.cli fleet sync
+# Deploy MCP configuration to all office machines
+uv run python -m mcp_manager.cli office deploy
 
-# Audit Ubuntu 25.04 + Python 3.13 compliance
-python -m mcp_manager.cli fleet audit
+# Verify synchronization across office
+uv run python -m mcp_manager.cli office verify
+
+# Check deployment status
+uv run python -m mcp_manager.cli office status
+
+# Legacy fleet management commands
+uv run python -m mcp_manager.cli fleet register office-machine 192.168.1.100
+uv run python -m mcp_manager.cli fleet sync
+uv run python -m mcp_manager.cli fleet audit
 ```
 
 ## 🚨 CRITICAL: UV-First Development Requirements
@@ -286,7 +295,8 @@ MCP Manager Architecture:
 
 ## 📖 Learn more
 
-- **[🏢 Office Setup Guide](https://kairin.github.io/mcp-manager/office-setup/)** - Complete office deployment workflow
+- **[🏢 Office Deployment Guide](docs/OFFICE-DEPLOYMENT.md)** - Complete SSH-based deployment across office machines
+- **[🏢 Office Setup Guide](https://kairin.github.io/mcp-manager/office-setup/)** - Web-based office deployment workflow
 - **[Configuration Guide](docs/configuration.md)** - Detailed setup instructions
 - **[Server Management](docs/servers.md)** - Adding and managing MCP servers
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
