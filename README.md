@@ -67,8 +67,13 @@ After setup, you'll have:
 # Check comprehensive system status
 uv run python -m mcp_manager.cli status
 
+<<<<<<< HEAD
 # Verify 6 MCP servers (context7, shadcn, github, playwright, hf-mcp-server, markitdown)
 uv run python -m mcp_manager.cli mcp status
+=======
+# Verify 6 MCP servers (all connected and operational)
+claude mcp list
+>>>>>>> b4e42b3527705b6adf860b55e99e4f7a59945575
 
 # Access 174+ Claude agents including astro-deploy-specialist
 uv run python -m mcp_manager.cli agent discover
@@ -145,13 +150,13 @@ Error while finding module specification
 #### ✅ Solutions Applied by Following UV-First:
 ```bash
 # Package Installation
-uv pip install markitdown-mcp  # Not: pip install
+uv tool install markitdown-mcp  # Not: pip install
 
 # Command Execution
-uv run markitdown-mcp         # Not: markitdown-mcp
+uv tool run markitdown-mcp     # Not: markitdown-mcp
 
 # MCP Server Configuration
-"command": "uv", "args": ["run", "markitdown-mcp"]  # Not: "command": "markitdown-mcp"
+"command": "uv", "args": ["tool", "run", "markitdown-mcp"]  # Not: "command": "markitdown-mcp"
 
 # CLI Execution
 uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
@@ -176,14 +181,15 @@ Before starting any work on this project:
     <p><em>Complete development environment standardization</em></p>
 </div>
 
-### 🔧 MCP Server Management (5 Critical Servers)
+### 🔧 MCP Server Management (6 Critical Servers)
 | Server | Type | Status | Purpose |
 |--------|------|--------|---------|
-| [Context7](https://context7.com) | HTTP | ✅ Global + Auth | Library documentation and code examples |
-| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Global | UI component registry and tooling |
-| [GitHub MCP](https://github.com) | stdio | ✅ Global | GitHub API integration and management |
-| [Playwright MCP](https://playwright.dev) | stdio | ✅ Global | Browser automation and testing |
-| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Global + Auth | AI model access with HF CLI integration |
+| [Context7](https://context7.com) | HTTP | ✅ Connected | Library documentation and code examples |
+| [shadcn/ui](https://ui.shadcn.com) | stdio | ✅ Connected | UI component registry and tooling |
+| [GitHub MCP](https://github.com) | stdio | ✅ Connected | GitHub API integration and management |
+| [Playwright MCP](https://playwright.dev) | stdio | ✅ Connected | Browser automation and testing |
+| [Hugging Face MCP](https://huggingface.co) | HTTP | ✅ Connected | AI model access with HF CLI integration |
+| [MarkItDown](https://github.com/microsoft/markitdown) | stdio | ✅ Connected | Document conversion to markdown (PDF, Office, images) |
 
 <div align="center">
     <img src="docs/images/mcp-servers.png" alt="Supported MCP Servers" width="800">
@@ -193,7 +199,7 @@ Before starting any work on this project:
 #### 🤗 Hugging Face MCP Setup
 ```bash
 # Quick setup with HF CLI authentication
-./hf_quick_setup.sh
+./scripts/setup/hf_quick_setup.sh
 
 # Or use MCP Manager CLI
 uv run python -m mcp_manager.cli mcp setup-hf --login
@@ -307,6 +313,38 @@ MCP Manager Architecture:
     <p><em><a href="https://kairin.github.io/mcp-manager/office-setup/">🏢 Complete Office Setup Guide</a> - One-command deployment for office environments</em></p>
 </div>
 
+## 🚀 Local CI/CD Deployment
+
+**🎯 Zero GitHub Actions = Zero Cost = Zero Workflow Failures**
+
+### Automatic Deployment (Recommended)
+The pre-commit hook automatically builds and stages the website:
+```bash
+# Just commit normally - hook handles everything
+git add .
+git commit -m "docs: update documentation"
+git push
+```
+
+### Manual Deployment Workflow
+For interactive control over the entire deployment process:
+```bash
+# Complete deployment pipeline with prompts
+./scripts/deployment/deploy.sh
+```
+
+### Emergency Website Fix
+If GitHub Pages shows 404 errors:
+```bash
+npm run build && git add docs/ && git commit -m "fix: rebuild website" && git push
+```
+
+**Key Benefits**:
+- ✅ **Pre-commit hook** prevents broken deployments
+- ✅ **Local builds** verified before pushing
+- ✅ **Zero GitHub Actions** usage (no workflow failures)
+- ✅ **Branch preservation** (YYYYMMDD-HHMMSS naming)
+
 ## 🛠️ Troubleshooting
 
 > **⚠️ 90% of issues are caused by not following UV-first requirements**
@@ -337,7 +375,7 @@ uv run python script.py      # Not: python script.py
 ```bash
 # Complete environment reset
 rm -rf .venv && uv venv .venv && source .venv/bin/activate
-uv pip install -e . && uv pip install markitdown-mcp
+uv pip install -e . && uv tool install markitdown-mcp
 uv run python -m mcp_manager.cli status
 ```
 
@@ -351,7 +389,7 @@ uv run python -m mcp_manager.cli mcp add server-name --type stdio --command "uv"
 **Missing Commands:**
 ```bash
 # Always use uv run for installed packages
-uv run markitdown-mcp --help  # Not: markitdown-mcp --help
+uv tool run markitdown-mcp --help  # Not: markitdown-mcp --help
 uv run python -m mcp_manager.cli status  # Not: python -m mcp_manager.cli status
 ```
 

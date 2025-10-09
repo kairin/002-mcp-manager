@@ -5,6 +5,70 @@ All notable changes to MCP Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🚀 Local CI/CD Implementation (Zero GitHub Actions Cost)
+
+#### ✅ Complete Local Deployment Workflow
+- **Problem Solved**: 85 GitHub Actions workflow failures causing notification spam and potential billing
+- **Solution**: Removed `.github/workflows/` directory entirely - GitHub Pages serves `docs/` directly
+- **Impact**: Zero GitHub Actions usage = Zero cost = Zero workflow failures
+
+#### 🔧 Pre-Commit Hook Implementation
+- **File**: `.git/hooks/pre-commit`
+- **Automatic Build Detection**: Triggers rebuild only when source files change (src/, public/, astro.config.mjs)
+- **Build Verification**: Validates critical files exist (index.html, _astro/, .nojekyll)
+- **Auto-Staging**: Automatically stages built files to docs/ for commit
+- **Commit Blocking**: Prevents commits if build fails
+
+#### 📦 Interactive Deployment Script
+- **File**: `scripts/deployment/deploy.sh`
+- **Complete Pipeline**: Build → Stage → Commit → Push → Merge → Deploy
+- **Interactive Prompts**: User control at each step
+- **Branch Preservation**: YYYYMMDD-HHMMSS naming strategy maintained
+- **Deployment Verification**: Checks GitHub Pages HTTP 200 status after push
+
+#### 📚 Documentation Updates
+- **AGENTS.md**: Added mandatory local CI/CD workflow section
+- **README.md**: New "Local CI/CD Deployment" section with usage examples
+- **Usage Patterns**:
+  - Automatic: `git commit` (pre-commit hook handles build)
+  - Manual: `./scripts/deployment/deploy.sh` (interactive workflow)
+  - Emergency: `npm run build && git add docs/ && git commit && git push`
+
+**Success Metrics**:
+- ✅ Eliminated 85 GitHub Actions workflow failures
+- ✅ Zero GitHub Actions billing risk
+- ✅ Local build verification prevents broken deployments
+- ✅ Maintains constitutional requirement: Branch preservation + Zero-cost operations
+
+### ✅ MCP Server Connectivity Verification
+
+#### 🔌 All 6 MCP Servers Confirmed Operational
+- **Connectivity Validation**: Verified all MCP servers are properly connected using `claude mcp list`
+- **Server Status** (as of 2025-09-30):
+  - ✅ **context7** (HTTP) - Connected to https://mcp.context7.com/mcp
+  - ✅ **playwright** (stdio) - Connected via `npx @playwright/mcp@latest`
+  - ✅ **github** (stdio) - Connected via `/home/kkk/.nvm/versions/node/v24.8.0/bin/npx @modelcontextprotocol/server-github`
+  - ✅ **shadcn** (stdio) - Connected via `npx shadcn@latest mcp`
+  - ✅ **hf-mcp-server** (HTTP) - Connected to https://huggingface.co/mcp
+  - ✅ **markitdown** (stdio) - Connected via `uv run markitdown-mcp`
+
+#### 📚 Documentation Updates
+- **README.md Updated**: Changed server count from 5 to 6 servers
+- **Server Status**: Updated status indicators from "✅ Global" to "✅ Connected" for clarity
+- **MarkItDown Addition**: Added MarkItDown server to official supported servers list
+- **Verification Command**: Updated recommended command to `claude mcp list` for direct validation
+
+#### 🔍 GitHub MCP Installation Analysis
+- **Current Implementation**: No server-specific installation logic found in `src/mcp_manager/core.py`
+- **Generic Configuration**: `add_server()` method accepts any type (HTTP/stdio) as specified
+- **Documentation Accuracy**: v1.2.3 already corrected GitHub MCP type from HTTP to stdio (CHANGELOG:63-64)
+- **Working Configuration**: Actual deployment uses stdio with `@modelcontextprotocol/server-github` npx package
+- **No Code Changes Needed**: Core functionality correctly implements generic server management
+
+**Impact**: Confirms successful implementation of all planned MCP servers with proper stdio/HTTP type assignments. GitHub MCP server type correction in v1.2.3 resolved earlier documentation inconsistency.
+
 ## [1.2.3] - 2025-09-30
 
 ### 🔒 Security & Privacy Protection Framework
@@ -345,7 +409,7 @@ This integration serves as a critical case study demonstrating that **following 
 - **Verification Tools**:
   - `verify_mcp_servers.py` - Comprehensive server configuration verification
   - `setup_hf_with_cli.py` - HF CLI integration setup script
-  - `hf_quick_setup.sh` - Quick setup script for HF authentication
+  - `scripts/setup/hf_quick_setup.sh` - Quick setup script for HF authentication
 
 ### 🔄 Changed
 - **HF Integration Module**: Enhanced to support HF CLI token management
