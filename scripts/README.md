@@ -138,7 +138,7 @@ The pre-commit hook at `.git/hooks/pre-commit` automatically runs builds when ne
 
 - [AGENTS.md](../AGENTS.md) - Complete project requirements
 - [README.md](../README.md) - Project overview
-- [CHANGELOG.md](../CHANGELOG.md) - Historical changes
+- [CHANGELOG.md](../docs/CHANGELOG.md) - Historical changes
 
 ---
 
