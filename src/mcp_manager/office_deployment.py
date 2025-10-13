@@ -88,9 +88,7 @@ class OfficeDeploymentManager:
 
             del nodes[hostname]
             self._save_office_nodes(nodes)
-            self.console.print(
-                f"[green]✅ Removed office node: {hostname}[/green]"
-            )
+            self.console.print(f"[green]✅ Removed office node: {hostname}[/green]")
             return True
 
         except Exception as e:
@@ -115,9 +113,7 @@ class OfficeDeploymentManager:
             ssh_cmd.extend([f"{node['ssh_user']}@{node['ip_address']}", "echo", "ok"])
 
             # Test connection
-            result = subprocess.run(
-                ssh_cmd, capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=10)
 
             is_reachable = result.returncode == 0
 
@@ -156,9 +152,7 @@ class OfficeDeploymentManager:
         try:
             # Read local MCP configuration
             if not self.claude_config_path.exists():
-                raise MCPManagerError(
-                    "Local .claude.json not found. Cannot deploy."
-                )
+                raise MCPManagerError("Local .claude.json not found. Cannot deploy.")
 
             with open(self.claude_config_path) as f:
                 local_config = json.load(f)
@@ -235,9 +229,7 @@ class OfficeDeploymentManager:
             )
 
             for hostname in nodes.keys():
-                progress.update(
-                    task, description=f"[cyan]Deploying to {hostname}..."
-                )
+                progress.update(task, description=f"[cyan]Deploying to {hostname}...")
                 results[hostname] = self.deploy_to_node(hostname, dry_run=dry_run)
                 progress.advance(task)
 
@@ -272,9 +264,7 @@ class OfficeDeploymentManager:
                 ]
             )
 
-            result = subprocess.run(
-                ssh_cmd, capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
                 return {
@@ -478,9 +468,7 @@ class OfficeDeploymentManager:
             with open(self.office_config_path) as f:
                 return json.load(f)
         except Exception as e:
-            self.console.print(
-                f"[yellow]⚠️ Failed to load office nodes: {e}[/yellow]"
-            )
+            self.console.print(f"[yellow]⚠️ Failed to load office nodes: {e}[/yellow]")
             return {}
 
     def _save_office_nodes(self, nodes: dict[str, dict[str, Any]]) -> None:

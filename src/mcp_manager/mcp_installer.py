@@ -10,8 +10,6 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from .exceptions import MCPManagerError
-
 
 class MCPInstaller:
     """Manages system-wide MCP server installation and verification."""
@@ -92,9 +90,7 @@ class MCPInstaller:
             )
 
             for server_name, server_spec in self.SUPPORTED_SERVERS.items():
-                progress.update(
-                    task, description=f"[cyan]Installing {server_name}..."
-                )
+                progress.update(task, description=f"[cyan]Installing {server_name}...")
                 results[server_name] = self.install_server(
                     server_name, server_spec, skip_auth=skip_auth, dry_run=dry_run
                 )
@@ -172,9 +168,7 @@ class MCPInstaller:
                     )
                     result["authenticated"] = True
                 else:
-                    auth_result = self._setup_authentication(
-                        server_name, server_spec
-                    )
+                    auth_result = self._setup_authentication(server_name, server_spec)
                     result["authenticated"] = auth_result["success"]
                     result["details"].extend(auth_result["details"])
             else:
@@ -183,9 +177,7 @@ class MCPInstaller:
 
             # Overall success
             result["success"] = (
-                result["installed"]
-                and result["configured"]
-                and result["authenticated"]
+                result["installed"] and result["configured"] and result["authenticated"]
             )
 
         except Exception as e:
@@ -276,7 +268,9 @@ class MCPInstaller:
 
     def display_installation_status(self, results: dict[str, Any]) -> None:
         """Display formatted installation status."""
-        self.console.print("\n[bold cyan]📦 MCP Server Installation Status[/bold cyan]\n")
+        self.console.print(
+            "\n[bold cyan]📦 MCP Server Installation Status[/bold cyan]\n"
+        )
 
         table = Table(title="Installation Results")
         table.add_column("Server", style="cyan")
@@ -307,7 +301,9 @@ class MCPInstaller:
 
     def display_verification_status(self, results: dict[str, Any]) -> None:
         """Display formatted verification status."""
-        self.console.print("\n[bold cyan]🔍 MCP Server Verification Status[/bold cyan]\n")
+        self.console.print(
+            "\n[bold cyan]🔍 MCP Server Verification Status[/bold cyan]\n"
+        )
 
         table = Table(title="Verification Results")
         table.add_column("Server", style="cyan")
@@ -332,9 +328,11 @@ class MCPInstaller:
             status_display = (
                 "[green]Healthy[/green]"
                 if status == "healthy"
-                else "[yellow]Needs Auth[/yellow]"
-                if status == "needs_auth"
-                else "[red]Unhealthy[/red]"
+                else (
+                    "[yellow]Needs Auth[/yellow]"
+                    if status == "needs_auth"
+                    else "[red]Unhealthy[/red]"
+                )
             )
 
             table.add_row(
@@ -357,7 +355,7 @@ class MCPInstaller:
             )
 
             if result.returncode == 0:
-                self.console.print(f"[green]✅ Installation successful[/green]")
+                self.console.print("[green]✅ Installation successful[/green]")
                 return True
             else:
                 self.console.print(
@@ -429,9 +427,7 @@ class MCPInstaller:
             self.console.print(
                 f"\n[yellow]⚠️  Authentication required for {server_name}[/yellow]"
             )
-            self.console.print(
-                f"[dim]Missing: {', '.join(missing_vars)}[/dim]"
-            )
+            self.console.print(f"[dim]Missing: {', '.join(missing_vars)}[/dim]")
             self.console.print(
                 f"\n[cyan]Please run:[/cyan] {' '.join(server_spec['setup_command'])}"
             )
@@ -494,7 +490,9 @@ class MCPInstaller:
                 # For HTTP servers, check headers
                 if server_spec["type"] == "http":
                     headers = server_config.get("headers", {})
-                    if any(key in headers for key in ["Authorization", "CONTEXT7_API_KEY"]):
+                    if any(
+                        key in headers for key in ["Authorization", "CONTEXT7_API_KEY"]
+                    ):
                         return {
                             "status": "pass",
                             "message": "Authentication configured",
@@ -558,7 +556,10 @@ class MCPInstaller:
                 ),
             }
 
-            if verification.get("checks", {}).get("configured", {}).get("status") == "pass":
+            if (
+                verification.get("checks", {}).get("configured", {}).get("status")
+                == "pass"
+            ):
                 summary["configured"] += 1
 
             if status == "healthy":
