@@ -6,9 +6,10 @@ import Features from '../components/Features.astro';
 import MCPServers from '../components/MCPServers.astro';
 import Documentation from '../components/Documentation.astro';
 import Footer from '../components/Footer.astro';
----
 
-<Layout title="MCP Manager v1.2.3 - Complete System Management Platform">
+const version = import.meta.env.PROJECT_VERSION || '0.1.0';
+---
+<Layout title={`MCP Manager v${version} - Complete System Management Platform`}>
   <main>
     <Hero />
     
@@ -30,7 +31,7 @@ import Footer from '../components/Footer.astro';
               <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
                 <span class="text-primary-foreground">🔒</span>
               </div>
-              <h3 class="text-lg font-semibold text-card-foreground">Security Framework v1.2.3</h3>
+              <h3 class="text-lg font-semibold text-card-foreground">Security Framework v{version}</h3>
             </div>
             <p class="mt-4 text-sm text-muted-foreground">
               Information classification system, mandatory secret scanning, and template-only credential approach preventing 99% of exposures.

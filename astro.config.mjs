@@ -1,6 +1,22 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
+import fs from 'fs';
+import toml from '@iarna/toml';
+
+// Read version from pyproject.toml for dynamic versioning
+const pyprojectPath = './pyproject.toml';
+let projectVersion = '0.1.0'; // Fallback version
+try {
+  if (fs.existsSync(pyprojectPath)) {
+    const pyprojectContent = fs.readFileSync(pyprojectPath, 'utf8');
+    const pyproject = toml.parse(pyprojectContent);
+    projectVersion = pyproject.project?.version || projectVersion;
+    console.log(`✅ Loaded project version: ${projectVersion} from pyproject.toml`);
+  }
+} catch (error) {
+  console.warn(`⚠️ Could not read version from pyproject.toml: ${error.message}`);
+}
 
 // MCP Manager - Modern Web Development Stack Configuration
 // Constitutional compliance: Astro.build (>=4.0) with TypeScript strict mode
@@ -36,6 +52,10 @@ export default defineConfig({
 
   // Vite configuration for performance optimization
   vite: {
+    // Inject project version as environment variable
+    define: {
+      'import.meta.env.PROJECT_VERSION': JSON.stringify(projectVersion),
+    },
     plugins: [
       // Automatically create .nojekyll file for GitHub Pages
       {

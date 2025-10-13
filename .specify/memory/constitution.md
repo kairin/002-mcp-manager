@@ -1,17 +1,23 @@
 <!--
 Sync Impact Report:
-Version change: 1.0.0 → 1.1.0
-Modified principles: None
+Version change: 1.1.0 → 1.2.0
+Modified principles:
+  - I. UV-First Development → Added explicit uv configuration requirements
+  - VII. Cross-Platform Compatibility → Enforced Python 3.13+ system Python (zero bloat strategy)
 Added sections:
-  - VIII. Repository Organization (new principle)
+  - IX. Multi-Agent Support (NEW principle for Claude/Gemini/universal AI integration)
+  - Testing Completeness subsection under Quality Standards
 Removed sections: None
 Templates requiring updates:
-  ✅ plan-template.md - Add repository organization checks
-  ⚠ spec-template.md - May need file placement guidance
-  ⚠ tasks-template.md - Add organization validation tasks
+  ✅ plan-template.md - Python 3.13+ system Python, UV config, Gemini CLI checks
+  ✅ pyproject.toml - requires-python = ">=3.13", [tool.uv] python = "python3.13"
+  ⚠ spec-template.md - May need multi-agent context guidance
+  ⚠ tasks-template.md - Add runtime testing validation tasks
 Follow-up TODOs:
-  - Review plan-template.md for "Repository Organization Check" section
-  - Verify tasks-template.md includes file placement validation
+  - Update AGENTS.md to reflect Python 3.13+ requirement (currently incorrectly states 3.11+)
+  - Create spec-kit specification for system Python enforcement
+  - Add Gemini CLI integration validation to quality gates
+  - Document runtime testing requirements for refactored CLI modules
 -->
 
 # MCP Manager Constitution
@@ -29,9 +35,16 @@ Follow-up TODOs:
 - MCP server configs: `"command": "uv", "args": ["run", "executable"]`
 - Testing: `uv run pytest` (NEVER `pytest` directly)
 
-**Rationale:** UV provides deterministic dependency resolution, faster installs, and consistent virtual environment management across the Ubuntu 25.04 + Python 3.13 fleet. Direct `pip` usage bypasses UV's environment isolation, causing 90% of observed failures.
+**Configuration requirements (MANDATORY):**
+```toml
+# pyproject.toml
+[tool.uv]
+python = "python3.11"  # Or "python3.13" for explicit version pinning
+```
 
-**Real-world validation:** MarkItDown MCP integration (v1.2.1) demonstrated that 100% of environment issues were resolved by strict UV-first compliance. See CHANGELOG.md and TROUBLESHOOTING.md for case study.
+**Rationale:** UV provides deterministic dependency resolution, faster installs, and consistent virtual environment management across the Ubuntu 25.04 + Python 3.11+ fleet. Direct `pip` usage bypasses UV's environment isolation, causing 90% of observed failures. The explicit `[tool.uv]` configuration ensures UV uses the intended system Python interpreter, preventing version drift.
+
+**Real-world validation:** MarkItDown MCP integration (v1.2.1) demonstrated that 100% of environment issues were resolved by strict UV-first compliance. See docs/CHANGELOG.md and docs/TROUBLESHOOTING.md for case study.
 
 ### II. Global Configuration First (MANDATORY)
 
@@ -198,10 +211,27 @@ Secure credential management with information classification prevents 99% of acc
 
 **Standardization requirements:**
 - OS: Ubuntu 25.04 (verified via `lsb_release -a`)
-- Python: 3.13+ (verified via `python --version`)
+- Python: 3.13+ (system Python, verified via `python --version`)
 - Package manager: UV (verified via `uv --version`)
 - Node.js: 18+ for stdio MCP servers (verified via `node --version`)
 - Git: 2.40+ for branch strategy (verified via `git --version`)
+
+**Python version management (MANDATORY):**
+```toml
+# pyproject.toml REQUIRED configuration
+[project]
+requires-python = ">=3.13"
+
+[tool.uv]
+python = "python3.13"  # MANDATORY: Use system Python (no additional installations)
+```
+
+**Rationale:** The Python 3.13 system Python requirement ensures:
+1. **Zero bloat**: Uses Ubuntu 25.04 system Python (no additional Python installations)
+2. **Performance**: Python 3.13 speed improvements and better memory management
+3. **Fleet consistency**: Identical behavior across all nodes (no version drift)
+4. **Modern features**: Latest type checking, error messages, and async improvements
+5. **Simplified management**: Single interpreter, no UV version juggling
 
 **Fleet management commands:**
 ```bash
@@ -210,7 +240,7 @@ mcp-manager fleet sync                  # Sync configs across nodes
 mcp-manager fleet audit                 # Verify compliance
 ```
 
-**Rationale:** Consistent environments across home office, work office, and cloud VMs enable:
+**Benefits:** Consistent environments across home office, work office, and cloud VMs enable:
 1. One-command setup: `mcp-manager init` works identically everywhere
 2. Configuration portability: `~/.claude.json` syncs via Git
 3. Reproducible builds: Same Python/Node versions guarantee deterministic results
@@ -341,6 +371,71 @@ verify.py                      # Generic name in root
 mcp-thing.md                   # Ambiguous documentation
 ```
 
+### IX. Multi-Agent Support (MANDATORY)
+
+**The system MUST support multiple AI agents (Claude Code, Gemini CLI, universal AI platforms) with synchronized MCP server configurations.** Agent-specific workflows must remain synchronized while respecting platform differences.
+
+**Supported AI platforms:**
+- **Claude Code**: Primary development agent (MCP via `~/.claude.json`)
+- **Gemini CLI**: Secondary agent (MCP via `~/.config/gemini/settings.json`)
+- **Universal agents**: OpenCode, GitHub Copilot (via `AGENTS.md` symlinks)
+
+**Configuration synchronization (MANDATORY):**
+```bash
+# System-wide Gemini CLI integration
+mcp-manager gemini sync              # Sync ~/.claude.json → ~/.config/gemini/settings.json
+export GEMINI_CLI_SYSTEM_SETTINGS_PATH="$HOME/.config/gemini/settings.json"
+
+# Verification
+mcp-manager gemini verify            # Validate Gemini MCP configuration
+```
+
+**Agent instruction files (MANDATORY):**
+- **AGENTS.md**: Primary instruction file (universal, platform-agnostic)
+- **CLAUDE.md**: Symlink to AGENTS.md (Claude Code discovery)
+- **GEMINI.md**: Symlink to AGENTS.md (Gemini CLI discovery)
+- **Platform-specific files**: `.github/copilot-instructions.md`, `QWEN.md` (only if needed)
+
+**Enforcement rules:**
+- All agent instructions consolidated in `AGENTS.md`
+- Platform-specific files are symlinks (NEVER duplicate content)
+- MCP server configurations synchronized across `~/.claude.json` and `~/.config/gemini/settings.json`
+- `mcp-manager mcp add/remove` updates both configurations when `--global` flag used
+- `mcp-manager init` configures both Claude Code and Gemini CLI environments
+
+**Configuration structure consistency:**
+```json
+// Both ~/.claude.json and ~/.config/gemini/settings.json use identical structure
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {"CONTEXT7_API_KEY": "..."}
+    },
+    "shadcn": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    }
+    // ... other servers
+  }
+}
+```
+
+**Rationale:** Multi-agent support ensures:
+1. **Flexibility**: Developers can use their preferred AI coding assistant
+2. **Consistency**: All agents have access to same MCP servers and capabilities
+3. **Maintainability**: Single source of truth (AGENTS.md) prevents instruction drift
+4. **Scalability**: Easy to add support for new AI platforms (OpenCode, Qwen, etc.)
+5. **Integration**: Spec-kit workflows work identically across all agents
+
+**Benefits:**
+- **Zero duplication**: Agent instructions synchronized via symlinks
+- **Automatic sync**: `mcp-manager gemini sync` keeps configurations aligned
+- **Fleet-wide deployment**: `mcp-manager fleet sync` propagates to all nodes
+- **Platform agnostic**: Core logic works with any AI agent that supports MCP
+
 ## Quality Standards
 
 **Testing requirements (MANDATORY):**
@@ -349,6 +444,14 @@ mcp-thing.md                   # Ambiguous documentation
 - CLI tests: All `mcp-manager` commands with success/failure paths
 - Performance tests: Health checks complete in <5 seconds
 - Security tests: Automated secret scanning and credential validation
+- **Runtime testing**: All refactored CLI modules verified with end-to-end tests (MANDATORY after modularization)
+
+**Testing completeness (MANDATORY):**
+- Deferred runtime testing MUST be completed before feature considered complete
+- CLI modularization requires full regression test suite execution
+- All command groups (`mcp`, `gemini`, `project`, `fleet`, `agent`, `office`) tested
+- Basic execution, options, error handling, and verbose mode validated
+- Test results documented and failures resolved before merge
 
 **Code quality (MANDATORY):**
 - Formatting: `black` (88 char line length)
@@ -362,6 +465,7 @@ mcp-thing.md                   # Ambiguous documentation
 - CLI reference: Every command with examples
 - Troubleshooting guide: Common issues with UV-first solutions
 - Following instructions guide: Why AGENTS.md compliance is critical
+- Multi-agent setup guide: Claude Code + Gemini CLI integration
 
 **Quality gates (blocking):**
 ```bash
@@ -384,7 +488,8 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 4. **Agent validation:** Claude Code agents verify AGENTS.md compliance
 5. **Security audit:** Mandatory credential scanning and information classification
 6. **Organization audit:** File placement validation against repository structure rules
-7. **Manual review:** Constitution violations require explicit justification
+7. **Multi-agent sync:** Gemini CLI configuration validation
+8. **Manual review:** Constitution violations require explicit justification
 
 **Amendment procedure:**
 1. Propose changes in dedicated branch: `YYYYMMDD-HHMMSS-constitution-amendment`
@@ -409,6 +514,8 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Clarifying branch preservation rules: v1.0.1 (PATCH - clarification)
 - Removing principle entirely: v2.0.0 (MAJOR - breaking change)
 - Adding repository organization principle: v1.1.0 (MINOR - new principle)
+- Resolving Python version conflict: v1.2.0 (MINOR - significant change to existing principle)
+- Adding multi-agent support principle: v1.2.0 (MINOR - new principle)
 
 ## Governance
 
@@ -420,6 +527,7 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Integration tests validate zero downtime operations
 - Website deployment validates GitHub Pages protection
 - File placement validates repository organization rules
+- Multi-agent configuration synchronization verified
 
 **Reference documents:**
 - **Runtime guidance:** AGENTS.md (symlinked as CLAUDE.md, GEMINI.md)
@@ -438,5 +546,7 @@ pytest tests/ --cov=mcp_manager     # Testing with coverage
 - Reliability: >99.9% uptime for monitoring operations
 - Security compliance: 0 exposed secrets, 100% template-only credential references
 - Organization compliance: 0 misplaced files, 100% adherence to directory structure
+- Multi-agent sync: 100% configuration parity between Claude and Gemini CLI
+- Runtime testing: 0 deferred tests, 100% CLI module validation
 
-**Version**: 1.1.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-10-10
+**Version**: 1.2.0 | **Ratified**: 2025-09-23 | **Last Amended**: 2025-10-14

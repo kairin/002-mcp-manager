@@ -2,7 +2,7 @@
 name = "mcp-manager"
 version = "0.1.0"
 description = "🚀 MCP Manager - Comprehensive Project Standardization & Fleet Management System. Ensures consistency across Ubuntu 25.04 development environments with MCP servers, project standards, Astro.build deployment, local CI/CD, uv Python management, spec-kit integration, and Claude agent orchestration."
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "typer>=0.12.0",
     "rich>=13.0.0",
@@ -26,7 +26,8 @@ dev = [
 ]
 
 [project.scripts]
-mcp-manager = "mcp_manager.cli:main"
+# Note: Using __main__ module to avoid conflict with cli/ directory
+mcp-manager = "mcp_manager.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/kairin/mcp-manager"
@@ -46,7 +47,7 @@ allow-direct-references = true
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -63,7 +64,7 @@ extend-exclude = '''
 '''
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 88
 select = [
     "E",  # pycodestyle errors
@@ -84,7 +85,7 @@ ignore = [
 "__init__.py" = ["F401"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true
@@ -94,6 +95,9 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 strict_equality = true
+
+[tool.uv]
+# Python version is managed via .python-version file (3.13 for zero bloat strategy)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

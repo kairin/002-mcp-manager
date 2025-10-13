@@ -78,9 +78,19 @@
 - [ ] Audit logging for credential access
 
 **VII. Cross-Platform Compatibility:**
-- [ ] Ubuntu 25.04 + Python 3.13 standardization
-- [ ] UV package manager for environment management
+- [ ] Ubuntu 25.04 + Python 3.13 system Python (zero bloat strategy)
+- [ ] UV package manager with mandatory `[tool.uv] python = "python3.13"` configuration
 - [ ] Fleet-wide synchronization capability
+
+**VIII. Repository Organization:**
+- [ ] Files organized in structured directories (no root clutter)
+- [ ] Documentation in `docs/`, scripts in `scripts/{setup,verify,deployment,legacy}`
+- [ ] File placement validation automated in pre-commit hooks
+
+**IX. Multi-Agent Support:**
+- [ ] MCP configurations synchronized for Claude Code (`~/.claude.json`)
+- [ ] MCP configurations synchronized for Gemini CLI (`~/.config/gemini/settings.json`)
+- [ ] Agent instructions consolidated in `AGENTS.md` with symlinks (CLAUDE.md, GEMINI.md)
 
 ## Project Structure
 
@@ -249,4 +259,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`*
