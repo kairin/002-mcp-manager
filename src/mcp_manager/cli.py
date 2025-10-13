@@ -13,6 +13,7 @@ from .core import MCPManager
 from .exceptions import MCPManagerError
 from .fleet_manager import FleetManager
 from .hf_integration import HuggingFaceIntegration
+from .mcp_installer import MCPInstaller
 from .office_deployment import OfficeDeploymentManager
 from .project_standards import ProjectStandardsManager
 
@@ -455,6 +456,137 @@ def mcp_setup_all(
             rprint(f"[yellow]⚠️ Missing servers: {', '.join(missing)}[/yellow]")
 
     except MCPManagerError as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@mcp_app.command("install-all")
+def mcp_install_all(
+    skip_auth: bool = typer.Option(
+        False, "--skip-auth", help="Skip authentication setup"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be installed without making changes"
+    ),
+) -> None:
+    """Install and configure all 6 MCP servers system-wide (includes MarkItDown)."""
+    try:
+        installer = MCPInstaller(console)
+
+        rprint(
+            "[bold cyan]📦 Installing All MCP Servers System-Wide[/bold cyan]\n"
+        )
+        rprint("[dim]This ensures all servers are available globally, not just in this repo[/dim]\n")
+
+        # Install all servers
+        results = installer.install_all_servers(skip_auth=skip_auth, dry_run=dry_run)
+
+        # Display results
+        installer.display_installation_status(results)
+
+        if not dry_run:
+            # Get summary
+            summary = installer.get_installation_summary()
+
+            rprint(f"\n[bold cyan]📊 Installation Summary[/bold cyan]")
+            rprint(f"   Total Servers: {summary['total_servers']}")
+            rprint(f"   Configured: {summary['configured']}")
+            rprint(f"   Healthy: {summary['healthy']}")
+            rprint(f"   Needs Auth: {summary['needs_auth']}")
+            rprint(f"   Unhealthy: {summary['unhealthy']}")
+
+            if summary['healthy'] == summary['total_servers']:
+                rprint(
+                    "\n[green]✅ All MCP servers installed and operational system-wide![/green]"
+                )
+            elif summary['needs_auth'] > 0:
+                rprint(
+                    f"\n[yellow]⚠️ {summary['needs_auth']} server(s) need authentication setup[/yellow]"
+                )
+                rprint("[cyan]💡 Run the suggested commands shown above to complete setup[/cyan]")
+            else:
+                rprint(
+                    f"\n[red]❌ {summary['unhealthy']} server(s) failed to install[/red]"
+                )
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@mcp_app.command("verify-all")
+def mcp_verify_all() -> None:
+    """Verify all MCP servers are installed and working system-wide."""
+    try:
+        installer = MCPInstaller(console)
+
+        rprint("[bold cyan]🔍 Verifying All MCP Servers[/bold cyan]\n")
+
+        # Verify all servers
+        results = installer.verify_all_servers()
+
+        # Display results
+        installer.display_verification_status(results)
+
+        # Count healthy servers
+        healthy_count = sum(
+            1 for v in results.values() if v.get("status") == "healthy"
+        )
+        total_count = len(results)
+
+        if healthy_count == total_count:
+            rprint(
+                f"\n[green]✅ All {total_count} MCP servers are healthy and operational![/green]"
+            )
+            rprint(
+                "[dim]Servers are configured globally and available system-wide[/dim]"
+            )
+        else:
+            rprint(
+                f"\n[yellow]⚠️ {total_count - healthy_count}/{total_count} server(s) need attention[/yellow]"
+            )
+            rprint(
+                "[cyan]💡 Run 'mcp-manager mcp install-all' to fix issues[/cyan]"
+            )
+
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@mcp_app.command("install")
+def mcp_install(
+    server_name: str = typer.Argument(..., help="MCP server name to install"),
+    skip_auth: bool = typer.Option(
+        False, "--skip-auth", help="Skip authentication setup"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be installed without making changes"
+    ),
+) -> None:
+    """Install a specific MCP server system-wide."""
+    try:
+        installer = MCPInstaller(console)
+
+        rprint(f"[bold cyan]📦 Installing {server_name} MCP Server[/bold cyan]\n")
+
+        # Install specific server
+        result = installer.install_server(
+            server_name, skip_auth=skip_auth, dry_run=dry_run
+        )
+
+        # Display result
+        if result.get("success"):
+            rprint(f"[green]✅ {server_name} installed successfully![/green]")
+            for detail in result.get("details", []):
+                rprint(f"   • {detail}")
+        else:
+            rprint(f"[red]❌ {server_name} installation failed[/red]")
+            for detail in result.get("details", []):
+                rprint(f"   • {detail}")
+            raise typer.Exit(1)
+
+    except Exception as e:
         rprint(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
 

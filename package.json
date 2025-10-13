@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "clean-docs": "rm -rf ./docs/* || true",
+    "clean-docs": "find ./docs -maxdepth 1 -name '*.html' -delete && rm -rf ./docs/_astro ./docs/office-setup || true",
     "prebuild": "npm run clean-docs",
     "build": "astro check && astro build",
     "postbuild": "cp public/favicon.* docs/ || true",
