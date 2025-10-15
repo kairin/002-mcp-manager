@@ -13,14 +13,21 @@ from .core_models import (
     UpdateStatus,
 )
 
-# Export validation models (new for Python 3.13 enforcement)
+# Export validation models (legacy - used by existing validation code)
 from .validation_models import (
     ConstitutionCheckResult,
     MCPServerConfig,
     PythonEnforcementStatus,
     PythonVersionInfo,
-    UVConfiguration,
-    ValidationResult,
+    UVConfiguration as LegacyUVConfiguration,
+    ValidationResult as LegacyValidationResult,
+)
+
+# Export Python enforcement models (Feature 002 - System Python Enforcement)
+from .python_enforcement import (
+    PythonEnvironment,
+    UVConfiguration as SystemUVConfiguration,
+    ValidationResult as SystemValidationResult,
 )
 
 __all__ = [
@@ -35,11 +42,15 @@ __all__ = [
     "ServerStatus",
     "ServerType",
     "UpdateStatus",
-    # Validation models
+    # Legacy validation models
     "ConstitutionCheckResult",
     "MCPServerConfig",
     "PythonEnforcementStatus",
     "PythonVersionInfo",
-    "UVConfiguration",
-    "ValidationResult",
+    "LegacyUVConfiguration",
+    "LegacyValidationResult",
+    # System Python Enforcement models (Feature 002)
+    "PythonEnvironment",
+    "SystemUVConfiguration",
+    "SystemValidationResult",
 ]

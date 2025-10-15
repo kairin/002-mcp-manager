@@ -9,16 +9,17 @@ __version__ = "0.1.0"
 __author__ = "Mister K"
 __email__ = "678459+kairin@users.noreply.github.com"
 
-from .core import MCPManager
-from .exceptions import ConfigurationError, MCPManagerError, ServerNotFoundError
+# Note: Core imports commented out until core.py and exceptions.py are implemented
+# from .core import MCPManager
+# from .exceptions import ConfigurationError, MCPManagerError, ServerNotFoundError
 from .models import MCPServer, ServerConfig, ServerStatus
 
 __all__ = [
-    "MCPManager",
+    # "MCPManager",
     "MCPServer",
     "ServerConfig",
     "ServerStatus",
-    "MCPManagerError",
-    "ServerNotFoundError",
-    "ConfigurationError",
+    # "MCPManagerError",
+    # "ServerNotFoundError",
+    # "ConfigurationError",
 ]
