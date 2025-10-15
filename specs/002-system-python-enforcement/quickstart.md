@@ -1,6 +1,6 @@
 # Quickstart: System Python Enforcement
 
-**Feature**: System Python Enforcement (001)
+**Feature**: System Python Enforcement (002)
 **Date**: 2025-10-15
 **Target Audience**: Developers implementing the feature
 
@@ -119,7 +119,7 @@ uv run pytest tests/
 
 ## Key Modules to Implement
 
-### 1. `src/mcp_manager/python_env.py` (NEW)
+### 1. `backend/src/mcp_manager/python_env.py` (NEW)
 
 **Purpose**: Detect and validate system Python 3.13
 
@@ -160,7 +160,7 @@ uv run pytest tests/unit/test_python_env.py
 uv run pytest tests/integration/test_python_detection.py
 ```
 
-### 2. `src/mcp_manager/uv_config.py` (NEW)
+### 2. `backend/src/mcp_manager/uv_config.py` (NEW)
 
 **Purpose**: Validate UV configuration compliance
 
@@ -189,7 +189,7 @@ uv run pytest tests/unit/test_uv_config.py
 uv run pytest tests/integration/test_uv_integration.py
 ```
 
-### 3. `src/mcp_manager/validators.py` (NEW)
+### 3. `backend/src/mcp_manager/validators.py` (NEW)
 
 **Purpose**: Orchestrate validation and generate results
 
@@ -212,7 +212,7 @@ def validate_python_environment(
 uv run pytest tests/unit/test_validators.py
 ```
 
-### 4. Update `src/mcp_manager/cli.py` (EXISTING)
+### 4. Update `backend/src/mcp_manager/cli.py` (EXISTING)
 
 **Purpose**: Add `validate` command
 
@@ -259,7 +259,7 @@ uv run pytest tests/contract/test_validation_cli.py
 
 ```bash
 # Create models.py with Pydantic v2 models
-vim src/mcp_manager/models.py
+vim backend/src/mcp_manager/models.py
 
 # Add:
 # - PythonEnvironment
@@ -274,7 +274,7 @@ uv run pytest tests/unit/test_models.py -v
 
 ```bash
 # Create python_env.py
-vim src/mcp_manager/python_env.py
+vim backend/src/mcp_manager/python_env.py
 
 # Implement:
 # - find_system_python()
@@ -291,7 +291,7 @@ uv run pytest tests/integration/test_python_detection.py -v
 
 ```bash
 # Create uv_config.py
-vim src/mcp_manager/uv_config.py
+vim backend/src/mcp_manager/uv_config.py
 
 # Implement:
 # - validate_uv_config()
@@ -307,7 +307,7 @@ uv run pytest tests/integration/test_uv_integration.py -v
 
 ```bash
 # Create validators.py
-vim src/mcp_manager/validators.py
+vim backend/src/mcp_manager/validators.py
 
 # Implement:
 # - validate_python_environment()
@@ -320,7 +320,7 @@ uv run pytest tests/unit/test_validators.py -v
 
 ```bash
 # Update cli.py
-vim src/mcp_manager/cli.py
+vim backend/src/mcp_manager/cli.py
 
 # Add validate command
 
@@ -399,7 +399,7 @@ time uv run mcp-manager validate
 ### Add New Python Search Path
 
 ```python
-# src/mcp_manager/python_env.py
+# backend/src/mcp_manager/python_env.py
 PYTHON_SEARCH_PATHS = [
     "/usr/bin/python3.13",
     "/usr/local/bin/python3.13",
@@ -411,7 +411,7 @@ PYTHON_SEARCH_PATHS = [
 ### Add New UV Configuration Setting
 
 ```python
-# src/mcp_manager/models.py
+# backend/src/mcp_manager/models.py
 class UVConfiguration(BaseModel):
     # ... existing fields ...
     new_setting: str | None = Field(
@@ -423,7 +423,7 @@ class UVConfiguration(BaseModel):
 ### Add New Validation Check
 
 ```python
-# src/mcp_manager/validators.py
+# backend/src/mcp_manager/validators.py
 def validate_python_environment(...) -> ValidationResult:
     # ... existing checks ...
 

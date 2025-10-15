@@ -1,7 +1,7 @@
 # Research: System Python Enforcement
 
 **Date**: 2025-10-15
-**Feature**: System Python Enforcement (001)
+**Feature**: System Python Enforcement (002)
 **Purpose**: Technology research and decision documentation for enforcing Python 3.13 system usage
 
 ## Overview
@@ -341,19 +341,19 @@ def validate_uv_config(project_root: Path) -> dict[str, bool]:
 ### Phase 1 Deliverables
 
 1. **Create `uv.toml`** with enforcement configuration
-2. **Implement `src/mcp_manager/python_env.py`**:
+2. **Implement `backend/src/mcp_manager/python_env.py`**:
    - `find_system_python()`: Multi-path search
    - `get_python_version()`: Version validation
    - `is_python_313()`: Version check
    - `detect_distribution()`: OS/distro detection
    - `get_venv_base_python()`: Venv validation
 
-3. **Implement `src/mcp_manager/uv_config.py`**:
+3. **Implement `backend/src/mcp_manager/uv_config.py`**:
    - `validate_uv_config()`: Config compliance check
    - `get_uv_config_path()`: Config file location
    - `check_uv_installed()`: UV availability check
 
-4. **Implement `src/mcp_manager/validators.py`**:
+4. **Implement `backend/src/mcp_manager/validators.py`**:
    - `validate_python_environment()`: Main validation orchestrator
    - CLI command handler for `mcp-manager validate`
 

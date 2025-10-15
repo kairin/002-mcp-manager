@@ -86,7 +86,7 @@ specs/002-system-python-enforcement/
 ### Source Code (repository root)
 
 ```
-src/mcp_manager/
+backend/src/mcp_manager/
 ├── __init__.py          # Package exports
 ├── cli.py               # CLI interface (existing)
 ├── core.py              # Core MCP management (existing)
@@ -114,7 +114,7 @@ tests/
 └── config               # NEW: Project-local UV configuration (or uv.toml at root)
 ```
 
-**Structure Decision**: Single project structure is appropriate for mcp-manager CLI tool. New modules added to existing `src/mcp_manager/` package to maintain cohesion. UV configuration stored project-locally to avoid system-wide impacts per FR-002.
+**Structure Decision**: Single project structure is appropriate for mcp-manager CLI tool. New modules added to existing `backend/src/mcp_manager/` package to maintain cohesion. UV configuration stored project-locally to avoid system-wide impacts per FR-002.
 
 ## Complexity Tracking
 

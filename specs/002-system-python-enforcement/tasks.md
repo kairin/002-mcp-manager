@@ -12,8 +12,8 @@
 - Include exact file paths in descriptions
 
 ## Path Conventions
-- **Current Structure**: `src/mcp_manager/`, `tests/` at repository root
-- **Note**: Feature 004 will later move to `backend/src/mcp_manager/` - these tasks use current structure
+- **Current Structure**: `backend/src/mcp_manager/`, `tests/` at repository root
+- **Note**: Paths reflect current project structure after Feature 001 restructure
 
 ---
 
@@ -34,17 +34,17 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Create Pydantic v2 `PythonEnvironment` model in `src/mcp_manager/models.py` with fields: executable_path, version, source, distribution, is_valid, in_virtualenv, venv_base_python (see data-model.md lines 22-92)
-- [ ] T006 [P] Create Pydantic v2 `UVConfiguration` model in `src/mcp_manager/models.py` with fields: config_file_path, python_downloads, python_preference, python_version_pinned, is_compliant, compliance_violations (see data-model.md lines 112-201)
-- [ ] T007 [P] Create Pydantic v2 `ValidationResult` model in `src/mcp_manager/models.py` with fields: status, python_environment, uv_configuration, errors, warnings, checks_performed, timestamp (see data-model.md lines 222-377)
-- [ ] T008 [P] Implement `find_system_python()` in `src/mcp_manager/python_env.py` to search priority paths: /usr/bin/python3.13 → /usr/local/bin/python3.13 → /opt/homebrew/bin/python3.13 (see research.md lines 46-59)
-- [ ] T009 [P] Implement `get_python_version()` in `src/mcp_manager/python_env.py` using subprocess to parse `python3.13 --version` output (see research.md lines 245-265)
-- [ ] T010 [P] Implement `is_python_313()` in `src/mcp_manager/python_env.py` to validate version is (3, 13, x) (see research.md lines 267-270)
-- [ ] T011 [P] Implement `detect_distribution()` in `src/mcp_manager/python_env.py` to detect OS from /etc/os-release or macOS architecture (see research.md lines 192-217)
-- [ ] T012 [P] Implement `get_venv_base_python()` in `src/mcp_manager/python_env.py` to parse pyvenv.cfg and extract base Python path (see research.md lines 277-295)
-- [ ] T013 [P] Implement `validate_uv_config()` in `src/mcp_manager/uv_config.py` to parse uv.toml and check python-downloads/python-preference settings (see research.md lines 306-337)
-- [ ] T014 [P] Implement `check_uv_installed()` in `src/mcp_manager/uv_config.py` to verify UV availability in PATH
-- [ ] T015 [P] Implement `get_uv_config_path()` in `src/mcp_manager/uv_config.py` to locate uv.toml or pyproject.toml with [tool.uv] section
+- [ ] T005 [P] Create Pydantic v2 `PythonEnvironment` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: executable_path, version, source, distribution, is_valid, in_virtualenv, venv_base_python (see data-model.md lines 22-92)
+- [ ] T006 [P] Create Pydantic v2 `UVConfiguration` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: config_file_path, python_downloads, python_preference, python_version_pinned, is_compliant, compliance_violations (see data-model.md lines 112-201)
+- [ ] T007 [P] Create Pydantic v2 `ValidationResult` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: status, python_environment, uv_configuration, errors, warnings, checks_performed, timestamp (see data-model.md lines 222-377)
+- [ ] T008 [P] Implement `find_system_python()` in `backend/src/mcp_manager/python_env.py` to search priority paths: /usr/bin/python3.13 → /usr/local/bin/python3.13 → /opt/homebrew/bin/python3.13 (see research.md lines 46-59)
+- [ ] T009 [P] Implement `get_python_version()` in `backend/src/mcp_manager/python_env.py` using subprocess to parse `python3.13 --version` output (see research.md lines 245-265)
+- [ ] T010 [P] Implement `is_python_313()` in `backend/src/mcp_manager/python_env.py` to validate version is (3, 13, x) (see research.md lines 267-270)
+- [ ] T011 [P] Implement `detect_distribution()` in `backend/src/mcp_manager/python_env.py` to detect OS from /etc/os-release or macOS architecture (see research.md lines 192-217)
+- [ ] T012 [P] Implement `get_venv_base_python()` in `backend/src/mcp_manager/python_env.py` to parse pyvenv.cfg and extract base Python path (see research.md lines 277-295)
+- [ ] T013 [P] Implement `validate_uv_config()` in `backend/src/mcp_manager/uv_config.py` to parse uv.toml and check python-downloads/python-preference settings (see research.md lines 306-337)
+- [ ] T014 [P] Implement `check_uv_installed()` in `backend/src/mcp_manager/uv_config.py` to verify UV availability in PATH
+- [ ] T015 [P] Implement `get_uv_config_path()` in `backend/src/mcp_manager/uv_config.py` to locate uv.toml or pyproject.toml with [tool.uv] section
 
 **Checkpoint**: Foundation ready - all Python detection and UV configuration infrastructure available
 
@@ -60,11 +60,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Add Python version validation on CLI startup in `src/mcp_manager/cli.py` before any command execution using `find_system_python()` and `is_python_313()`
-- [ ] T017 [US1] Add UV configuration validation on CLI startup in `src/mcp_manager/cli.py` to verify `uv.toml` compliance using `validate_uv_config()`
-- [ ] T018 [US1] Implement clear error message in `src/mcp_manager/cli.py` when system Python 3.13 not found, including distribution-specific installation instructions (FR-010)
-- [ ] T019 [US1] Implement clear error message in `src/mcp_manager/cli.py` when UV configuration allows Python downloads, suggesting fix (FR-010)
-- [ ] T020 [US1] Add Python executable path logging in `src/mcp_manager/cli.py` for auditing purposes (FR-009)
+- [ ] T016 [US1] Add Python version validation on CLI startup in `backend/src/mcp_manager/cli.py` before any command execution using `find_system_python()` and `is_python_313()`
+- [ ] T017 [US1] Add UV configuration validation on CLI startup in `backend/src/mcp_manager/cli.py` to verify `uv.toml` compliance using `validate_uv_config()`
+- [ ] T018 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when system Python 3.13 not found, including distribution-specific installation instructions (FR-010)
+- [ ] T019 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when UV configuration allows Python downloads, suggesting fix (FR-010)
+- [ ] T020 [US1] Add Python executable path logging in `backend/src/mcp_manager/cli.py` for auditing purposes (FR-009)
 
 **Checkpoint**: At this point, all CLI commands should enforce system Python 3.13 and prevent UV Python downloads
 
@@ -80,10 +80,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] Implement `validate_python_environment()` orchestrator in `src/mcp_manager/validators.py` that calls `find_system_python()`, `validate_uv_config()`, builds `ValidationResult` model (see data-model.md lines 378-389)
-- [ ] T022 [P] [US2] Implement `ValidationResult.to_summary()` method in `src/mcp_manager/models.py` to generate summary status line per contract (see contracts/validation_cli.md lines 56-88)
-- [ ] T023 [P] [US2] Implement `ValidationResult.to_verbose()` method in `src/mcp_manager/models.py` to generate detailed diagnostic report per contract (see contracts/validation_cli.md lines 90-128)
-- [ ] T024 [US2] Add `validate` command to `src/mcp_manager/cli.py` with optional `--verbose` flag using Typer (see contracts/validation_cli.md lines 18-28)
+- [ ] T021 [P] [US2] Implement `validate_python_environment()` orchestrator in `backend/src/mcp_manager/validators.py` that calls `find_system_python()`, `validate_uv_config()`, builds `ValidationResult` model (see data-model.md lines 378-389)
+- [ ] T022 [P] [US2] Implement `ValidationResult.to_summary()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate summary status line per contract (see contracts/validation_cli.md lines 56-88)
+- [ ] T023 [P] [US2] Implement `ValidationResult.to_verbose()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate detailed diagnostic report per contract (see contracts/validation_cli.md lines 90-128)
+- [ ] T024 [US2] Add `validate` command to `backend/src/mcp_manager/cli.py` with optional `--verbose` flag using Typer (see contracts/validation_cli.md lines 18-28)
 - [ ] T025 [US2] Implement exit code logic in validate command: 0=PASS, 1=FAIL, 2=ERROR per contract (see contracts/validation_cli.md lines 30-37)
 - [ ] T026 [US2] Add virtual environment detection and base Python validation in `validate_python_environment()` (FR-012)
 - [ ] T027 [US2] Implement performance optimization to ensure validation completes in <2 seconds (SC-003)
@@ -149,9 +149,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T049 [US4] Update MCP server launcher in `src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
-- [ ] T050 [US4] Add Python environment validation for MCP server launches in `src/mcp_manager/core.py` to verify system Python is used
-- [ ] T051 [US4] Add logging for MCP server Python executable path in `src/mcp_manager/core.py` for auditing (FR-009)
+- [ ] T049 [US4] Update MCP server launcher in `backend/src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
+- [ ] T050 [US4] Add Python environment validation for MCP server launches in `backend/src/mcp_manager/core.py` to verify system Python is used
+- [ ] T051 [US4] Add logging for MCP server Python executable path in `backend/src/mcp_manager/core.py` for auditing (FR-009)
 - [ ] T052 [P] [US4] Create integration test `test_mcp_server_uses_system_python()` in `tests/integration/test_mcp_server_python.py` to verify server process Python version
 
 **Checkpoint**: All MCP servers launched by mcp-manager use system Python 3.13 consistently
@@ -254,12 +254,12 @@ Continue from MVP → User Story 3 (P2) tests → User Story 4 (P3) MCP servers 
 
 ```bash
 # These tasks can be launched together (different files):
-Task T021: "Implement validate_python_environment() orchestrator in src/mcp_manager/validators.py"
-Task T022: "Implement ValidationResult.to_summary() method in src/mcp_manager/models.py"
-Task T023: "Implement ValidationResult.to_verbose() method in src/mcp_manager/models.py"
+Task T021: "Implement validate_python_environment() orchestrator in backend/src/mcp_manager/validators.py"
+Task T022: "Implement ValidationResult.to_summary() method in backend/src/mcp_manager/models/python_enforcement.py"
+Task T023: "Implement ValidationResult.to_verbose() method in backend/src/mcp_manager/models/python_enforcement.py"
 
 # After T021-T023 complete, these can proceed sequentially:
-Task T024: "Add validate command to src/mcp_manager/cli.py"
+Task T024: "Add validate command to backend/src/mcp_manager/cli.py"
 Task T025: "Implement exit code logic in validate command"
 ```
 
@@ -351,4 +351,4 @@ With 3 developers after Foundational phase completes:
 - Commit after each task or logical group of tasks
 - Stop at any checkpoint to validate story independently
 - Code quality checks (black, ruff, mypy) required before marking Phase 7 complete
-- All file paths use current structure (src/mcp_manager/) - Feature 004 will later migrate to backend/
+- All file paths reflect current project structure (backend/src/mcp_manager/)
