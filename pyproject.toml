@@ -110,5 +110,22 @@ addopts = [
     "--cov=mcp_manager",
     "--cov-report=term-missing",
     "--cov-report=html",
+    "--cov-report=xml",
     "--cov-fail-under=80",
+    "--strict-markers",
+    "--tb=short",
+    "-v",
+]
+# Enforce system Python 3.13 execution via UV
+# UV configuration in [tool.uv] ensures python-preference="only-system"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests requiring real system Python",
+    "contract: marks tests verifying CLI behavior contracts",
+]
+# Filter warnings
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
 ]

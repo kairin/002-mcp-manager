@@ -1,7 +1,7 @@
 # Data Model: System Python Enforcement
 
 **Date**: 2025-10-15
-**Feature**: System Python Enforcement (001)
+**Feature**: System Python Enforcement (002)
 **Purpose**: Define data structures for Python environment detection, UV configuration, and validation results
 
 ## Overview
@@ -552,6 +552,53 @@ print(result.exit_code)  # 0
 print(result.to_summary())  # "✓ PASS: System Python 3.13 enforcement validated..."
 ```
 
+## Error Message Catalog
+
+Standardized error messages for consistency across the system.
+
+| Code | Scenario | Message Template | Exit Code | Distribution-Specific Guidance |
+|------|----------|------------------|-----------|--------------------------------|
+| **E001** | Python 3.13 not found | "Python 3.13 not found on system\nSearched locations: {paths}" | 2 (ERROR) | Ubuntu/Debian: `sudo apt install python3.13`<br>Fedora/RHEL: `sudo dnf install python3.13`<br>macOS: `brew install python@3.13` |
+| **E002** | UV not installed | "UV package manager not found in PATH" | 2 (ERROR) | All: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **E003** | Wrong Python version | "Python at {path} is version {version}, not 3.13.x as required" | 2 (ERROR) | Install Python 3.13 using distribution package manager |
+| **E004** | UV config non-compliant (downloads) | "UV allows Python downloads (python-downloads={value}). Must be 'manual' or 'never'." | 1 (FAIL) | Edit `uv.toml`: `python-downloads = "never"` |
+| **E005** | UV config non-compliant (preference) | "UV not configured for system-only Python (python-preference={value}). Must be 'only-system'." | 1 (FAIL) | Edit `uv.toml`: `python-preference = "only-system"` |
+| **E006** | Venv wrong Python | "Virtual environment uses Python {version}, not system Python 3.13 (base: {path})" | 1 (FAIL) | Recreate venv: `uv venv --python /usr/bin/python3.13` |
+| **E007** | UV config file missing | "UV configuration file not found (uv.toml or pyproject.toml)" | 2 (ERROR) | Create `uv.toml` with required settings |
+| **E008** | Permission denied reading config | "Cannot read UV configuration: {path}" | 2 (ERROR) | Check file permissions: `chmod 644 {path}` |
+| **E009** | Python version detection failed | "Could not determine version for Python at {path}" | 2 (ERROR) | Verify Python installation: `{path} --version` |
+| **E010** | Unsupported distribution | "Unable to detect OS distribution for error guidance" | 2 (ERROR) | Check `/etc/os-release` or manual Python installation |
+
+### Usage Guidelines
+
+**Error Message Construction**:
+```python
+# Example: E001 - Python not found
+error_message = (
+    "Python 3.13 not found on system\n"
+    f"Searched locations: {', '.join(searched_paths)}"
+)
+
+# Add distribution-specific guidance
+distribution = detect_distribution()
+if "Ubuntu" in distribution or "Debian" in distribution:
+    error_message += "\nInstall: sudo apt install python3.13"
+elif "Fedora" in distribution or "Red Hat" in distribution:
+    error_message += "\nInstall: sudo dnf install python3.13"
+elif "macOS" in distribution:
+    error_message += "\nInstall: brew install python@3.13"
+```
+
+**Exit Code Selection**:
+- Use **ERROR (2)** when validation cannot complete (missing dependencies, detection failures)
+- Use **FAIL (1)** when validation completes but finds constitutional violations
+- Use **PASS (0)** when all validation checks succeed
+
+**Message Formatting**:
+- First line: Clear statement of the problem
+- Second line: Specific details (paths, values, etc.)
+- Optional third line: Actionable fix command
+
 ## Summary
 
 Three core Pydantic v2 models defined:
@@ -564,6 +611,8 @@ All models include:
 - Field validation via Pydantic validators
 - Property methods for computed fields
 - Clear state transition lifecycles
-- Comprehensive error messages
+- Comprehensive error messages (see Error Message Catalog)
+
+Standardized error codes (E001-E010) ensure consistent error reporting across all modules.
 
 Next: Define API contracts for validation command (Phase 1 continuation).

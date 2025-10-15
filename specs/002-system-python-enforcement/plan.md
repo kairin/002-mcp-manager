@@ -36,6 +36,19 @@ This feature enforces strict usage of system Python 3.13 across the entire mcp-m
 - Validation command: <2 seconds total execution
 - Configuration validation: <1 second
 
+**Logging Configuration**:
+- **Framework**: Python's built-in `logging` module with `rich.logging.RichHandler`
+- **Location**: `~/.mcp-manager/logs/python-enforcement.log`
+- **Format**: Structured logs with timestamp, level, module, message, python_path, uv_config_path
+- **Rotation**: 10MB max file size, 5 historical files retained
+- **Retention**: 30 days automatic cleanup
+- **Levels**:
+  - DEBUG: Python detection attempts, path searches
+  - INFO: Successful validations, Python path used
+  - WARNING: Non-critical issues (missing .python-version, etc.)
+  - ERROR: Validation failures, missing dependencies
+- **Audit Fields**: python_executable_path, uv_config_file, validation_status, timestamp
+
 **Constraints**:
 - Must use exactly Python 3.13 (not 3.13+)
 - Project-local UV configuration only (no system-wide modification)
@@ -86,7 +99,7 @@ specs/002-system-python-enforcement/
 ### Source Code (repository root)
 
 ```
-src/mcp_manager/
+backend/src/mcp_manager/
 ├── __init__.py          # Package exports
 ├── cli.py               # CLI interface (existing)
 ├── core.py              # Core MCP management (existing)
@@ -114,7 +127,7 @@ tests/
 └── config               # NEW: Project-local UV configuration (or uv.toml at root)
 ```
 
-**Structure Decision**: Single project structure is appropriate for mcp-manager CLI tool. New modules added to existing `src/mcp_manager/` package to maintain cohesion. UV configuration stored project-locally to avoid system-wide impacts per FR-002.
+**Structure Decision**: Single project structure is appropriate for mcp-manager CLI tool. New modules added to existing `backend/src/mcp_manager/` package to maintain cohesion. UV configuration stored project-locally to avoid system-wide impacts per FR-002.
 
 ## Complexity Tracking
 
