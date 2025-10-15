@@ -40,3 +40,27 @@ class PythonEnvironmentError(MCPManagerError):
     """
 
     pass
+
+
+class FileSystemError(MCPManagerError):
+    """File system operation failed.
+
+    Raised when:
+    - Unable to create directories
+    - Permission denied writing configuration files
+    - OS errors during file operations
+    """
+
+    pass
+
+
+class ShellProfileError(MCPManagerError):
+    """Shell profile update failed.
+
+    Raised when:
+    - Unable to read shell profile
+    - Permission denied writing to shell profile
+    - OS errors updating shell configuration
+    """
+
+    pass
