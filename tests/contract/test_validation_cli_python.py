@@ -1,7 +1,7 @@
 """Contract tests for 'mcp-manager validate python' CLI command."""
-import subprocess
+
 import json
-import pytest
+import subprocess
 
 
 def test_validate_python_success():
@@ -9,7 +9,7 @@ def test_validate_python_success():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "python"],
         capture_output=True,
-        text=True
+        text=True,
     )
     assert result.returncode == 0
     assert "Python version validation: PASS" in result.stdout
@@ -21,7 +21,7 @@ def test_validate_python_json_output():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "python", "--json"],
         capture_output=True,
-        text=True
+        text=True,
     )
     data = json.loads(result.stdout)
     assert "check_name" in data

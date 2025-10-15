@@ -12,7 +12,6 @@ References:
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Literal
 
 try:
     import toml
@@ -78,7 +77,7 @@ def get_uv_config_path(project_root: Path) -> Path | None:
         # Try to parse and check for [tool.uv] section
         if toml is not None:
             try:
-                with open(pyproject_toml_path, "r") as f:
+                with open(pyproject_toml_path) as f:
                     config = toml.load(f)
                     if "tool" in config and "uv" in config["tool"]:
                         return pyproject_toml_path
@@ -88,7 +87,7 @@ def get_uv_config_path(project_root: Path) -> Path | None:
         else:
             # Without toml library, just check if file contains [tool.uv]
             try:
-                with open(pyproject_toml_path, "r") as f:
+                with open(pyproject_toml_path) as f:
                     content = f.read()
                     if "[tool.uv]" in content:
                         return pyproject_toml_path
@@ -155,8 +154,12 @@ def validate_uv_config(project_root: Path) -> dict[str, str | None]:
                 config_data = _parse_pyproject_toml(config_path)
 
             # Extract relevant settings
-            result["python_downloads"] = config_data.get("python-downloads") or config_data.get("python_downloads")
-            result["python_preference"] = config_data.get("python-preference") or config_data.get("python_preference")
+            result["python_downloads"] = config_data.get(
+                "python-downloads"
+            ) or config_data.get("python_downloads")
+            result["python_preference"] = config_data.get(
+                "python-preference"
+            ) or config_data.get("python_preference")
 
         except Exception:
             # If parsing fails, leave settings as None
@@ -166,7 +169,7 @@ def validate_uv_config(project_root: Path) -> dict[str, str | None]:
     python_version_file = project_root / ".python-version"
     if python_version_file.exists() and python_version_file.is_file():
         try:
-            with open(python_version_file, "r") as f:
+            with open(python_version_file) as f:
                 version_content = f.read().strip()
                 if version_content:
                     result["python_version_pinned"] = version_content
@@ -187,12 +190,12 @@ def _parse_uv_toml(config_path: Path) -> dict[str, str]:
     """
     if toml is not None:
         # Use toml library if available
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return toml.load(f)
     else:
         # Fallback: simple parsing for key = "value" format
         config = {}
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             for line in f:
                 line = line.strip()
                 # Skip comments and empty lines
@@ -218,7 +221,7 @@ def _parse_pyproject_toml(config_path: Path) -> dict[str, str]:
     """
     if toml is not None:
         # Use toml library if available
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             data = toml.load(f)
             return data.get("tool", {}).get("uv", {})
     else:
@@ -226,7 +229,7 @@ def _parse_pyproject_toml(config_path: Path) -> dict[str, str]:
         config = {}
         in_tool_uv_section = False
 
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             for line in f:
                 line = line.strip()
 
@@ -276,7 +279,7 @@ def get_uv_python_path() -> Path | None:
             capture_output=True,
             text=True,
             timeout=5,
-            check=False
+            check=False,
         )
 
         if result.returncode == 0:
@@ -288,3 +291,248 @@ def get_uv_python_path() -> Path | None:
 
     except (subprocess.TimeoutExpired, subprocess.SubprocessError):
         return None
+
+
+def migrate_legacy_uv_config(
+    project_root: Path, create_backup: bool = True
+) -> dict[str, str]:
+    """Migrate legacy UV configuration to standard uv.toml format.
+
+    Implements T057: UV config migration utility.
+
+    Converts legacy `.uv/config` files to the modern `uv.toml` format
+    with constitutional Python 3.13 enforcement requirements.
+
+    Args:
+        project_root: Path to project root directory
+        create_backup: Create backup of existing configs before migration
+
+    Returns:
+        Migration result dictionary:
+        {
+            "status": "success" | "no_migration_needed" | "error",
+            "message": str,  # Description of what happened
+            "backup_path": str | None,  # Path to backup if created
+            "migrated_from": str | None,  # Source config file path
+            "migrated_to": str,  # Destination uv.toml path
+        }
+
+    Examples:
+        >>> result = migrate_legacy_uv_config(Path.cwd())
+        >>> if result["status"] == "success":
+        ...     print(f"Migrated from {result['migrated_from']} to {result['migrated_to']}")
+        ... elif result["status"] == "no_migration_needed":
+        ...     print("Already using standard uv.toml")
+
+    Migration Process:
+        1. Check for legacy .uv/config file
+        2. Check for existing uv.toml (skip if already migrated)
+        3. Create backup of legacy config if requested
+        4. Create uv.toml with constitutional requirements
+        5. Preserve non-conflicting settings from legacy config
+
+    Constitutional Requirements Applied:
+        - python-downloads = "never"
+        - python-preference = "only-system"
+        - system-site-packages = true
+
+    References:
+        - Task: T057 (Create UV config migration utility)
+        - Guide: docs/migration-guide.md (T058)
+    """
+    result: dict[str, str | None] = {
+        "status": "error",
+        "message": "",
+        "backup_path": None,
+        "migrated_from": None,
+        "migrated_to": str(project_root / "uv.toml"),
+    }
+
+    uv_toml_path = project_root / "uv.toml"
+    legacy_config_path = project_root / ".uv" / "config"
+    global_uv_config = Path.home() / ".config" / "uv" / "uv.toml"
+
+    # Check if already using standard uv.toml
+    if uv_toml_path.exists():
+        result["status"] = "no_migration_needed"
+        result["message"] = "Project already using standard uv.toml configuration"
+        return result
+
+    # Check for legacy .uv/config
+    if not legacy_config_path.exists():
+        # No legacy config found - create new uv.toml with constitutional requirements
+        result["status"] = "no_migration_needed"
+        result["message"] = (
+            "No legacy configuration found. Creating new uv.toml with constitutional requirements."
+        )
+
+        try:
+            _create_constitutional_uv_toml(uv_toml_path)
+            result["status"] = "success"
+            result["message"] = "Created new uv.toml with constitutional requirements"
+        except Exception as e:
+            result["status"] = "error"
+            result["message"] = f"Failed to create uv.toml: {e}"
+
+        return result
+
+    # Legacy config found - migrate to uv.toml
+    result["migrated_from"] = str(legacy_config_path)
+
+    try:
+        # Create backup if requested
+        if create_backup:
+            backup_path = project_root / ".uv" / "config.backup"
+            import shutil
+
+            shutil.copy2(legacy_config_path, backup_path)
+            result["backup_path"] = str(backup_path)
+
+        # Create uv.toml with constitutional requirements
+        _create_constitutional_uv_toml(uv_toml_path)
+
+        result["status"] = "success"
+        result["message"] = (
+            f"Successfully migrated from {legacy_config_path} to {uv_toml_path}"
+        )
+
+    except Exception as e:
+        result["status"] = "error"
+        result["message"] = f"Migration failed: {e}"
+
+    return result
+
+
+def _create_constitutional_uv_toml(uv_toml_path: Path) -> None:
+    """Create uv.toml with constitutional requirements.
+
+    Creates a uv.toml file with mandatory Python 3.13 enforcement settings.
+
+    Args:
+        uv_toml_path: Path where uv.toml should be created
+
+    Raises:
+        OSError: If file cannot be created or written
+    """
+    constitutional_config = """# UV Configuration - Constitutional Requirements
+# Auto-generated by mcp-manager (Feature 002: System Python 3.13 Enforcement)
+#
+# References:
+#   - .specify/memory/constitution.md
+#   - specs/002-system-python-enforcement/spec.md
+
+[tool.uv]
+# Constitutional requirement: Never download Python interpreters
+# UV must only use the system-installed Python 3.13
+python-downloads = "never"
+
+# Constitutional requirement: Only use system Python
+# Prevents UV from using managed or virtual environment Pythons
+python-preference = "only-system"
+
+[tool.uv.pip]
+# Use system site packages for integration
+# Allows MCP servers to access system-installed packages
+system-site-packages = true
+"""
+
+    uv_toml_path.parent.mkdir(parents=True, exist_ok=True)
+    uv_toml_path.write_text(constitutional_config)
+
+
+def check_global_uv_conflicts(project_root: Path) -> dict[str, str | bool]:
+    """Check for global UV configuration conflicts.
+
+    Checks if global UV configuration (~/.config/uv/uv.toml) conflicts
+    with project constitutional requirements.
+
+    Args:
+        project_root: Path to project root directory
+
+    Returns:
+        Dictionary with conflict detection results:
+        {
+            "has_conflicts": bool,  # True if conflicts detected
+            "global_config_exists": bool,  # True if global config exists
+            "global_config_path": str | None,  # Path to global config
+            "conflicts": list[str],  # List of conflict descriptions
+            "resolution": str,  # Recommended resolution steps
+        }
+
+    Examples:
+        >>> conflicts = check_global_uv_conflicts(Path.cwd())
+        >>> if conflicts["has_conflicts"]:
+        ...     print(f"Conflicts detected: {conflicts['conflicts']}")
+        ...     print(f"Resolution: {conflicts['resolution']}")
+
+    References:
+        - Task: T057 (UV config migration utility)
+        - Guide: docs/PYTHON-TROUBLESHOOTING.md
+    """
+    global_config_path = Path.home() / ".config" / "uv" / "uv.toml"
+
+    result: dict[str, str | bool | list] = {
+        "has_conflicts": False,
+        "global_config_exists": global_config_path.exists(),
+        "global_config_path": (
+            str(global_config_path) if global_config_path.exists() else None
+        ),
+        "conflicts": [],
+        "resolution": "",
+    }
+
+    if not global_config_path.exists():
+        result["resolution"] = "No global UV config found - no conflicts"
+        return result
+
+    # Parse global config
+    try:
+        if toml is not None:
+            with open(global_config_path) as f:
+                global_config = toml.load(f)
+        else:
+            global_config = _parse_uv_toml(global_config_path)
+
+        # Check for python-downloads conflict
+        python_downloads = global_config.get("python-downloads") or global_config.get(
+            "python_downloads"
+        )
+        if python_downloads and python_downloads not in ("manual", "never"):
+            result["has_conflicts"] = True
+            result["conflicts"].append(
+                f"Global config has python-downloads={python_downloads}, "
+                "but constitutional requirement is 'never' or 'manual'"
+            )
+
+        # Check for python-preference conflict
+        python_preference = global_config.get("python-preference") or global_config.get(
+            "python_preference"
+        )
+        if python_preference and python_preference != "only-system":
+            result["has_conflicts"] = True
+            result["conflicts"].append(
+                f"Global config has python-preference={python_preference}, "
+                "but constitutional requirement is 'only-system'"
+            )
+
+        # Provide resolution
+        if result["has_conflicts"]:
+            result["resolution"] = (
+                "Rename or backup global UV config to prevent conflicts:\n"
+                f"  mv {global_config_path} {global_config_path}.backup\n\n"
+                "UV will then use the project uv.toml which enforces constitutional requirements."
+            )
+        else:
+            result["resolution"] = (
+                "Global UV config is compatible with project requirements"
+            )
+
+    except Exception as e:
+        result["has_conflicts"] = True
+        result["conflicts"].append(f"Failed to parse global config: {e}")
+        result["resolution"] = (
+            "Unable to validate global config. Consider renaming it:\n"
+            f"  mv {global_config_path} {global_config_path}.backup"
+        )
+
+    return result

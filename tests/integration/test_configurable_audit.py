@@ -15,7 +15,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from mcp_manager.core import MCPManager
 from mcp_manager.models import AuditConfiguration
 

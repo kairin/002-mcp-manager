@@ -18,12 +18,13 @@ from typing import Any
 
 from .exceptions import (
     ConfigurationError,
-    MCPManagerError,
     PythonEnvironmentError,
     ServerNotFoundError,
 )
 from .python_env import (
+    detect_distribution,
     find_system_python,
+    get_installation_instructions,
     get_installation_source,
     is_python_313,
 )
@@ -68,15 +69,22 @@ class MCPManager:
         python_path = find_system_python()
 
         if python_path is None:
+            distro = detect_distribution()
+            instructions = get_installation_instructions()
             raise PythonEnvironmentError(
-                "System Python 3.13 not found. "
-                "Constitutional requirement: mcp-manager requires Python 3.13 system installation."
+                f"System Python 3.13 not found on {distro}.\n"
+                f"Constitutional requirement: mcp-manager requires Python 3.13 system installation.\n"
+                f"{instructions}"
             )
 
         if not is_python_313(python_path):
+            distro = detect_distribution()
+            instructions = get_installation_instructions()
             raise PythonEnvironmentError(
-                f"Found Python at {python_path} but it is not version 3.13.x. "
-                "Constitutional requirement: Only Python 3.13 is allowed."
+                f"Found Python at {python_path} but it is not version 3.13.x.\n"
+                f"Constitutional requirement: Only Python 3.13 is allowed.\n"
+                f"Detected system: {distro}\n"
+                f"{instructions}"
             )
 
         # T051: Log Python executable path for auditing
@@ -94,14 +102,26 @@ class MCPManager:
 
         if uv_config.get("python_downloads") not in ("manual", "never"):
             raise PythonEnvironmentError(
-                f"UV configuration violation: python-downloads={uv_config.get('python_downloads')}. "
-                "Constitutional requirement: Must be 'manual' or 'never' to prevent Python downloads."
+                f"UV configuration violation: python-downloads={uv_config.get('python_downloads')}.\n"
+                f"Constitutional requirement: Must be 'manual' or 'never' to prevent Python downloads.\n\n"
+                f"To fix, ensure uv.toml contains:\n"
+                f"    [tool.uv]\n"
+                f'    python-downloads = "never"\n\n'
+                f"Then remove any global UV config conflicts:\n"
+                f"    mv ~/.config/uv/uv.toml ~/.config/uv/uv.toml.backup\n\n"
+                f"Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md"
             )
 
         if uv_config.get("python_preference") != "only-system":
             raise PythonEnvironmentError(
-                f"UV configuration violation: python-preference={uv_config.get('python_preference')}. "
-                "Constitutional requirement: Must be 'only-system' to enforce system Python usage."
+                f"UV configuration violation: python-preference={uv_config.get('python_preference')}.\n"
+                f"Constitutional requirement: Must be 'only-system' to enforce system Python usage.\n\n"
+                f"To fix, ensure uv.toml contains:\n"
+                f"    [tool.uv]\n"
+                f'    python-preference = "only-system"\n\n'
+                f"Then remove any global UV config conflicts:\n"
+                f"    mv ~/.config/uv/uv.toml ~/.config/uv/uv.toml.backup\n\n"
+                f"Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md"
             )
 
     def get_system_python_path(self) -> Path:
@@ -136,7 +156,9 @@ class MCPManager:
         with open(self.claude_config_path, "w") as f:
             json.dump(config, f, indent=2)
 
-        logger.info(f"Initialized global MCP configuration at {self.claude_config_path}")
+        logger.info(
+            f"Initialized global MCP configuration at {self.claude_config_path}"
+        )
 
     def init_project_config(self, force: bool = False) -> None:
         """Initialize project-local MCP configuration.
@@ -193,10 +215,16 @@ class MCPManager:
             ConfigurationError: If invalid server configuration
         """
         if server_type not in ("http", "stdio"):
-            raise ConfigurationError(f"Invalid server type: {server_type}. Must be 'http' or 'stdio'.")
+            raise ConfigurationError(
+                f"Invalid server type: {server_type}. Must be 'http' or 'stdio'."
+            )
 
         # Load existing config
-        config_path = self.claude_config_path if global_config else Path.cwd() / ".claude" / "config.json"
+        config_path = (
+            self.claude_config_path
+            if global_config
+            else Path.cwd() / ".claude" / "config.json"
+        )
 
         if config_path.exists():
             with open(config_path) as f:
@@ -227,7 +255,9 @@ class MCPManager:
                     f"Replacing with UV-managed execution for constitutional compliance."
                 )
                 server_config["command"] = "uv"
-                server_config["args"] = ["run", str(self._system_python_path)] + (args or [])
+                server_config["args"] = ["run", str(self._system_python_path)] + (
+                    args or []
+                )
 
                 # T051: Log Python executable path
                 logger.info(
@@ -265,7 +295,11 @@ class MCPManager:
         Raises:
             ServerNotFoundError: If server not found in configuration
         """
-        config_path = self.claude_config_path if global_config else Path.cwd() / ".claude" / "config.json"
+        config_path = (
+            self.claude_config_path
+            if global_config
+            else Path.cwd() / ".claude" / "config.json"
+        )
 
         if not config_path.exists():
             raise ServerNotFoundError(f"Configuration file not found: {config_path}")
@@ -274,9 +308,7 @@ class MCPManager:
             config = json.load(f)
 
         if name not in config.get("mcpServers", {}):
-            raise ServerNotFoundError(
-                f"Server '{name}' not found in configuration"
-            )
+            raise ServerNotFoundError(f"Server '{name}' not found in configuration")
 
         del config["mcpServers"][name]
 
@@ -336,8 +368,7 @@ class MCPManager:
         """
         servers = self.get_global_servers()
         return {
-            name: self.check_server_health(name, timeout)
-            for name in servers.keys()
+            name: self.check_server_health(name, timeout) for name in servers.keys()
         }
 
     def update_server(self, name: str, dry_run: bool = False) -> dict[str, Any]:
@@ -363,10 +394,7 @@ class MCPManager:
             Dictionary of update results by server name
         """
         servers = self.get_global_servers()
-        return {
-            name: self.update_server(name, dry_run)
-            for name in servers.keys()
-        }
+        return {name: self.update_server(name, dry_run) for name in servers.keys()}
 
     def diagnose_server(self, name: str, verbose: bool = False) -> dict[str, Any]:
         """Diagnose MCP server issues (placeholder).
@@ -391,10 +419,7 @@ class MCPManager:
             Dictionary of diagnosis results by server name
         """
         servers = self.get_global_servers()
-        return {
-            name: self.diagnose_server(name, verbose)
-            for name in servers.keys()
-        }
+        return {name: self.diagnose_server(name, verbose) for name in servers.keys()}
 
     def migrate_project_to_global(self, create_backup: bool = True) -> dict[str, Any]:
         """Migrate project MCP configurations to global (placeholder).

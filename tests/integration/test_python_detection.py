@@ -10,10 +10,8 @@ References:
 
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
-
 from mcp_manager.python_env import (
     detect_distribution,
     find_system_python,
@@ -40,8 +38,9 @@ class TestPythonDetectionRealSystem:
 
         # Verify it's in expected priority locations
         expected_dirs = ["/usr/bin", "/usr/local/bin", "/opt/homebrew/bin"]
-        assert any(str(python_path.parent) == dir for dir in expected_dirs), \
-            f"Python not in expected locations: {python_path}"
+        assert any(
+            str(python_path.parent) == dir for dir in expected_dirs
+        ), f"Python not in expected locations: {python_path}"
 
     def test_get_python_version_real(self):
         """Verify get_python_version() works with real Python executable."""
@@ -52,7 +51,9 @@ class TestPythonDetectionRealSystem:
 
         assert version is not None, f"Could not get version from {python_path}"
         assert len(version) == 3, f"Version should be (major, minor, patch): {version}"
-        assert all(isinstance(v, int) for v in version), f"Version parts must be integers: {version}"
+        assert all(
+            isinstance(v, int) for v in version
+        ), f"Version parts must be integers: {version}"
 
     def test_is_python_313_real(self):
         """Verify is_python_313() correctly identifies system Python."""
@@ -78,11 +79,17 @@ class TestPythonDetectionRealSystem:
 
         # Should contain one of the expected patterns
         valid_patterns = [
-            "Ubuntu", "Debian", "Fedora", "Red Hat", "CentOS",
-            "macOS", "Linux"
+            "Ubuntu",
+            "Debian",
+            "Fedora",
+            "Red Hat",
+            "CentOS",
+            "macOS",
+            "Linux",
         ]
-        assert any(pattern in distribution for pattern in valid_patterns), \
-            f"Distribution '{distribution}' doesn't match expected patterns"
+        assert any(
+            pattern in distribution for pattern in valid_patterns
+        ), f"Distribution '{distribution}' doesn't match expected patterns"
 
     def test_python_executable_runs(self):
         """Verify found Python executable actually runs."""
@@ -94,7 +101,7 @@ class TestPythonDetectionRealSystem:
             [str(python_path), "-c", "print('test')"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
 
         assert result.returncode == 0, f"Python execution failed: {result.stderr}"
@@ -120,7 +127,7 @@ class TestPythonDetectionRealSystem:
             "import pathlib",
             "import subprocess",
             "import json",
-            "import re"
+            "import re",
         ]
 
         for import_stmt in test_imports:
@@ -128,8 +135,9 @@ class TestPythonDetectionRealSystem:
                 [str(python_path), "-c", import_stmt],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
 
-            assert result.returncode == 0, \
-                f"Failed to import: {import_stmt}\n{result.stderr}"
+            assert (
+                result.returncode == 0
+            ), f"Failed to import: {import_stmt}\n{result.stderr}"

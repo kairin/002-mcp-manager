@@ -1,7 +1,7 @@
 """MCP server configuration validator."""
+
 import json
 from pathlib import Path
-from typing import List
 
 from ..models.validation_models import MCPServerConfig, ValidationResult
 
@@ -31,7 +31,9 @@ class MCPValidator:
                         "total_servers": len(servers),
                         "stdio_servers": len(stdio_servers),
                         "compliant": len(compliant_servers),
-                        "non_compliant_servers": [s.model_dump() for s in non_compliant],
+                        "non_compliant_servers": [
+                            s.model_dump() for s in non_compliant
+                        ],
                     },
                     severity="error",
                 )
@@ -55,7 +57,7 @@ class MCPValidator:
                 severity="error",
             )
 
-    def _load_mcp_servers(self) -> List[MCPServerConfig]:
+    def _load_mcp_servers(self) -> list[MCPServerConfig]:
         """Load MCP server configurations from ~/.claude.json."""
         with self.claude_config_path.open() as f:
             data = json.load(f)

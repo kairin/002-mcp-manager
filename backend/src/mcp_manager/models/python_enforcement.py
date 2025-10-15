@@ -48,38 +48,29 @@ class PythonEnvironment(BaseModel):
     """
 
     executable_path: Path = Field(
-        ...,
-        description="Absolute path to Python 3.13 executable"
+        ..., description="Absolute path to Python 3.13 executable"
     )
 
     version: tuple[int, int, int] = Field(
-        ...,
-        description="Python version as (major, minor, micro) tuple"
+        ..., description="Python version as (major, minor, micro) tuple"
     )
 
     source: Literal["package_manager", "manual_install", "unknown"] = Field(
-        ...,
-        description="Installation source based on path location"
+        ..., description="Installation source based on path location"
     )
 
     distribution: str = Field(
-        ...,
-        description="OS distribution (e.g., 'Ubuntu', 'macOS (Apple Silicon)')"
+        ..., description="OS distribution (e.g., 'Ubuntu', 'macOS (Apple Silicon)')"
     )
 
-    is_valid: bool = Field(
-        ...,
-        description="True if Python is 3.13.x and executable"
-    )
+    is_valid: bool = Field(..., description="True if Python is 3.13.x and executable")
 
     in_virtualenv: bool = Field(
-        default=False,
-        description="True if currently running in virtual environment"
+        default=False, description="True if currently running in virtual environment"
     )
 
     venv_base_python: Path | None = Field(
-        default=None,
-        description="Base Python path if in venv, None otherwise"
+        default=None, description="Base Python path if in venv, None otherwise"
     )
 
     @field_validator("version")
@@ -140,7 +131,7 @@ class PythonEnvironment(BaseModel):
 
     model_config = {
         "frozen": True,  # Immutable after creation
-        "str_strip_whitespace": True
+        "str_strip_whitespace": True,
     }
 
 
@@ -173,35 +164,28 @@ class UVConfiguration(BaseModel):
     """
 
     config_file_path: Path = Field(
-        ...,
-        description="Path to uv.toml or pyproject.toml config file"
+        ..., description="Path to uv.toml or pyproject.toml config file"
     )
 
     python_downloads: Literal["automatic", "manual", "never", None] = Field(
-        default=None,
-        description="Python download policy from config"
+        default=None, description="Python download policy from config"
     )
 
     python_preference: Literal[
         "only-managed", "managed", "system", "only-system", None
-    ] = Field(
-        default=None,
-        description="Python preference setting from config"
-    )
+    ] = Field(default=None, description="Python preference setting from config")
 
     python_version_pinned: str | None = Field(
-        default=None,
-        description="Content of .python-version file if exists"
+        default=None, description="Content of .python-version file if exists"
     )
 
     is_compliant: bool = Field(
-        ...,
-        description="True if configuration meets constitutional requirements"
+        ..., description="True if configuration meets constitutional requirements"
     )
 
     compliance_violations: list[str] = Field(
         default_factory=list,
-        description="List of compliance violations (empty if compliant)"
+        description="List of compliance violations (empty if compliant)",
     )
 
     @field_validator("config_file_path")
@@ -278,16 +262,12 @@ class UVConfiguration(BaseModel):
 
         # Recommended: .python-version file
         if not self.has_python_version_pin:
-            violations.append(
-                "Missing .python-version file to pin Python 3.13"
-            )
+            violations.append("Missing .python-version file to pin Python 3.13")
 
         self.compliance_violations = violations
         self.is_compliant = len(violations) == 0
 
-    model_config = {
-        "validate_assignment": True  # Re-validate on field updates
-    }
+    model_config = {"validate_assignment": True}  # Re-validate on field updates
 
 
 class ValidationResult(BaseModel):
@@ -322,38 +302,33 @@ class ValidationResult(BaseModel):
     """
 
     status: Literal["PASS", "FAIL", "ERROR"] = Field(
-        ...,
-        description="Overall validation status"
+        ..., description="Overall validation status"
     )
 
     python_environment: PythonEnvironment | None = Field(
         default=None,
-        description="Detected Python environment (None if detection failed)"
+        description="Detected Python environment (None if detection failed)",
     )
 
     uv_configuration: UVConfiguration | None = Field(
         default=None,
-        description="UV configuration status (None if UV not found/configured)"
+        description="UV configuration status (None if UV not found/configured)",
     )
 
     errors: list[str] = Field(
-        default_factory=list,
-        description="Critical errors that prevented validation"
+        default_factory=list, description="Critical errors that prevented validation"
     )
 
     warnings: list[str] = Field(
-        default_factory=list,
-        description="Non-critical issues found during validation"
+        default_factory=list, description="Non-critical issues found during validation"
     )
 
     checks_performed: list[str] = Field(
-        default_factory=list,
-        description="List of validation checks executed"
+        default_factory=list, description="List of validation checks executed"
     )
 
     timestamp: datetime = Field(
-        default_factory=datetime.now,
-        description="When validation was performed"
+        default_factory=datetime.now, description="When validation was performed"
     )
 
     @property
@@ -364,9 +339,9 @@ class ValidationResult(BaseModel):
             0 for PASS, 1 for FAIL, 2 for ERROR
         """
         return {
-            "PASS": 0,   # Success
-            "FAIL": 1,   # Validation failed (constitutional violation)
-            "ERROR": 2   # Error during validation (e.g., UV not installed)
+            "PASS": 0,  # Success
+            "FAIL": 1,  # Validation failed (constitutional violation)
+            "ERROR": 2,  # Error during validation (e.g., UV not installed)
         }[self.status]
 
     @property
@@ -376,9 +351,8 @@ class ValidationResult(BaseModel):
         Returns:
             True if status is FAIL or UV configuration has violations
         """
-        return (
-            self.status == "FAIL"
-            or (self.uv_configuration and not self.uv_configuration.is_compliant)
+        return self.status == "FAIL" or (
+            self.uv_configuration and not self.uv_configuration.is_compliant
         )
 
     def to_summary(self) -> str:
@@ -405,16 +379,10 @@ class ValidationResult(BaseModel):
             if self.uv_configuration:
                 violations.extend(self.uv_configuration.compliance_violations)
             violations_str = "\n  ".join(violations)
-            return (
-                f"✗ FAIL: Constitution violations detected\n"
-                f"  {violations_str}"
-            )
+            return f"✗ FAIL: Constitution violations detected\n" f"  {violations_str}"
         else:  # ERROR
             errors_str = "\n  ".join(self.errors)
-            return (
-                f"✗ ERROR: Validation could not complete\n"
-                f"  {errors_str}"
-            )
+            return f"✗ ERROR: Validation could not complete\n" f"  {errors_str}"
 
     def to_verbose(self) -> str:
         """Generate verbose output (--verbose flag).
@@ -425,11 +393,7 @@ class ValidationResult(BaseModel):
         Returns:
             Formatted verbose report string
         """
-        lines = [
-            "System Python Enforcement Validation Report",
-            "=" * 44,
-            ""
-        ]
+        lines = ["System Python Enforcement Validation Report", "=" * 44, ""]
 
         # Python Environment section
         lines.append("Python Environment:")
@@ -493,6 +457,4 @@ class ValidationResult(BaseModel):
 
         return "\n".join(lines)
 
-    model_config = {
-        "arbitrary_types_allowed": True  # For datetime
-    }
+    model_config = {"arbitrary_types_allowed": True}  # For datetime

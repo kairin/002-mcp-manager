@@ -1,5 +1,5 @@
 """Validation CLI commands for Python 3.13 enforcement."""
-import json as json_module
+
 
 import typer
 from rich.console import Console
@@ -23,7 +23,7 @@ def validate_python(
     result = validator.validate_version()
 
     if json:
-        console.print_json(data=result.model_dump(mode='json'))
+        console.print_json(data=result.model_dump(mode="json"))
     else:
         status = "✅" if result.passed else "❌"
         console.print(
@@ -49,7 +49,7 @@ def validate_uv(
     result = validator.validate_configuration()
 
     if json:
-        console.print_json(data=result.model_dump(mode='json'))
+        console.print_json(data=result.model_dump(mode="json"))
     else:
         status = "✅" if result.passed else "❌"
         console.print(
@@ -70,7 +70,7 @@ def validate_mcp_servers(
     result = validator.validate_servers()
 
     if json:
-        console.print_json(data=result.model_dump(mode='json'))
+        console.print_json(data=result.model_dump(mode="json"))
     else:
         status = "✅" if result.passed else "❌"
         console.print(
@@ -111,7 +111,7 @@ def validate_constitution(
                 "check_name": "constitution_compliance",
                 "passed": all_passed,
                 "principles_validated": len(results),
-                "principle_results": [r.model_dump(mode='json') for r in results],
+                "principle_results": [r.model_dump(mode="json") for r in results],
             }
         )
     else:
@@ -160,10 +160,12 @@ def validate_all(
             data={
                 "check_name": "comprehensive_validation",
                 "passed": all_passed,
-                "python": python_result.model_dump(mode='json'),
-                "uv": uv_result.model_dump(mode='json'),
-                "mcp_servers": mcp_result.model_dump(mode='json'),
-                "constitution": [r.model_dump(mode='json') for r in constitution_results],
+                "python": python_result.model_dump(mode="json"),
+                "uv": uv_result.model_dump(mode="json"),
+                "mcp_servers": mcp_result.model_dump(mode="json"),
+                "constitution": [
+                    r.model_dump(mode="json") for r in constitution_results
+                ],
             }
         )
     else:

@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from mcp_manager.core import MCPManager
 from mcp_manager.python_env import find_system_python, is_python_313
 
@@ -251,16 +250,10 @@ class TestMCPServerLogging:
         system_python = manager.get_system_python_path()
 
         # Verify logging contains Python path
-        assert any(
-            str(system_python) in record.message
-            for record in caplog.records
-        )
+        assert any(str(system_python) in record.message for record in caplog.records)
 
         # Verify logging contains source information
-        assert any(
-            "source:" in record.message
-            for record in caplog.records
-        )
+        assert any("source:" in record.message for record in caplog.records)
 
     def test_mcp_server_add_logs_python_path(self, tmp_path, caplog):
         """T051: Verify adding Python-based server logs executable path.
@@ -289,13 +282,7 @@ class TestMCPServerLogging:
         )
 
         # Verify server configuration is logged
-        assert any(
-            "test-python-server" in record.message
-            for record in caplog.records
-        )
+        assert any("test-python-server" in record.message for record in caplog.records)
 
         # Verify Python path is logged
-        assert any(
-            str(system_python) in record.message
-            for record in caplog.records
-        )
+        assert any(str(system_python) in record.message for record in caplog.records)

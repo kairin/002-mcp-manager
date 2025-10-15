@@ -14,13 +14,12 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
+from mcp_manager.python_env import find_system_python
 from mcp_manager.uv_config import (
     check_uv_installed,
     get_uv_config_path,
     validate_uv_config,
 )
-from mcp_manager.python_env import find_system_python
 
 
 class TestUvConfigParsingRealFile:
@@ -38,7 +37,7 @@ class TestUvConfigParsingRealFile:
 
             # Write compliant configuration
             uv_toml.write_text(
-                '[tool.uv]\n'
+                "[tool.uv]\n"
                 'python-downloads = "never"\n'
                 'python-preference = "only-system"\n'
             )
@@ -57,10 +56,10 @@ class TestUvConfigParsingRealFile:
 
             # Write pyproject.toml with [tool.uv] section
             pyproject_toml.write_text(
-                '[project]\n'
+                "[project]\n"
                 'name = "test-project"\n'
-                '\n'
-                '[tool.uv]\n'
+                "\n"
+                "[tool.uv]\n"
                 'python-downloads = "manual"\n'
                 'python-preference = "only-system"\n'
             )
@@ -78,7 +77,7 @@ class TestUvConfigParsingRealFile:
             python_version = project_root / ".python-version"
 
             uv_toml.write_text(
-                '[tool.uv]\n'
+                "[tool.uv]\n"
                 'python-downloads = "never"\n'
                 'python-preference = "only-system"\n'
             )
@@ -138,7 +137,7 @@ class TestUvPythonFindMatchesDetection:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=10
+                timeout=10,
             )
             uv_python_path = Path(result.stdout.strip())
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
@@ -153,8 +152,9 @@ class TestUvPythonFindMatchesDetection:
         uv_resolved = uv_python_path.resolve()
         our_resolved = our_python_path.resolve()
 
-        assert uv_resolved == our_resolved, \
-            f"UV found {uv_python_path} but we found {our_python_path}"
+        assert (
+            uv_resolved == our_resolved
+        ), f"UV found {uv_python_path} but we found {our_python_path}"
 
     @pytest.mark.skipif(not check_uv_installed(), reason="UV not installed")
     def test_uv_run_uses_system_python(self):
@@ -165,7 +165,7 @@ class TestUvPythonFindMatchesDetection:
             # Create uv.toml with our config
             uv_toml = project_root / "uv.toml"
             uv_toml.write_text(
-                '[tool.uv]\n'
+                "[tool.uv]\n"
                 'python-downloads = "never"\n'
                 'python-preference = "only-system"\n'
             )
@@ -177,12 +177,18 @@ class TestUvPythonFindMatchesDetection:
             # Run a simple Python command via UV
             try:
                 result = subprocess.run(
-                    ["uv", "run", "--no-project", "python3", "-c",
-                     "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+                    [
+                        "uv",
+                        "run",
+                        "--no-project",
+                        "python3",
+                        "-c",
+                        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+                    ],
                     capture_output=True,
                     text=True,
                     cwd=project_root,
-                    timeout=15
+                    timeout=15,
                 )
 
                 if result.returncode == 0:
@@ -212,9 +218,13 @@ class TestUvPythonFindMatchesDetection:
                     capture_output=True,
                     text=True,
                     check=True,
-                    timeout=30
+                    timeout=30,
                 )
-            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                subprocess.TimeoutExpired,
+            ) as e:
                 pytest.skip(f"Could not create venv: {e}")
 
             # Verify pyvenv.cfg contains our Python
@@ -222,4 +232,6 @@ class TestUvPythonFindMatchesDetection:
             assert pyvenv_cfg.exists(), "pyvenv.cfg not created"
 
             cfg_content = pyvenv_cfg.read_text()
-            assert "3.13" in cfg_content, f"pyvenv.cfg doesn't reference 3.13:\n{cfg_content}"
+            assert (
+                "3.13" in cfg_content
+            ), f"pyvenv.cfg doesn't reference 3.13:\n{cfg_content}"

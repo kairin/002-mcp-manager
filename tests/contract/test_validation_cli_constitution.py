@@ -1,7 +1,7 @@
 """Contract tests for 'mcp-manager validate constitution' CLI command."""
-import subprocess
+
 import json
-import pytest
+import subprocess
 
 
 def test_validate_constitution_all_principles():
@@ -9,7 +9,7 @@ def test_validate_constitution_all_principles():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "constitution"],
         capture_output=True,
-        text=True
+        text=True,
     )
     assert "Constitution validation:" in result.stdout
     assert "Principles validated:" in result.stdout
@@ -20,11 +20,13 @@ def test_validate_constitution_specific_principle():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "constitution", "--principle", "7"],
         capture_output=True,
-        text=True
+        text=True,
     )
-    assert ("7. Cross-Platform Compatibility" in result.stdout or
-            "VII. Cross-Platform Compatibility" in result.stdout or
-            "Principle VII" in result.stdout)
+    assert (
+        "7. Cross-Platform Compatibility" in result.stdout
+        or "VII. Cross-Platform Compatibility" in result.stdout
+        or "Principle VII" in result.stdout
+    )
 
 
 def test_validate_constitution_json_output():
@@ -32,7 +34,7 @@ def test_validate_constitution_json_output():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "constitution", "--json"],
         capture_output=True,
-        text=True
+        text=True,
     )
     data = json.loads(result.stdout)
     assert "check_name" in data

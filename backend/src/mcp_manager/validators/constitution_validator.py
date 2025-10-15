@@ -1,10 +1,9 @@
 """Constitution compliance validator."""
-from typing import List, Optional
+
 
 from ..models.validation_models import (
     ConstitutionCheckResult,
     PythonEnforcementStatus,
-    ValidationResult,
 )
 from .mcp_validator import MCPValidator
 from .python_validator import PythonValidator
@@ -34,8 +33,8 @@ class ConstitutionValidator:
         )
 
     def validate_all_principles(
-        self, principle_filter: Optional[int] = None
-    ) -> List[ConstitutionCheckResult]:
+        self, principle_filter: int | None = None
+    ) -> list[ConstitutionCheckResult]:
         """Validate all constitution principles (or specific principle)."""
         if principle_filter == 7:
             return [self.validate_principle_vii()]
