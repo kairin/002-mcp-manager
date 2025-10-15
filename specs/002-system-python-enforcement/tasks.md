@@ -21,10 +21,10 @@
 
 **Purpose**: Project initialization and UV configuration for system Python 3.13 enforcement
 
-- [ ] T001 Create `uv.toml` at project root with `python-downloads = "never"` and `python-preference = "only-system"` per research.md
-- [ ] T002 [P] Verify `.python-version` file contains `3.13` (should already exist)
-- [ ] T003 [P] Update `pyproject.toml` to set `requires-python = ">=3.13"` for constitutional compliance
-- [ ] T004 [P] Verify system Python 3.13 installed and UV available before proceeding
+- [x] T001 Create `uv.toml` at project root with `python-downloads = "never"` and `python-preference = "only-system"` per research.md
+- [x] T002 [P] Verify `.python-version` file contains `3.13` (should already exist)
+- [x] T003 [P] Update `pyproject.toml` to set `requires-python = ">=3.13"` for constitutional compliance
+- [x] T004 [P] Verify system Python 3.13 installed and UV available before proceeding
 
 ---
 
@@ -34,17 +34,17 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Create Pydantic v2 `PythonEnvironment` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: executable_path, version, source, distribution, is_valid, in_virtualenv, venv_base_python (see data-model.md lines 22-92)
-- [ ] T006 [P] Create Pydantic v2 `UVConfiguration` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: config_file_path, python_downloads, python_preference, python_version_pinned, is_compliant, compliance_violations (see data-model.md lines 112-201)
-- [ ] T007 [P] Create Pydantic v2 `ValidationResult` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: status, python_environment, uv_configuration, errors, warnings, checks_performed, timestamp (see data-model.md lines 222-377)
-- [ ] T008 [P] Implement `find_system_python()` in `backend/src/mcp_manager/python_env.py` to search priority paths: /usr/bin/python3.13 → /usr/local/bin/python3.13 → /opt/homebrew/bin/python3.13 (see research.md lines 46-59)
-- [ ] T009 [P] Implement `get_python_version()` in `backend/src/mcp_manager/python_env.py` using subprocess to parse `python3.13 --version` output (see research.md lines 245-265)
-- [ ] T010 [P] Implement `is_python_313()` in `backend/src/mcp_manager/python_env.py` to validate version is (3, 13, x) (see research.md lines 267-270)
-- [ ] T011 [P] Implement `detect_distribution()` in `backend/src/mcp_manager/python_env.py` to detect OS from /etc/os-release or macOS architecture (see research.md lines 192-217)
-- [ ] T012 [P] Implement `get_venv_base_python()` in `backend/src/mcp_manager/python_env.py` to parse pyvenv.cfg and extract base Python path (see research.md lines 277-295)
-- [ ] T013 [P] Implement `validate_uv_config()` in `backend/src/mcp_manager/uv_config.py` to parse uv.toml and check python-downloads/python-preference settings (see research.md lines 306-337)
-- [ ] T014 [P] Implement `check_uv_installed()` in `backend/src/mcp_manager/uv_config.py` to verify UV availability in PATH
-- [ ] T015 [P] Implement `get_uv_config_path()` in `backend/src/mcp_manager/uv_config.py` to locate uv.toml or pyproject.toml with [tool.uv] section
+- [x] T005 [P] Create Pydantic v2 `PythonEnvironment` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: executable_path, version, source, distribution, is_valid, in_virtualenv, venv_base_python (see data-model.md lines 22-92)
+- [x] T006 [P] Create Pydantic v2 `UVConfiguration` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: config_file_path, python_downloads, python_preference, python_version_pinned, is_compliant, compliance_violations (see data-model.md lines 112-201)
+- [x] T007 [P] Create Pydantic v2 `ValidationResult` model in `backend/src/mcp_manager/models/python_enforcement.py` with fields: status, python_environment, uv_configuration, errors, warnings, checks_performed, timestamp (see data-model.md lines 222-377)
+- [x] T008 [P] Implement `find_system_python()` in `backend/src/mcp_manager/python_env.py` to search priority paths: /usr/bin/python3.13 → /usr/local/bin/python3.13 → /opt/homebrew/bin/python3.13 (see research.md lines 46-59)
+- [x] T009 [P] Implement `get_python_version()` in `backend/src/mcp_manager/python_env.py` using subprocess to parse `python3.13 --version` output (see research.md lines 245-265)
+- [x] T010 [P] Implement `is_python_313()` in `backend/src/mcp_manager/python_env.py` to validate version is (3, 13, x) (see research.md lines 267-270)
+- [x] T011 [P] Implement `detect_distribution()` in `backend/src/mcp_manager/python_env.py` to detect OS from /etc/os-release or macOS architecture (see research.md lines 192-217)
+- [x] T012 [P] Implement `get_venv_base_python()` in `backend/src/mcp_manager/python_env.py` to parse pyvenv.cfg and extract base Python path (see research.md lines 277-295)
+- [x] T013 [P] Implement `validate_uv_config()` in `backend/src/mcp_manager/uv_config.py` to parse uv.toml and check python-downloads/python-preference settings (see research.md lines 306-337)
+- [x] T014 [P] Implement `check_uv_installed()` in `backend/src/mcp_manager/uv_config.py` to verify UV availability in PATH
+- [x] T015 [P] Implement `get_uv_config_path()` in `backend/src/mcp_manager/uv_config.py` to locate uv.toml or pyproject.toml with [tool.uv] section
 
 **Checkpoint**: Foundation ready - all Python detection and UV configuration infrastructure available
 
@@ -60,11 +60,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Add Python version validation on CLI startup in `backend/src/mcp_manager/cli.py` before any command execution using `find_system_python()` and `is_python_313()`
-- [ ] T017 [US1] Add UV configuration validation on CLI startup in `backend/src/mcp_manager/cli.py` to verify `uv.toml` compliance using `validate_uv_config()`
-- [ ] T018 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when system Python 3.13 not found, including distribution-specific installation instructions (FR-010)
-- [ ] T019 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when UV configuration allows Python downloads, suggesting fix (FR-010)
-- [ ] T020 [US1] Add Python executable path logging in `backend/src/mcp_manager/cli.py` for auditing purposes (FR-009)
+- [x] T016 [US1] Add Python version validation on CLI startup in `backend/src/mcp_manager/cli.py` before any command execution using `find_system_python()` and `is_python_313()`
+- [x] T017 [US1] Add UV configuration validation on CLI startup in `backend/src/mcp_manager/cli.py` to verify `uv.toml` compliance using `validate_uv_config()`
+- [x] T018 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when system Python 3.13 not found, including distribution-specific installation instructions (FR-010)
+- [x] T019 [US1] Implement clear error message in `backend/src/mcp_manager/cli.py` when UV configuration allows Python downloads, suggesting fix (FR-010)
+- [x] T020 [US1] Add Python executable path logging in `backend/src/mcp_manager/cli.py` for auditing purposes (FR-009)
 
 **Checkpoint**: At this point, all CLI commands should enforce system Python 3.13 and prevent UV Python downloads
 

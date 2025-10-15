@@ -1,5 +1,6 @@
 """CLI interface for MCP Manager - Comprehensive Project Standardization System."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,13 @@ from .exceptions import MCPManagerError
 from .fleet_manager import FleetManager
 from .office_deployment import OfficeDeploymentManager
 from .project_standards import ProjectStandardsManager
+from .python_env import (
+    detect_distribution,
+    find_system_python,
+    get_installation_source,
+    is_python_313,
+)
+from .uv_config import check_uv_installed, validate_uv_config
 
 # Initialize CLI app and console
 app = typer.Typer(
@@ -26,6 +34,134 @@ app = typer.Typer(
     rich_markup_mode="rich",
 )
 console = Console()
+
+# Setup logging
+logger = logging.getLogger(__name__)
+
+
+# T016-T020: Python environment validation functions
+def _validate_python_environment() -> None:
+    """Validate Python 3.13 and UV configuration on CLI startup.
+
+    This function implements Tasks T016-T020:
+    - T016: Python version validation using find_system_python() and is_python_313()
+    - T017: UV configuration validation using validate_uv_config()
+    - T018: Clear error message when Python 3.13 not found
+    - T019: Clear error message when UV config allows Python downloads
+    - T020: Python executable path logging
+
+    Raises:
+        typer.Exit: If validation fails (exits with code 1)
+    """
+    # T016: Validate Python version on CLI startup
+    python_path = find_system_python()
+
+    if python_path is None or not is_python_313(python_path):
+        # T018: Clear error message for missing Python 3.13
+        distribution = detect_distribution()
+        _display_python_not_found_error(distribution)
+        raise typer.Exit(code=1)
+
+    # T020: Log Python executable path for auditing
+    logger.info(
+        f"Using Python: {python_path} (source: {get_installation_source(python_path)})"
+    )
+
+    # T017: Validate UV configuration on CLI startup
+    if not check_uv_installed():
+        rprint("[red]Error: UV package manager not found[/red]")
+        rprint(
+            "[yellow]Install UV:[/yellow] curl -LsSf https://astral.sh/uv/install.sh | sh"
+        )
+        raise typer.Exit(code=1)
+
+    project_root = Path.cwd()
+    uv_config = validate_uv_config(project_root)
+
+    # T019: Check if UV configuration allows Python downloads
+    if uv_config.get("python_downloads") not in ("manual", "never"):
+        _display_uv_config_error(uv_config, project_root)
+        raise typer.Exit(code=1)
+
+    if uv_config.get("python_preference") != "only-system":
+        _display_uv_config_error(uv_config, project_root)
+        raise typer.Exit(code=1)
+
+
+def _display_python_not_found_error(distribution: str) -> None:
+    """Display distribution-specific error message for missing Python 3.13.
+
+    Implements T018: Clear error messages with installation instructions.
+
+    Args:
+        distribution: OS distribution name (e.g., "Ubuntu 22.04", "macOS (Apple Silicon)")
+    """
+    rprint("[red]❌ Error: Python 3.13 not found[/red]")
+    rprint(
+        "[yellow]Python 3.13 is required for mcp-manager (constitutional requirement)[/yellow]"
+    )
+    rprint("")
+
+    # Provide distribution-specific installation instructions
+    if "Ubuntu" in distribution or "Debian" in distribution:
+        rprint("[cyan]Installation instructions for Ubuntu/Debian:[/cyan]")
+        rprint("  sudo apt update")
+        rprint("  sudo apt install python3.13")
+    elif (
+        "Fedora" in distribution
+        or "CentOS" in distribution
+        or "Red Hat" in distribution
+    ):
+        rprint("[cyan]Installation instructions for Fedora/RHEL/CentOS:[/cyan]")
+        rprint("  sudo dnf install python3.13")
+    elif "macOS" in distribution:
+        rprint("[cyan]Installation instructions for macOS:[/cyan]")
+        rprint("  brew install python@3.13")
+    else:
+        rprint(f"[cyan]Detected distribution: {distribution}[/cyan]")
+        rprint(
+            "[cyan]Please install Python 3.13 using your system package manager[/cyan]"
+        )
+
+    rprint("")
+    rprint("[dim]After installation, verify with: python3.13 --version[/dim]")
+
+
+def _display_uv_config_error(uv_config: dict, project_root: Path) -> None:
+    """Display error message for non-compliant UV configuration.
+
+    Implements T019: Clear error messages for UV configuration issues.
+
+    Args:
+        uv_config: UV configuration dictionary from validate_uv_config()
+        project_root: Path to project root directory
+    """
+    rprint("[red]❌ Error: UV configuration violates constitutional requirements[/red]")
+    rprint("[yellow]UV must be configured to use only system Python 3.13[/yellow]")
+    rprint("")
+
+    rprint("[cyan]Current configuration:[/cyan]")
+    if uv_config.get("config_file"):
+        rprint(f"  Config file: {uv_config['config_file']}")
+    rprint(
+        f"  python-downloads: {uv_config.get('python_downloads', 'not set')} "
+        f"[red](must be 'never' or 'manual')[/red]"
+    )
+    rprint(
+        f"  python-preference: {uv_config.get('python_preference', 'not set')} "
+        f"[red](must be 'only-system')[/red]"
+    )
+
+    rprint("")
+    rprint("[cyan]To fix, create/update uv.toml in project root:[/cyan]")
+    rprint("")
+    rprint("  # Prevent UV from downloading Python interpreters")
+    rprint('  python-downloads = "never"')
+    rprint("")
+    rprint("  # Use only system-installed Python")
+    rprint('  python-preference = "only-system"')
+    rprint("")
+    rprint(f"[dim]Expected location: {project_root / 'uv.toml'}[/dim]")
 
 
 # Global verbose flag callback
@@ -41,6 +177,8 @@ def global_options(
 ) -> None:
     """Global options for MCP Manager.
 
+    Implements T016-T020: Python 3.13 and UV configuration validation on CLI startup.
+
     Args:
         ctx: Typer context
         verbose: Enable verbose mode
@@ -48,6 +186,9 @@ def global_options(
     set_verbose_mode(verbose)
     if verbose:
         console.print("[dim]Verbose mode enabled[/dim]")
+
+    # T016-T020: Validate Python 3.13 and UV configuration on CLI startup
+    _validate_python_environment()
 
 
 # Create sub-applications for different management areas
