@@ -1,0 +1,78 @@
+# API Contract: Gemini CLI Configuration Sync
+
+operation: gemini_sync
+description: Synchronize MCP server configurations from Claude Code to Gemini CLI
+
+input:
+  force:
+    type: boolean
+    required: false
+    default: false
+    description: If true, overwrite existing Gemini configuration even if it has custom settings
+
+output:
+  success:
+    type: boolean
+    description: Whether the sync operation completed successfully
+
+  servers_synced:
+    type: array
+    items: string
+    description: List of server names that were synchronized
+
+  config_path:
+    type: string
+    description: Absolute path to the created/updated Gemini settings.json
+
+  env_var_configured:
+    type: boolean
+    description: Whether GEMINI_CLI_SYSTEM_SETTINGS_PATH was added to shell profile
+
+  shell_profile:
+    type: string
+    nullable: true
+    description: Path to the shell profile that was updated (null if already configured)
+
+errors:
+  ConfigurationError:
+    description: ~/.claude.json not found or contains invalid JSON
+
+  FileSystemError:
+    description: Cannot create ~/.config/gemini/ directory or write settings.json
+
+  ShellProfileError:
+    description: Cannot update shell profile (read-only filesystem, permissions)
+
+  NoServersError:
+    description: No MCP servers configured in ~/.claude.json to sync
+
+examples:
+  - description: "First-time sync"
+    input:
+      force: false
+    output:
+      success: true
+      servers_synced: ["context7", "shadcn", "github", "playwright", "hf-mcp-server", "markitdown"]
+      config_path: "/home/user/.config/gemini/settings.json"
+      env_var_configured: true
+      shell_profile: "/home/user/.bashrc"
+
+  - description: "Sync with existing Gemini config (merge)"
+    input:
+      force: false
+    output:
+      success: true
+      servers_synced: ["shadcn", "github"]  # Only new/updated servers
+      config_path: "/home/user/.config/gemini/settings.json"
+      env_var_configured: false  # Already configured
+      shell_profile: null
+
+  - description: "Force overwrite"
+    input:
+      force: true
+    output:
+      success: true
+      servers_synced: ["context7", "shadcn", "github", "playwright", "hf-mcp-server", "markitdown"]
+      config_path: "/home/user/.config/gemini/settings.json"
+      env_var_configured: false
+      shell_profile: null
