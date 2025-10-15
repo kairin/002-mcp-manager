@@ -80,13 +80,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] Implement `validate_python_environment()` orchestrator in `backend/src/mcp_manager/validators.py` that calls `find_system_python()`, `validate_uv_config()`, builds `ValidationResult` model (see data-model.md lines 378-389)
-- [ ] T022 [P] [US2] Implement `ValidationResult.to_summary()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate summary status line per contract (see contracts/validation_cli.md lines 56-88)
-- [ ] T023 [P] [US2] Implement `ValidationResult.to_verbose()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate detailed diagnostic report per contract (see contracts/validation_cli.md lines 90-128)
-- [ ] T024 [US2] Add `validate` command to `backend/src/mcp_manager/cli.py` with optional `--verbose` flag using Typer (see contracts/validation_cli.md lines 18-28)
-- [ ] T025 [US2] Implement exit code logic in validate command: 0=PASS, 1=FAIL, 2=ERROR per contract (see contracts/validation_cli.md lines 30-37)
-- [ ] T026 [US2] Add virtual environment detection and base Python validation in `validate_python_environment()` (FR-012)
-- [ ] T027 [US2] Implement performance optimization to ensure validation completes in <2 seconds (SC-003)
+- [x] T021 [P] [US2] Implement `validate_python_environment()` orchestrator in `backend/src/mcp_manager/validators.py` that calls `find_system_python()`, `validate_uv_config()`, builds `ValidationResult` model (see data-model.md lines 378-389)
+- [x] T022 [P] [US2] Implement `ValidationResult.to_summary()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate summary status line per contract (see contracts/validation_cli.md lines 56-88)
+- [x] T023 [P] [US2] Implement `ValidationResult.to_verbose()` method in `backend/src/mcp_manager/models/python_enforcement.py` to generate detailed diagnostic report per contract (see contracts/validation_cli.md lines 90-128)
+- [x] T024 [US2] Add `validate` command to `backend/src/mcp_manager/cli.py` with optional `--verbose` flag using Typer (see contracts/validation_cli.md lines 18-28)
+- [x] T025 [US2] Implement exit code logic in validate command: 0=PASS, 1=FAIL, 2=ERROR per contract (see contracts/validation_cli.md lines 30-37)
+- [x] T026 [US2] Add virtual environment detection and base Python validation in `validate_python_environment()` (FR-012)
+- [x] T027 [US2] Implement performance optimization to ensure validation completes in <2 seconds (SC-003)
 
 **Checkpoint**: At this point, `mcp-manager validate` command should be fully functional with both summary and verbose output modes
 

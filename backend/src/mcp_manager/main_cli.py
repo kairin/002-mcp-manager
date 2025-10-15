@@ -26,6 +26,7 @@ from .python_env import (
     is_python_313,
 )
 from .uv_config import check_uv_installed, validate_uv_config
+from .validators.python_enforcement_validator import validate_python_environment
 
 # Initialize CLI app and console
 app = typer.Typer(
@@ -679,6 +680,43 @@ def status() -> None:
     except Exception as e:
         rprint(f"[red]Error getting system status: {e}[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def validate(
+    verbose: bool = typer.Option(
+        False, "--verbose", help="Display detailed diagnostic information"
+    )
+) -> None:
+    """Validate Python 3.13 and UV configuration compliance.
+
+    Implements T024-T025: Validation command with exit codes (0=PASS, 1=FAIL, 2=ERROR).
+
+    Exit Codes:
+        0: PASS - All validation checks passed
+        1: FAIL - Constitutional violations detected
+        2: ERROR - Validation could not complete
+
+    Examples:
+        $ mcp-manager validate
+        ✓ PASS: System Python 3.13 enforcement validated
+
+        $ mcp-manager validate --verbose
+        [Full diagnostic report]
+    """
+    # T024: Run validation using orchestrator
+    result = validate_python_environment()
+
+    # T025: Display output based on verbose flag (T022-T023)
+    if verbose:
+        # T023: Verbose output with full diagnostics
+        console.print(result.to_verbose())
+    else:
+        # T022: Summary output (default)
+        console.print(result.to_summary())
+
+    # T025: Exit with appropriate code based on validation status
+    raise typer.Exit(code=result.exit_code)
 
 
 # =============================================================================
