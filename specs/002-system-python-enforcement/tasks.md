@@ -104,35 +104,35 @@
 
 ### Unit Tests for User Story 3
 
-- [ ] T028 [P] [US3] Create unit test `test_find_system_python_package_manager()` in `tests/unit/test_python_env.py` to verify /usr/bin/python3.13 is found first (mocked paths)
-- [ ] T029 [P] [US3] Create unit test `test_find_system_python_manual_install()` in `tests/unit/test_python_env.py` to verify /usr/local/bin fallback (mocked paths)
-- [ ] T030 [P] [US3] Create unit test `test_get_python_version_parsing()` in `tests/unit/test_python_env.py` to verify version parsing from "Python 3.13.0" output
-- [ ] T031 [P] [US3] Create unit test `test_is_python_313_valid()` in `tests/unit/test_python_env.py` to verify (3, 13, 0) returns True
-- [ ] T032 [P] [US3] Create unit test `test_is_python_313_invalid()` in `tests/unit/test_python_env.py` to verify (3, 12, 0) returns False
-- [ ] T033 [P] [US3] Create unit test `test_detect_distribution_ubuntu()` in `tests/unit/test_python_env.py` to verify Ubuntu detection from /etc/os-release
-- [ ] T034 [P] [US3] Create unit test `test_get_venv_base_python()` in `tests/unit/test_python_env.py` to verify pyvenv.cfg parsing
-- [ ] T035 [P] [US3] Create unit test `test_validate_uv_config_compliant()` in `tests/unit/test_uv_config.py` to verify compliant uv.toml detection
-- [ ] T036 [P] [US3] Create unit test `test_validate_uv_config_non_compliant()` in `tests/unit/test_uv_config.py` to verify violation detection when python-downloads=automatic
-- [ ] T037 [P] [US3] Create unit test `test_validation_result_exit_codes()` in `tests/unit/test_validators.py` to verify exit_code property returns 0/1/2 correctly
+- [x] T028 [P] [US3] Create unit test `test_find_system_python_package_manager()` in `tests/unit/test_python_env.py` to verify /usr/bin/python3.13 is found first (mocked paths)
+- [x] T029 [P] [US3] Create unit test `test_find_system_python_manual_install()` in `tests/unit/test_python_env.py` to verify /usr/local/bin fallback (mocked paths)
+- [x] T030 [P] [US3] Create unit test `test_get_python_version_parsing()` in `tests/unit/test_python_env.py` to verify version parsing from "Python 3.13.0" output
+- [x] T031 [P] [US3] Create unit test `test_is_python_313_valid()` in `tests/unit/test_python_env.py` to verify (3, 13, 0) returns True
+- [x] T032 [P] [US3] Create unit test `test_is_python_313_invalid()` in `tests/unit/test_python_env.py` to verify (3, 12, 0) returns False
+- [x] T033 [P] [US3] Create unit test `test_detect_distribution_ubuntu()` in `tests/unit/test_python_env.py` to verify Ubuntu detection from /etc/os-release
+- [x] T034 [P] [US3] Create unit test `test_get_venv_base_python()` in `tests/unit/test_python_env.py` to verify pyvenv.cfg parsing
+- [x] T035 [P] [US3] Create unit test `test_validate_uv_config_compliant()` in `tests/unit/test_uv_config.py` to verify compliant uv.toml detection
+- [x] T036 [P] [US3] Create unit test `test_validate_uv_config_non_compliant()` in `tests/unit/test_uv_config.py` to verify violation detection when python-downloads=automatic
+- [x] T037 [P] [US3] Create unit test `test_validation_result_exit_codes()` in `tests/unit/test_validators.py` to verify exit_code property returns 0/1/2 correctly
 
 ### Integration Tests for User Story 3
 
-- [ ] T038 [P] [US3] Create integration test `test_python_detection_real_system()` in `tests/integration/test_python_detection.py` to verify real system Python 3.13 detection (not mocked)
-- [ ] T039 [P] [US3] Create integration test `test_uv_config_parsing_real_file()` in `tests/integration/test_uv_integration.py` to verify parsing actual uv.toml file
-- [ ] T040 [P] [US3] Create integration test `test_uv_python_find_matches_detection()` in `tests/integration/test_uv_integration.py` to verify `uv python find` matches our detection
+- [x] T038 [P] [US3] Create integration test `test_python_detection_real_system()` in `tests/integration/test_python_detection.py` to verify real system Python 3.13 detection (not mocked)
+- [x] T039 [P] [US3] Create integration test `test_uv_config_parsing_real_file()` in `tests/integration/test_uv_integration.py` to verify parsing actual uv.toml file
+- [x] T040 [P] [US3] Create integration test `test_uv_python_find_matches_detection()` in `tests/integration/test_uv_integration.py` to verify `uv python find` matches our detection
 
 ### Contract Tests for User Story 3
 
-- [ ] T041 [P] [US3] Create contract test `test_validate_success_summary_output()` in `tests/contract/test_validation_cli.py` to verify summary format on PASS (see contracts/validation_cli.md lines 213-218)
-- [ ] T042 [P] [US3] Create contract test `test_validate_failure_violations_listed()` in `tests/contract/test_validation_cli.py` to verify failure output lists violations (see contracts/validation_cli.md lines 220-226)
-- [ ] T043 [P] [US3] Create contract test `test_validate_error_python_not_found()` in `tests/contract/test_validation_cli.py` to verify error output when Python 3.13 missing (see contracts/validation_cli.md lines 228-233)
-- [ ] T044 [P] [US3] Create contract test `test_validate_verbose_complete_report()` in `tests/contract/test_validation_cli.py` to verify verbose output includes all sections (see contracts/validation_cli.md lines 235-241)
-- [ ] T045 [P] [US3] Create contract test `test_validate_venv_base_python_check()` in `tests/contract/test_validation_cli.py` to verify venv base Python validation (see contracts/validation_cli.md lines 243-247)
-- [ ] T046 [P] [US3] Create contract test `test_validate_performance_within_limits()` in `tests/contract/test_validation_cli.py` to verify execution <2 seconds (see contracts/validation_cli.md lines 249-253)
+- [x] T041 [P] [US3] Create contract test `test_validate_success_summary_output()` in `tests/contract/test_validation_cli.py` to verify summary format on PASS (see contracts/validation_cli.md lines 213-218)
+- [x] T042 [P] [US3] Create contract test `test_validate_failure_violations_listed()` in `tests/contract/test_validation_cli.py` to verify failure output lists violations (see contracts/validation_cli.md lines 220-226)
+- [x] T043 [P] [US3] Create contract test `test_validate_error_python_not_found()` in `tests/contract/test_validation_cli.py` to verify error output when Python 3.13 missing (see contracts/validation_cli.md lines 228-233)
+- [x] T044 [P] [US3] Create contract test `test_validate_verbose_complete_report()` in `tests/contract/test_validation_cli.py` to verify verbose output includes all sections (see contracts/validation_cli.md lines 235-241)
+- [x] T045 [P] [US3] Create contract test `test_validate_venv_base_python_check()` in `tests/contract/test_validation_cli.py` to verify venv base Python validation (see contracts/validation_cli.md lines 243-247)
+- [x] T046 [P] [US3] Create contract test `test_validate_performance_within_limits()` in `tests/contract/test_validation_cli.py` to verify execution <2 seconds (see contracts/validation_cli.md lines 249-253)
 
 ### Test Configuration for User Story 3
 
-- [ ] T047 [US3] Configure pytest in `pyproject.toml` to use system Python 3.13 via UV with coverage plugin
+- [x] T047 [US3] Configure pytest in `pyproject.toml` to use system Python 3.13 via UV with coverage plugin
 - [ ] T048 [US3] Verify test coverage >80% for python_env.py, uv_config.py, validators.py modules
 
 **Checkpoint**: At this point, comprehensive test suite validates system Python 3.13 enforcement across all modules
