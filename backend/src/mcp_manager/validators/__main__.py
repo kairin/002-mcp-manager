@@ -1,4 +1,5 @@
 """Pre-commit hook entry point for constitution validation."""
+
 import sys
 
 from .constitution_validator import ConstitutionValidator

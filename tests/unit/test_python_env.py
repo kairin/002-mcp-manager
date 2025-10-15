@@ -17,9 +17,7 @@ References:
 
 import subprocess
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
-
-import pytest
+from unittest.mock import Mock, mock_open, patch
 
 from mcp_manager.python_env import (
     detect_distribution,
@@ -41,11 +39,12 @@ class TestFindSystemPython:
     @patch("mcp_manager.python_env.Path")
     def test_find_system_python_package_manager(self, mock_path_class, mock_is_313):
         """T028: Verify /usr/bin/python3.13 is found first (package manager priority)."""
+
         # Mock: /usr/bin/python3.13 exists and is file
         def path_constructor(path_str):
             mock_path = Mock()
-            mock_path.exists.return_value = (path_str == "/usr/bin/python3.13")
-            mock_path.is_file.return_value = (path_str == "/usr/bin/python3.13")
+            mock_path.exists.return_value = path_str == "/usr/bin/python3.13"
+            mock_path.is_file.return_value = path_str == "/usr/bin/python3.13"
             mock_path.__str__ = lambda self: path_str
             mock_path.__eq__ = lambda self, other: str(self) == str(other)
             return mock_path
@@ -59,6 +58,7 @@ class TestFindSystemPython:
     @patch("pathlib.Path.exists")
     def test_find_system_python_manual_install(self, mock_exists):
         """T029: Verify /usr/local/bin fallback when /usr/bin not found."""
+
         # Mock: /usr/bin doesn't exist, but /usr/local/bin does
         def exists_side_effect(path_self):
             path_str = str(path_self)
@@ -77,6 +77,7 @@ class TestFindSystemPython:
     @patch("pathlib.Path.exists")
     def test_find_system_python_homebrew_fallback(self, mock_exists):
         """Verify /opt/homebrew/bin fallback (macOS Apple Silicon)."""
+
         # Mock: Only Homebrew path exists
         def exists_side_effect(path_self):
             return str(path_self) == "/opt/homebrew/bin/python3.13"
@@ -105,11 +106,7 @@ class TestGetPythonVersion:
     def test_get_python_version_parsing(self, mock_run):
         """T030: Verify version parsing from 'Python 3.13.0' output."""
         # Mock subprocess output
-        mock_run.return_value = Mock(
-            stdout="Python 3.13.0\n",
-            stderr="",
-            returncode=0
-        )
+        mock_run.return_value = Mock(stdout="Python 3.13.0\n", stderr="", returncode=0)
 
         python_path = Path("/usr/bin/python3.13")
         result = get_python_version(python_path)
@@ -120,16 +117,13 @@ class TestGetPythonVersion:
             capture_output=True,
             text=True,
             timeout=5,
-            check=False
+            check=False,
         )
 
     @patch("subprocess.run")
     def test_get_python_version_with_suffix(self, mock_run):
         """Verify version parsing with release candidate suffix."""
-        mock_run.return_value = Mock(
-            stdout="Python 3.13.1rc2\n",
-            returncode=0
-        )
+        mock_run.return_value = Mock(stdout="Python 3.13.1rc2\n", returncode=0)
 
         result = get_python_version(Path("/usr/bin/python3.13"))
 
@@ -145,10 +139,7 @@ class TestGetPythonVersion:
     @patch("subprocess.run")
     def test_get_python_version_invalid_format(self, mock_run):
         """Verify None returned when version output format is invalid."""
-        mock_run.return_value = Mock(
-            stdout="Invalid version string\n",
-            returncode=0
-        )
+        mock_run.return_value = Mock(stdout="Invalid version string\n", returncode=0)
 
         result = get_python_version(Path("/usr/bin/python3.13"))
 
@@ -165,7 +156,9 @@ class TestIsPython313:
         """T031: Verify (3, 13, 0) returns True."""
         python_path = Path("/usr/bin/python3.13")
 
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 13, 0)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 13, 0)
+        ):
             result = is_python_313(python_path)
 
         assert result is True
@@ -174,7 +167,9 @@ class TestIsPython313:
         """T032: Verify (3, 12, 0) returns False."""
         python_path = Path("/usr/bin/python3.12")
 
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 12, 0)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 12, 0)
+        ):
             result = is_python_313(python_path)
 
         assert result is False
@@ -183,7 +178,9 @@ class TestIsPython313:
         """Verify 3.13.5 returns True (any patch version OK)."""
         python_path = Path("/usr/bin/python3.13")
 
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 13, 5)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 13, 5)
+        ):
             result = is_python_313(python_path)
 
         assert result is True
@@ -192,7 +189,9 @@ class TestIsPython313:
         """Verify 2.7.x returns False."""
         python_path = Path("/usr/bin/python2.7")
 
-        with patch("mcp_manager.python_env.get_python_version", return_value=(2, 7, 18)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(2, 7, 18)
+        ):
             result = is_python_313(python_path)
 
         assert result is False
@@ -201,7 +200,9 @@ class TestIsPython313:
         """Verify 3.14.x returns False (must be exactly 3.13)."""
         python_path = Path("/usr/bin/python3.14")
 
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 14, 0)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 14, 0)
+        ):
             result = is_python_313(python_path)
 
         assert result is False
@@ -214,9 +215,14 @@ class TestDetectDistribution:
     """
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data='NAME="Ubuntu"\nVERSION="22.04 LTS (Jammy Jellyfish)"\n')
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='NAME="Ubuntu"\nVERSION="22.04 LTS (Jammy Jellyfish)"\n',
+    )
     def test_detect_distribution_ubuntu(self, mock_file, mock_exists):
         """T033: Verify Ubuntu detection from /etc/os-release."""
+
         # Mock /etc/os-release exists
         def exists_side_effect(path_self):
             return str(path_self) == "/etc/os-release"
@@ -229,9 +235,14 @@ class TestDetectDistribution:
         mock_file.assert_called_once_with(Path("/etc/os-release"), "r")
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data='NAME="Fedora Linux"\nVERSION="38 (Workstation Edition)"\n')
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='NAME="Fedora Linux"\nVERSION="38 (Workstation Edition)"\n',
+    )
     def test_detect_distribution_fedora(self, mock_file, mock_exists):
         """Verify Fedora detection from /etc/os-release."""
+
         def exists_side_effect(path_self):
             return str(path_self) == "/etc/os-release"
 
@@ -244,7 +255,9 @@ class TestDetectDistribution:
     @patch("pathlib.Path.exists", return_value=False)
     @patch("platform.system", return_value="Darwin")
     @patch("platform.machine", return_value="arm64")
-    def test_detect_distribution_macos_apple_silicon(self, mock_machine, mock_system, mock_exists):
+    def test_detect_distribution_macos_apple_silicon(
+        self, mock_machine, mock_system, mock_exists
+    ):
         """Verify macOS Apple Silicon detection."""
         result = detect_distribution()
 
@@ -253,7 +266,9 @@ class TestDetectDistribution:
     @patch("pathlib.Path.exists", return_value=False)
     @patch("platform.system", return_value="Darwin")
     @patch("platform.machine", return_value="x86_64")
-    def test_detect_distribution_macos_intel(self, mock_machine, mock_system, mock_exists):
+    def test_detect_distribution_macos_intel(
+        self, mock_machine, mock_system, mock_exists
+    ):
         """Verify macOS Intel detection."""
         result = detect_distribution()
 
@@ -275,10 +290,15 @@ class TestGetVenvBasePython:
     """
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data="home = /usr/bin\ninclude-system-site-packages = false\nversion = 3.13.0\n")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="home = /usr/bin\ninclude-system-site-packages = false\nversion = 3.13.0\n",
+    )
     @patch.dict("os.environ", {"VIRTUAL_ENV": "/home/user/.venv"})
     def test_get_venv_base_python(self, mock_file, mock_exists):
         """T034: Verify pyvenv.cfg parsing extracts base Python path."""
+
         # Mock pyvenv.cfg exists
         def exists_side_effect(path_self):
             return str(path_self).endswith("pyvenv.cfg")
@@ -293,8 +313,11 @@ class TestGetVenvBasePython:
         """Verify None returned when not in virtual environment."""
         # Mock sys to simulate NOT being in venv (base_prefix == prefix)
         import sys
-        with patch.object(sys, "base_prefix", "/usr"), \
-             patch.object(sys, "prefix", "/usr"):
+
+        with (
+            patch.object(sys, "base_prefix", "/usr"),
+            patch.object(sys, "prefix", "/usr"),
+        ):
             result = get_venv_base_python()
 
             assert result is None
@@ -308,10 +331,15 @@ class TestGetVenvBasePython:
         assert result is None
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data="include-system-site-packages = false\nversion = 3.13.0\n")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="include-system-site-packages = false\nversion = 3.13.0\n",
+    )
     @patch.dict("os.environ", {"VIRTUAL_ENV": "/home/user/.venv"})
     def test_get_venv_base_python_missing_home(self, mock_file, mock_exists):
         """Verify None returned when 'home' key missing in pyvenv.cfg."""
+
         def exists_side_effect(path_self):
             return str(path_self).endswith("pyvenv.cfg")
 

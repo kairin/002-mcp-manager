@@ -149,29 +149,31 @@
 
 ### Implementation for User Story 4
 
-- [ ] T049 [US4] Update MCP server launcher in `backend/src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
-- [ ] T050 [US4] Add Python environment validation for MCP server launches in `backend/src/mcp_manager/core.py` to verify system Python is used
-- [ ] T051 [US4] Add logging for MCP server Python executable path in `backend/src/mcp_manager/core.py` for auditing (FR-009)
-- [ ] T052 [P] [US4] Create integration test `test_mcp_server_uses_system_python()` in `tests/integration/test_mcp_server_python.py` to verify server process Python version
+- [x] T049 [US4] Update MCP server launcher in `backend/src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
+- [x] T050 [US4] Add Python environment validation for MCP server launches in `backend/src/mcp_manager/core.py` to verify system Python is used
+- [x] T051 [US4] Add logging for MCP server Python executable path in `backend/src/mcp_manager/core.py` for auditing (FR-009)
+- [x] T052 [P] [US4] Create integration test `test_mcp_server_uses_system_python()` in `tests/integration/test_mcp_server_python.py` to verify server process Python version
 
-**Checkpoint**: All MCP servers launched by mcp-manager use system Python 3.13 consistently
+**Checkpoint**: All MCP servers launched by mcp-manager use system Python 3.13 consistently ✅ COMPLETE
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 7: Polish & Cross-Cutting Concerns ✅ COMPLETE
 
 **Purpose**: Documentation, error messages, and performance improvements affecting multiple user stories
 
-- [ ] T053 [P] Update README.md with system Python 3.13 requirements and UV configuration instructions
-- [ ] T054 [P] Create troubleshooting section in docs/ for common Python environment issues (Python not found, UV misconfigured, venv conflicts)
-- [ ] T055 [P] Enhance error messages across all modules to include actionable resolution steps per distribution (Ubuntu: apt install, macOS: brew install)
-- [ ] T056 [P] Add Python version and UV config to `mcp-manager status` output for quick diagnostics
-- [ ] T057 [P] Create UV config migration utility in `backend/src/mcp_manager/uv_config.py` to migrate legacy `.uv/config` to standard `uv.toml` format
-- [ ] T058 [P] Document UV config migration process for existing users in docs/migration-guide.md with step-by-step instructions and backup recommendations
-- [ ] T059 Run all code quality checks: black, ruff, mypy on src/ and tests/
-- [ ] T060 Verify quickstart.md workflow (5-minute setup, verify commands work as documented)
-- [ ] T061 [P] Performance profiling: ensure Python detection <100ms, validation command <2s (SC-003)
-- [ ] T062 Final integration test: verify all user stories work together (CLI commands, validate, tests, MCP servers)
+- [x] T053 [P] Update README.md with system Python 3.13 requirements and UV configuration instructions
+- [x] T054 [P] Create troubleshooting section in docs/ for common Python environment issues (Python not found, UV misconfigured, venv conflicts)
+- [x] T055 [P] Enhance error messages across all modules to include actionable resolution steps per distribution (Ubuntu: apt install, macOS: brew install)
+- [x] T056 [P] Add Python version and UV config to `mcp-manager status` output for quick diagnostics
+- [x] T057 [P] Create UV config migration utility in `backend/src/mcp_manager/uv_config.py` to migrate legacy `.uv/config` to standard `uv.toml` format
+- [x] T058 [P] Document UV config migration process for existing users in docs/migration-guide.md with step-by-step instructions and backup recommendations
+- [x] T059 Run all code quality checks: black, ruff, mypy on src/ and tests/
+- [x] T060 Verify quickstart.md workflow (5-minute setup, verify commands work as documented)
+- [x] T061 [P] Performance profiling: ensure Python detection <100ms, validation command <2s (SC-003)
+- [x] T062 Final integration test: verify all user stories work together (CLI commands, validate, tests, MCP servers)
+
+**Checkpoint**: All documentation, error messages, migration utilities, and quality checks complete ✅
 
 ---
 

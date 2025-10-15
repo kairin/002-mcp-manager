@@ -1,4 +1,5 @@
 """UV configuration validator."""
+
 from pathlib import Path
 
 from ..models.validation_models import UVConfiguration, ValidationResult

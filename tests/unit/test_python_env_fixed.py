@@ -8,11 +8,8 @@ References:
     - tasks.md: T028-T034
 """
 
-import subprocess
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
-
-import pytest
+from unittest.mock import Mock, mock_open, patch
 
 from mcp_manager.python_env import (
     detect_distribution,
@@ -45,7 +42,9 @@ class TestFindSystemPython:
     @patch("mcp_manager.python_env.is_python_313")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.is_file")
-    def test_find_system_python_fallback_order(self, mock_is_file, mock_exists, mock_is_313):
+    def test_find_system_python_fallback_order(
+        self, mock_is_file, mock_exists, mock_is_313
+    ):
         """T029: Verify fallback to /usr/local/bin when /usr/bin not found."""
         mock_is_313.return_value = True
 
@@ -72,11 +71,7 @@ class TestGetPythonVersion:
     @patch("pathlib.Path.exists", return_value=True)
     def test_get_python_version_parsing(self, mock_exists, mock_run):
         """T030: Verify version parsing from subprocess output."""
-        mock_run.return_value = Mock(
-            stdout="Python 3.13.0\n",
-            stderr="",
-            returncode=0
-        )
+        mock_run.return_value = Mock(stdout="Python 3.13.0\n", stderr="", returncode=0)
 
         result = get_python_version(Path("/usr/bin/python3.13"))
 
@@ -88,13 +83,17 @@ class TestIsPython313:
 
     def test_is_python_313_valid(self):
         """T031: Verify (3, 13, 0) returns True."""
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 13, 0)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 13, 0)
+        ):
             result = is_python_313(Path("/usr/bin/python3.13"))
             assert result is True
 
     def test_is_python_313_invalid(self):
         """T032: Verify (3, 12, 0) returns False."""
-        with patch("mcp_manager.python_env.get_python_version", return_value=(3, 12, 0)):
+        with patch(
+            "mcp_manager.python_env.get_python_version", return_value=(3, 12, 0)
+        ):
             result = is_python_313(Path("/usr/bin/python3.12"))
             assert result is False
 

@@ -1,7 +1,7 @@
 """Contract tests for 'mcp-manager validate mcp-servers' CLI command."""
-import subprocess
+
 import json
-import pytest
+import subprocess
 
 
 def test_validate_mcp_servers_success():
@@ -9,7 +9,7 @@ def test_validate_mcp_servers_success():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "mcp-servers"],
         capture_output=True,
-        text=True
+        text=True,
     )
     # May pass or fail depending on actual config
     # Just validate structure
@@ -21,7 +21,7 @@ def test_validate_mcp_servers_json_output():
     result = subprocess.run(
         ["uv", "run", "mcp-manager", "validate", "mcp-servers", "--json"],
         capture_output=True,
-        text=True
+        text=True,
     )
     data = json.loads(result.stdout)
     assert "check_name" in data

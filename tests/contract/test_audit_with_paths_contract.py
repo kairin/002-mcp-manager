@@ -7,7 +7,6 @@ contracts/audit_with_paths.yaml
 from pathlib import Path
 
 import pytest
-
 from mcp_manager.core import MCPManager
 from mcp_manager.exceptions import InvalidPathError
 from mcp_manager.models import AuditConfiguration

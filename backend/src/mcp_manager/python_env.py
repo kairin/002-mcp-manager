@@ -10,7 +10,6 @@ References:
     - Tasks: T008, T009, T010, T011, T012
 """
 
-import os
 import platform
 import subprocess
 import sys
@@ -19,8 +18,8 @@ from typing import Literal
 
 # Priority-ordered search paths for Python 3.13 (per research.md lines 46-59)
 PYTHON_SEARCH_PATHS = [
-    "/usr/bin/python3.13",          # Debian/Ubuntu/Fedora package manager
-    "/usr/local/bin/python3.13",    # Manual install or macOS Homebrew (Intel)
+    "/usr/bin/python3.13",  # Debian/Ubuntu/Fedora package manager
+    "/usr/local/bin/python3.13",  # Manual install or macOS Homebrew (Intel)
     "/opt/homebrew/bin/python3.13",  # macOS Homebrew (Apple Silicon)
 ]
 
@@ -91,7 +90,7 @@ def get_python_version(python_path: Path) -> tuple[int, int, int] | None:
             capture_output=True,
             text=True,
             timeout=5,  # Prevent hanging on broken installations
-            check=False
+            check=False,
         )
 
         # Version may be in stdout or stderr depending on Python version
@@ -122,7 +121,12 @@ def get_python_version(python_path: Path) -> tuple[int, int, int] | None:
 
         return None
 
-    except (subprocess.TimeoutExpired, subprocess.SubprocessError, ValueError, IndexError):
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.SubprocessError,
+        ValueError,
+        IndexError,
+    ):
         return None
 
 
@@ -197,7 +201,7 @@ def detect_distribution() -> str:
         if os_release_path.exists():
             try:
                 os_release = {}
-                with open(os_release_path, "r") as f:
+                with open(os_release_path) as f:
                     for line in f:
                         line = line.strip()
                         if "=" in line:
@@ -215,7 +219,7 @@ def detect_distribution() -> str:
                 else:
                     return name
 
-            except (IOError, OSError):
+            except OSError:
                 pass
 
         # Fallback for Linux without /etc/os-release
@@ -224,6 +228,108 @@ def detect_distribution() -> str:
     else:
         # Fallback for other systems (Windows, BSD, etc.)
         return system
+
+
+def get_installation_instructions() -> str:
+    """Get distribution-specific Python 3.13 installation instructions.
+
+    Returns detailed, actionable installation commands based on the
+    detected operating system and distribution.
+
+    Returns:
+        Multi-line string with installation commands
+
+    Examples:
+        >>> instructions = get_installation_instructions()
+        >>> print(instructions)
+
+    References:
+        - Task: T055 (Enhanced error messages with actionable resolution steps)
+        - Guide: docs/PYTHON-TROUBLESHOOTING.md
+    """
+    distro = detect_distribution()
+
+    # Ubuntu/Debian
+    if "Ubuntu" in distro or "Debian" in distro:
+        return """
+To install Python 3.13 on Ubuntu/Debian:
+
+    sudo add-apt-repository ppa:deadsnakes/ppa
+    sudo apt update
+    sudo apt install python3.13 python3.13-dev python3.13-venv
+
+Verify installation:
+
+    python3.13 --version
+    which python3.13  # Should show: /usr/bin/python3.13
+
+Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md
+"""
+
+    # macOS
+    elif "macOS" in distro:
+        return """
+To install Python 3.13 on macOS:
+
+    brew install python@3.13
+    brew link python@3.13
+
+Verify installation:
+
+    python3.13 --version
+    which python3.13  # Should show: /opt/homebrew/bin/python3.13 (Apple Silicon)
+                      #           or: /usr/local/bin/python3.13 (Intel)
+
+Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md
+"""
+
+    # Fedora/CentOS/RHEL
+    elif "Fedora" in distro or "CentOS" in distro or "Red Hat" in distro:
+        return """
+To install Python 3.13 on Fedora/RHEL:
+
+    sudo dnf install python3.13
+
+Verify installation:
+
+    python3.13 --version
+    which python3.13  # Should show: /usr/bin/python3.13
+
+Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md
+"""
+
+    # Arch Linux
+    elif "Arch" in distro or "Manjaro" in distro:
+        return """
+To install Python 3.13 on Arch Linux:
+
+    sudo pacman -S python
+
+Verify installation:
+
+    python3.13 --version
+    which python3.13  # Should show: /usr/bin/python3.13
+
+Troubleshooting guide: docs/PYTHON-TROUBLESHOOTING.md
+"""
+
+    # Generic Linux
+    else:
+        return """
+To install Python 3.13, use your distribution's package manager.
+
+Common package managers:
+  - Debian/Ubuntu: sudo apt install python3.13
+  - Fedora/RHEL:   sudo dnf install python3.13
+  - Arch Linux:    sudo pacman -S python
+
+After installation, verify:
+
+    python3.13 --version
+    which python3.13
+
+For detailed troubleshooting: docs/PYTHON-TROUBLESHOOTING.md
+"""
 
 
 def get_venv_base_python(venv_path: Path | None = None) -> Path | None:
@@ -278,7 +384,7 @@ def get_venv_base_python(venv_path: Path | None = None) -> Path | None:
     try:
         # Parse pyvenv.cfg to find home directory
         home_dir = None
-        with open(pyvenv_cfg_path, "r") as f:
+        with open(pyvenv_cfg_path) as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("home = "):
@@ -304,11 +410,13 @@ def get_venv_base_python(venv_path: Path | None = None) -> Path | None:
 
         return None
 
-    except (IOError, OSError):
+    except OSError:
         return None
 
 
-def get_installation_source(python_path: Path) -> Literal["package_manager", "manual_install", "unknown"]:
+def get_installation_source(
+    python_path: Path,
+) -> Literal["package_manager", "manual_install", "unknown"]:
     """Determine Python installation source based on path.
 
     Classifies Python installation as package manager, manual install,

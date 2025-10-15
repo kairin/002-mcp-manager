@@ -11,9 +11,7 @@ References:
 """
 
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
-
-import pytest
+from unittest.mock import mock_open, patch
 
 from mcp_manager.uv_config import (
     check_uv_installed,
@@ -29,7 +27,11 @@ class TestValidateUvConfig:
     """
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data='[tool.uv]\npython-downloads = "never"\npython-preference = "only-system"\n')
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='[tool.uv]\npython-downloads = "never"\npython-preference = "only-system"\n',
+    )
     def test_validate_uv_config_compliant(self, mock_file, mock_exists):
         """T035: Verify compliant uv.toml detection (downloads=never, preference=only-system)."""
         project_root = Path("/home/user/project")
@@ -41,7 +43,10 @@ class TestValidateUvConfig:
         mock_exists.side_effect = exists_side_effect
 
         # Mock get_uv_config_path
-        with patch("mcp_manager.uv_config.get_uv_config_path", return_value=project_root / "uv.toml"):
+        with patch(
+            "mcp_manager.uv_config.get_uv_config_path",
+            return_value=project_root / "uv.toml",
+        ):
             result = validate_uv_config(project_root)
 
         assert result["python_downloads"] == "never"
@@ -50,7 +55,11 @@ class TestValidateUvConfig:
         assert result.get("python_downloads") in ("never", "manual")
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data='[tool.uv]\npython-downloads = "automatic"\npython-preference = "managed"\n')
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='[tool.uv]\npython-downloads = "automatic"\npython-preference = "managed"\n',
+    )
     def test_validate_uv_config_non_compliant(self, mock_file, mock_exists):
         """T036: Verify violation detection when python-downloads=automatic."""
         project_root = Path("/home/user/project")
@@ -62,7 +71,10 @@ class TestValidateUvConfig:
         mock_exists.side_effect = exists_side_effect
 
         # Mock get_uv_config_path
-        with patch("mcp_manager.uv_config.get_uv_config_path", return_value=project_root / "uv.toml"):
+        with patch(
+            "mcp_manager.uv_config.get_uv_config_path",
+            return_value=project_root / "uv.toml",
+        ):
             result = validate_uv_config(project_root)
 
         assert result["python_downloads"] == "automatic"
@@ -71,7 +83,11 @@ class TestValidateUvConfig:
         assert result.get("python_downloads") not in ("never", "manual")
 
     @patch("pathlib.Path.exists")
-    @patch("builtins.open", new_callable=mock_open, read_data='[tool.uv]\npython-downloads = "manual"\npython-preference = "only-system"\n')
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='[tool.uv]\npython-downloads = "manual"\npython-preference = "only-system"\n',
+    )
     def test_validate_uv_config_manual_downloads_allowed(self, mock_file, mock_exists):
         """Verify 'manual' downloads setting is considered compliant."""
         project_root = Path("/home/user/project")
@@ -81,7 +97,10 @@ class TestValidateUvConfig:
 
         mock_exists.side_effect = exists_side_effect
 
-        with patch("mcp_manager.uv_config.get_uv_config_path", return_value=project_root / "uv.toml"):
+        with patch(
+            "mcp_manager.uv_config.get_uv_config_path",
+            return_value=project_root / "uv.toml",
+        ):
             result = validate_uv_config(project_root)
 
         assert result["python_downloads"] == "manual"
@@ -98,7 +117,9 @@ class TestValidateUvConfig:
 
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.read_text")
-    def test_validate_uv_config_with_python_version_pin(self, mock_read_text, mock_exists):
+    def test_validate_uv_config_with_python_version_pin(
+        self, mock_read_text, mock_exists
+    ):
         """Verify .python-version file detection."""
         project_root = Path("/home/user/project")
 
@@ -123,7 +144,10 @@ class TestValidateUvConfig:
 
         mock_read_text.side_effect = read_text_side_effect
 
-        with patch("mcp_manager.uv_config.get_uv_config_path", return_value=project_root / "uv.toml"):
+        with patch(
+            "mcp_manager.uv_config.get_uv_config_path",
+            return_value=project_root / "uv.toml",
+        ):
             result = validate_uv_config(project_root)
 
         assert result.get("python_version_pinned") == "3.13"

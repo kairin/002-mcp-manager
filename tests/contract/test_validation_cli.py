@@ -15,10 +15,8 @@ References:
 """
 
 import subprocess
-import sys
 import time
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -44,11 +42,7 @@ class TestValidateCLIContract:
         env = {"PYTHONPATH": "backend/src"}
 
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=env
+            cmd, capture_output=True, text=True, timeout=timeout, env=env
         )
         return result
 
@@ -65,12 +59,13 @@ class TestValidateCLIContract:
         """
         # This test requires a compliant system setup
         # We'll use mocking to ensure consistent test environment
+        from datetime import datetime
+
         from mcp_manager.models.python_enforcement import (
             PythonEnvironment,
             UVConfiguration,
             ValidationResult,
         )
-        from datetime import datetime
 
         python_env = PythonEnvironment(
             executable_path=Path("/usr/bin/python3.13"),
@@ -79,7 +74,7 @@ class TestValidateCLIContract:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=False,
-            venv_base_python=None
+            venv_base_python=None,
         )
 
         uv_config = UVConfiguration(
@@ -87,7 +82,7 @@ class TestValidateCLIContract:
             python_downloads="never",
             python_preference="only-system",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -97,7 +92,7 @@ class TestValidateCLIContract:
             errors=[],
             warnings=[],
             checks_performed=["Python 3.13 detected", "UV configuration validated"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify exit code property
@@ -120,11 +115,12 @@ class TestValidateCLIContract:
             - Output contains: "Constitution violations detected"
             - Output contains: Each violation message
         """
+        from datetime import datetime
+
         from mcp_manager.models.python_enforcement import (
             UVConfiguration,
             ValidationResult,
         )
-        from datetime import datetime
 
         uv_config = UVConfiguration(
             config_file_path=Path("/home/user/project/uv.toml"),
@@ -133,8 +129,8 @@ class TestValidateCLIContract:
             is_compliant=False,
             compliance_violations=[
                 "UV allows Python downloads (python-downloads=automatic). Must be 'manual' or 'never'.",
-                "UV not configured for system-only Python (python-preference=managed). Must be 'only-system'."
-            ]
+                "UV not configured for system-only Python (python-preference=managed). Must be 'only-system'.",
+            ],
         )
 
         result = ValidationResult(
@@ -144,7 +140,7 @@ class TestValidateCLIContract:
             errors=[],
             warnings=[],
             checks_performed=["UV configuration validated"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify exit code property
@@ -168,8 +164,9 @@ class TestValidateCLIContract:
             - Output contains: Searched locations
             - Output contains: Installation guidance
         """
-        from mcp_manager.models.python_enforcement import ValidationResult
         from datetime import datetime
+
+        from mcp_manager.models.python_enforcement import ValidationResult
 
         result = ValidationResult(
             status="ERROR",
@@ -177,11 +174,11 @@ class TestValidateCLIContract:
             uv_configuration=None,
             errors=[
                 "Python 3.13 not found on system",
-                "Searched locations: /usr/bin/python3.13, /usr/local/bin/python3.13"
+                "Searched locations: /usr/bin/python3.13, /usr/local/bin/python3.13",
             ],
             warnings=[],
             checks_performed=["Searched for system Python 3.13"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify exit code property
@@ -204,12 +201,13 @@ class TestValidateCLIContract:
             - Timestamp included
             - Result status clearly indicated
         """
+        from datetime import datetime
+
         from mcp_manager.models.python_enforcement import (
             PythonEnvironment,
             UVConfiguration,
             ValidationResult,
         )
-        from datetime import datetime
 
         python_env = PythonEnvironment(
             executable_path=Path("/usr/bin/python3.13"),
@@ -218,7 +216,7 @@ class TestValidateCLIContract:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=False,
-            venv_base_python=None
+            venv_base_python=None,
         )
 
         uv_config = UVConfiguration(
@@ -227,7 +225,7 @@ class TestValidateCLIContract:
             python_preference="only-system",
             python_version_pinned="3.13",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -237,7 +235,7 @@ class TestValidateCLIContract:
             errors=[],
             warnings=[],
             checks_performed=["Python 3.13 detected", "UV configuration validated"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify verbose output contains all required sections
@@ -271,11 +269,12 @@ class TestValidateCLIContract:
             - Output shows base Python path
             - Validates base Python meets requirements
         """
+        from datetime import datetime
+
         from mcp_manager.models.python_enforcement import (
             PythonEnvironment,
             ValidationResult,
         )
-        from datetime import datetime
 
         # Simulate venv environment
         python_env = PythonEnvironment(
@@ -285,7 +284,7 @@ class TestValidateCLIContract:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=True,
-            venv_base_python=Path("/usr/bin/python3.13")
+            venv_base_python=Path("/usr/bin/python3.13"),
         )
 
         result = ValidationResult(
@@ -297,9 +296,9 @@ class TestValidateCLIContract:
             checks_performed=[
                 "Python 3.13 detected",
                 "Virtual environment detected",
-                "Base Python verified: /usr/bin/python3.13"
+                "Base Python verified: /usr/bin/python3.13",
             ],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify venv information in output
@@ -319,7 +318,7 @@ class TestValidateCLIContract:
             - No blocking operations or network calls
         """
         from mcp_manager.validators.python_enforcement_validator import (
-            PythonEnforcementValidator
+            PythonEnforcementValidator,
         )
 
         validator = PythonEnforcementValidator()
@@ -330,8 +329,9 @@ class TestValidateCLIContract:
         elapsed_time = time.time() - start_time
 
         # Verify performance requirement
-        assert elapsed_time < 2.0, \
-            f"Validation took {elapsed_time:.2f}s, exceeds 2.0s requirement"
+        assert (
+            elapsed_time < 2.0
+        ), f"Validation took {elapsed_time:.2f}s, exceeds 2.0s requirement"
 
         # Verify validation completed successfully (returned a result)
         assert result is not None
@@ -347,8 +347,9 @@ class TestValidateCLIContract:
             - Output contains: "UV package manager not found"
             - Output contains: Installation instructions
         """
-        from mcp_manager.models.python_enforcement import ValidationResult
         from datetime import datetime
+
+        from mcp_manager.models.python_enforcement import ValidationResult
 
         result = ValidationResult(
             status="ERROR",
@@ -356,11 +357,11 @@ class TestValidateCLIContract:
             uv_configuration=None,
             errors=[
                 "UV package manager not found in PATH",
-                "Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh"
+                "Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh",
             ],
             warnings=[],
             checks_performed=["Checked for UV installation"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Verify exit code property
@@ -381,12 +382,13 @@ class TestValidateCLIContract:
             - Exit code matches status
         """
         import json
+        from datetime import datetime
+
         from mcp_manager.models.python_enforcement import (
             PythonEnvironment,
             UVConfiguration,
             ValidationResult,
         )
-        from datetime import datetime
 
         python_env = PythonEnvironment(
             executable_path=Path("/usr/bin/python3.13"),
@@ -395,7 +397,7 @@ class TestValidateCLIContract:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=False,
-            venv_base_python=None
+            venv_base_python=None,
         )
 
         uv_config = UVConfiguration(
@@ -403,7 +405,7 @@ class TestValidateCLIContract:
             python_downloads="never",
             python_preference="only-system",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -413,7 +415,7 @@ class TestValidateCLIContract:
             errors=[],
             warnings=[],
             checks_performed=["Python 3.13 detected"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         # Pydantic v2 model_dump_json for JSON serialization

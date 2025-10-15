@@ -1,6 +1,5 @@
 """MCP Server Management commands."""
 
-
 import typer
 from rich import print as rprint
 from rich.console import Console

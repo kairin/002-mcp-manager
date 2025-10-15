@@ -1,7 +1,8 @@
 """Pydantic models for Python 3.13 enforcement validation system."""
+
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -38,7 +39,7 @@ class PythonVersionInfo(BaseModel):
 class UVConfiguration(BaseModel):
     """UV package manager configuration."""
 
-    python_version_file: Optional[Path] = None
+    python_version_file: Path | None = None
     python_version: str
     config_source: Path
     is_valid: bool
@@ -58,10 +59,10 @@ class MCPServerConfig(BaseModel):
 
     name: str = Field(..., min_length=1)
     type: Literal["stdio", "http"]
-    command: Optional[str] = None
-    args: List[str] = Field(default_factory=list)
-    url: Optional[str] = None
-    headers: Dict[str, str] = Field(default_factory=dict)
+    command: str | None = None
+    args: list[str] = Field(default_factory=list)
+    url: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
     uses_uv: bool = Field(default=False)
 
     @model_validator(mode="after")
@@ -73,7 +74,7 @@ class MCPServerConfig(BaseModel):
 
     @field_validator("command")
     @classmethod
-    def validate_stdio_has_command(cls, v: Optional[str], info) -> Optional[str]:
+    def validate_stdio_has_command(cls, v: str | None, info) -> str | None:
         """Validate stdio servers have command."""
         if info.data.get("type") == "stdio" and not v:
             raise ValueError("stdio servers must specify command")
@@ -86,7 +87,7 @@ class ValidationResult(BaseModel):
     check_name: str = Field(..., min_length=1)
     passed: bool
     message: str = Field(..., min_length=1)
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
     severity: Literal["info", "warning", "error", "critical"] = "info"
 
@@ -103,9 +104,9 @@ class ConstitutionCheckResult(BaseModel):
 
     principle_number: int = Field(..., ge=1, le=9)
     principle_name: str
-    checks: List[ValidationResult] = Field(..., min_length=1)
+    checks: list[ValidationResult] = Field(..., min_length=1)
     overall_passed: bool = Field(default=False)
-    failed_checks: List[ValidationResult] = Field(default_factory=list)
+    failed_checks: list[ValidationResult] = Field(default_factory=list)
     validation_timestamp: datetime = Field(default_factory=datetime.now)
 
     @model_validator(mode="after")
@@ -128,8 +129,8 @@ class PythonEnforcementStatus(BaseModel):
     uv_config_valid: bool
     mcp_servers_valid: bool
     constitution_compliant: bool = Field(default=False)
-    validation_results: List[ValidationResult]
-    recommendations: List[str] = Field(default_factory=list)
+    validation_results: list[ValidationResult]
+    recommendations: list[str] = Field(default_factory=list)
     validated_at: datetime = Field(default_factory=datetime.now)
 
     @model_validator(mode="after")
@@ -149,9 +150,7 @@ class PythonEnforcementStatus(BaseModel):
         if not self.python_version_valid:
             recommendations.append("Upgrade to Python 3.13+ (see TROUBLESHOOTING.md)")
         if not self.uv_config_valid:
-            recommendations.append(
-                "Create .python-version file with '3.13' content"
-            )
+            recommendations.append("Create .python-version file with '3.13' content")
         if not self.mcp_servers_valid:
             recommendations.append(
                 "Update stdio MCP servers to use UV (see quickstart.md)"

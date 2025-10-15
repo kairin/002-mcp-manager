@@ -13,8 +13,6 @@ References:
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from mcp_manager.models.python_enforcement import (
     PythonEnvironment,
     UVConfiguration,
@@ -37,7 +35,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert result.exit_code == 0
@@ -51,7 +49,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert result.exit_code == 1
@@ -65,7 +63,7 @@ class TestValidationResultExitCodes:
             errors=["Python 3.13 not found"],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert result.exit_code == 2
@@ -78,7 +76,7 @@ class TestValidationResultExitCodes:
             python_downloads="automatic",
             python_preference="managed",
             is_compliant=False,
-            compliance_violations=["UV allows Python downloads"]
+            compliance_violations=["UV allows Python downloads"],
         )
 
         result = ValidationResult(
@@ -88,7 +86,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert result.has_violations is True
@@ -101,7 +99,7 @@ class TestValidationResultExitCodes:
             python_downloads="never",
             python_preference="only-system",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -111,7 +109,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert result.has_violations is False
@@ -125,7 +123,7 @@ class TestValidationResultExitCodes:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=False,
-            venv_base_python=None
+            venv_base_python=None,
         )
 
         uv_config = UVConfiguration(
@@ -133,7 +131,7 @@ class TestValidationResultExitCodes:
             python_downloads="never",
             python_preference="only-system",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -143,7 +141,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         summary = result.to_summary()
@@ -162,8 +160,8 @@ class TestValidationResultExitCodes:
             is_compliant=False,
             compliance_violations=[
                 "UV allows Python downloads (python-downloads=automatic). Must be 'manual' or 'never'.",
-                "UV not configured for system-only Python (python-preference=managed). Must be 'only-system'."
-            ]
+                "UV not configured for system-only Python (python-preference=managed). Must be 'only-system'.",
+            ],
         )
 
         result = ValidationResult(
@@ -173,7 +171,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Test check"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         summary = result.to_summary()
@@ -191,11 +189,11 @@ class TestValidationResultExitCodes:
             uv_configuration=None,
             errors=[
                 "Python 3.13 not found on system",
-                "Searched locations: /usr/bin/python3.13, /usr/local/bin/python3.13"
+                "Searched locations: /usr/bin/python3.13, /usr/local/bin/python3.13",
             ],
             warnings=[],
             checks_performed=["Searched for system Python 3.13"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         summary = result.to_summary()
@@ -213,7 +211,7 @@ class TestValidationResultExitCodes:
             distribution="Ubuntu",
             is_valid=True,
             in_virtualenv=False,
-            venv_base_python=None
+            venv_base_python=None,
         )
 
         uv_config = UVConfiguration(
@@ -222,7 +220,7 @@ class TestValidationResultExitCodes:
             python_preference="only-system",
             python_version_pinned="3.13",
             is_compliant=True,
-            compliance_violations=[]
+            compliance_violations=[],
         )
 
         result = ValidationResult(
@@ -232,7 +230,7 @@ class TestValidationResultExitCodes:
             errors=[],
             warnings=[],
             checks_performed=["Python 3.13 detected", "UV configuration validated"],
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         verbose = result.to_verbose()

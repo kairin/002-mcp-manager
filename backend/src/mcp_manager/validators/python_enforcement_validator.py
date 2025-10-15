@@ -101,7 +101,9 @@ def validate_python_environment(project_root: Path | None = None) -> ValidationR
     # Verify it's actually Python 3.13
     if not is_python_313(python_path):
         version = get_python_version(python_path)
-        version_str = f"{version[0]}.{version[1]}.{version[2]}" if version else "unknown"
+        version_str = (
+            f"{version[0]}.{version[1]}.{version[2]}" if version else "unknown"
+        )
         errors.append(
             f"Python at {python_path} is version {version_str}, not 3.13.x as required"
         )

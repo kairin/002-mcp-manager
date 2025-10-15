@@ -226,10 +226,47 @@ uv run python -m mcp_manager.cli mcp setup-all
 
 ## 🔧 Prerequisites
 
-- **Python 3.11+**
-- **Claude Code CLI** installed and configured
-- **Git** for repository management
-- **Node.js 18+** (for stdio-based MCP servers)
+### System Requirements (Constitutional Requirements)
+
+- **Python 3.13**: System Python 3.13 installation required
+  - ✅ Ubuntu/Debian: `sudo apt install python3.13`
+  - ✅ macOS: `brew install python@3.13`
+  - ❌ Virtual environments or pyenv-managed Python NOT supported
+  - ❌ UV will NOT download Python (constitutional requirement)
+- **UV Package Manager**: Modern Python package manager
+  - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  - Project includes `uv.toml` with constitutional Python enforcement
+- **Git**: Repository management and version control
+- **Node.js 18+**: For stdio-based MCP servers (shadcn, playwright)
+- **Claude Code CLI**: Optional for direct Claude integration
+
+### UV Configuration (Constitutional Requirements)
+
+This project includes `uv.toml` with mandatory Python 3.13 enforcement:
+
+```toml
+[tool.uv]
+# Constitutional requirement: Never download Python interpreters
+python-downloads = "never"
+
+# Constitutional requirement: Only use system Python
+python-preference = "only-system"
+
+[tool.uv.pip]
+# Use system site packages for integration
+system-site-packages = true
+```
+
+**What this means:**
+- ✅ UV will ONLY use your system Python 3.13 installation
+- ✅ UV will NEVER download additional Python interpreters
+- ❌ Attempting to use UV without Python 3.13 will fail with a clear error
+- ❌ Virtual environments with non-3.13 Python will be rejected
+
+**Why this matters:**
+- **Consistency**: All MCP servers use the same Python 3.13 across all environments
+- **Security**: No hidden Python downloads or version conflicts
+- **Reliability**: Constitutional enforcement prevents environment drift
 
 ## 📚 Core functionality
 

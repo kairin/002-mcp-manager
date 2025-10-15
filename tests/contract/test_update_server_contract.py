@@ -5,7 +5,6 @@ contracts/update_server.yaml
 """
 
 import pytest
-
 from mcp_manager.core import MCPManager
 from mcp_manager.exceptions import (
     ServerNotFoundError,

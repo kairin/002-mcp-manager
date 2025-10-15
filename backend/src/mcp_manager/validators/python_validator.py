@@ -1,4 +1,5 @@
 """Python 3.13 version validator."""
+
 import subprocess
 import sys
 from pathlib import Path
@@ -46,9 +47,7 @@ class PythonValidator:
         runtime_version = sys.version_info
 
         # System Python verification
-        result = subprocess.run(
-            ["python", "--version"], capture_output=True, text=True
-        )
+        result = subprocess.run(["python", "--version"], capture_output=True, text=True)
         system_version_str = result.stdout.strip().replace("Python ", "")
 
         return PythonVersionInfo(
