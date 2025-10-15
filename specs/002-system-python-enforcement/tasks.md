@@ -149,12 +149,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T049 [US4] Update MCP server launcher in `backend/src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
-- [ ] T050 [US4] Add Python environment validation for MCP server launches in `backend/src/mcp_manager/core.py` to verify system Python is used
-- [ ] T051 [US4] Add logging for MCP server Python executable path in `backend/src/mcp_manager/core.py` for auditing (FR-009)
-- [ ] T052 [P] [US4] Create integration test `test_mcp_server_uses_system_python()` in `tests/integration/test_mcp_server_python.py` to verify server process Python version
+- [x] T049 [US4] Update MCP server launcher in `backend/src/mcp_manager/core.py` to use system Python 3.13 path from `find_system_python()` for stdio Python servers
+- [x] T050 [US4] Add Python environment validation for MCP server launches in `backend/src/mcp_manager/core.py` to verify system Python is used
+- [x] T051 [US4] Add logging for MCP server Python executable path in `backend/src/mcp_manager/core.py` for auditing (FR-009)
+- [x] T052 [P] [US4] Create integration test `test_mcp_server_uses_system_python()` in `tests/integration/test_mcp_server_python.py` to verify server process Python version
 
-**Checkpoint**: All MCP servers launched by mcp-manager use system Python 3.13 consistently
+**Checkpoint**: All MCP servers launched by mcp-manager use system Python 3.13 consistently ✅ COMPLETE
 
 ---
 
