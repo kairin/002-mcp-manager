@@ -9,7 +9,7 @@
 
 ### Session 2025-10-15
 
-- Q: Where and how should mcp-manager store UV configuration to enforce system Python usage? → A: Project-local `.uv/config` or similar in mcp-manager directory (isolated, no system-wide impact)
+- Q: Where and how should mcp-manager store UV configuration to enforce system Python usage? → A: Project-local `uv.toml` in mcp-manager root directory (isolated, no system-wide impact)
 - Q: What output format should the validation command use to report compliance status? → A: Summary status line with optional verbose flag for detailed diagnostics
 - Q: How should the system determine priority when multiple Python 3.13 installations exist? → A: Always prefer package manager installations (check `/usr/bin` first, then `/usr/local/bin`)
 - Q: How should mcp-manager behave when executed from within an active Python virtual environment? → A: Allow venv usage but only if the venv itself is based on system Python 3.13
@@ -71,6 +71,8 @@ Developers and CI/CD systems need to verify that mcp-manager adheres to the cons
 
 **Why this priority**: This is P1 because validation is essential for catching violations early and maintaining constitutional compliance. It's a quality gate that prevents drift from requirements.
 
+**Note**: While this is P1 priority for strategic importance, implementation depends on Phase 3 (startup validation infrastructure) completion. Implementation order does not always match priority order - P1 indicates criticality, not necessarily implementation sequence.
+
 **Independent Test**: Can be fully tested by running `mcp-manager validate` and verifying (1) command reports current Python configuration, (2) identifies any constitution violations, and (3) provides clear pass/fail status. Delivers immediate compliance verification.
 
 **Acceptance Scenarios**:
@@ -89,6 +91,7 @@ Developers and CI/CD systems need to verify that mcp-manager adheres to the cons
 - What if a user has multiple Python 3.13 installations (system package manager vs manual install)? (System searches `/usr/bin` first for package manager installation, then `/usr/local/bin` for manual installation, and uses the first Python 3.13 found)
 - How does the system behave if UV is not installed? (System must check for UV and provide installation instructions if missing)
 - What happens when running mcp-manager in a virtual environment? (System validates that the venv is based on system Python 3.13; allows execution if valid, fails with clear error if venv uses different Python version)
+- What happens when venv is nested (venv created from another venv)? (System validates base Python transitively through pyvenv.cfg chain, ensuring the ultimate base is system Python 3.13)
 
 ## Requirements *(mandatory)*
 
@@ -110,7 +113,7 @@ Developers and CI/CD systems need to verify that mcp-manager adheres to the cons
 ### Key Entities
 
 - **Python Environment Configuration**: Represents the detected system Python 3.13 installation, including executable path, version information, and validation status
-- **UV Configuration**: Represents project-local UV configuration files (e.g., `.uv/config` in mcp-manager directory) that enforce system Python usage and prevent additional Python installations without affecting system-wide UV settings
+- **UV Configuration**: Represents project-local UV configuration file (`uv.toml` in mcp-manager root) that enforces system Python usage and prevents additional Python installations without affecting system-wide UV settings
 - **Validation Result**: Represents the compliance check outcome, including pass/fail status, detected Python version, UV configuration state, and any violations found
 
 ## Success Criteria *(mandatory)*
@@ -129,7 +132,11 @@ Developers and CI/CD systems need to verify that mcp-manager adheres to the cons
 
 - Users have Python 3.13 installed via their system package manager (apt, dnf, brew, etc.) or as a system-wide installation
 - UV is installed and available in the system PATH
-- The term "system Python" refers to Python installed system-wide, not in virtual environments or user-local installations
+- The term "system Python" refers to Python installed system-wide via package managers (apt, dnf, brew) or manual installation to standard system paths, explicitly excluding:
+  - Python version managers: pyenv (`~/.pyenv/versions/`), asdf (`~/.asdf/installs/python/`)
+  - Conda/Mamba environments
+  - User-local pip installations (`~/.local/`)
+  - Virtual environments (unless the venv itself is based on system Python 3.13)
 - Python 3.13 specifically is required (not 3.13+, exactly 3.13.x versions)
 - Python 3.13 is located at standard paths: `/usr/bin/python3.13` (package manager) or `/usr/local/bin/python3.13` (manual install)
 - Package manager installations at `/usr/bin` are preferred over manual installations at `/usr/local/bin` when multiple Python 3.13 installations exist
@@ -142,7 +149,7 @@ Developers and CI/CD systems need to verify that mcp-manager adheres to the cons
 - Must work across Linux distributions with different Python installation conventions
 - Cannot modify system Python installation or system-wide Python configuration
 - Must not interfere with other Python projects or tools on the same system
-- UV configuration must be project-local only (e.g., `.uv/config` within mcp-manager directory) and not modify system-wide UV settings or affect other projects
+- UV configuration must be project-local only (`uv.toml` in mcp-manager root) and not modify system-wide UV settings or affect other projects
 - Solution must be portable across developer machines and CI/CD environments
 - Cannot require root/sudo privileges for normal operations (only for initial Python 3.13 installation if needed)
 

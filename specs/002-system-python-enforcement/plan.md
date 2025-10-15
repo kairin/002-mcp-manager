@@ -36,6 +36,19 @@ This feature enforces strict usage of system Python 3.13 across the entire mcp-m
 - Validation command: <2 seconds total execution
 - Configuration validation: <1 second
 
+**Logging Configuration**:
+- **Framework**: Python's built-in `logging` module with `rich.logging.RichHandler`
+- **Location**: `~/.mcp-manager/logs/python-enforcement.log`
+- **Format**: Structured logs with timestamp, level, module, message, python_path, uv_config_path
+- **Rotation**: 10MB max file size, 5 historical files retained
+- **Retention**: 30 days automatic cleanup
+- **Levels**:
+  - DEBUG: Python detection attempts, path searches
+  - INFO: Successful validations, Python path used
+  - WARNING: Non-critical issues (missing .python-version, etc.)
+  - ERROR: Validation failures, missing dependencies
+- **Audit Fields**: python_executable_path, uv_config_file, validation_status, timestamp
+
 **Constraints**:
 - Must use exactly Python 3.13 (not 3.13+)
 - Project-local UV configuration only (no system-wide modification)

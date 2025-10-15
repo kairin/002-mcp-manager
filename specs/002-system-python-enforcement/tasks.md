@@ -166,10 +166,12 @@
 - [ ] T054 [P] Create troubleshooting section in docs/ for common Python environment issues (Python not found, UV misconfigured, venv conflicts)
 - [ ] T055 [P] Enhance error messages across all modules to include actionable resolution steps per distribution (Ubuntu: apt install, macOS: brew install)
 - [ ] T056 [P] Add Python version and UV config to `mcp-manager status` output for quick diagnostics
-- [ ] T057 Run all code quality checks: black, ruff, mypy on src/ and tests/
-- [ ] T058 Verify quickstart.md workflow (5-minute setup, verify commands work as documented)
-- [ ] T059 [P] Performance profiling: ensure Python detection <100ms, validation command <2s (SC-003)
-- [ ] T060 Final integration test: verify all user stories work together (CLI commands, validate, tests, MCP servers)
+- [ ] T057 [P] Create UV config migration utility in `backend/src/mcp_manager/uv_config.py` to migrate legacy `.uv/config` to standard `uv.toml` format
+- [ ] T058 [P] Document UV config migration process for existing users in docs/migration-guide.md with step-by-step instructions and backup recommendations
+- [ ] T059 Run all code quality checks: black, ruff, mypy on src/ and tests/
+- [ ] T060 Verify quickstart.md workflow (5-minute setup, verify commands work as documented)
+- [ ] T061 [P] Performance profiling: ensure Python detection <100ms, validation command <2s (SC-003)
+- [ ] T062 Final integration test: verify all user stories work together (CLI commands, validate, tests, MCP servers)
 
 ---
 
@@ -243,7 +245,7 @@ Continue from MVP → User Story 3 (P2) tests → User Story 4 (P3) MCP servers 
 - T041-T046 (contract tests - all different test functions)
 
 **Phase 7 - Polish**:
-- T053, T054, T055, T056, T059 (documentation and optimization - different files)
+- T053, T054, T055, T056, T057, T058, T061 (documentation, migration, and optimization - different files)
 
 **Cross-Story Parallelization** (if team capacity allows):
 - After Phase 2 completes: US1, US2, and US4 can proceed in parallel (different files/commands)
@@ -299,7 +301,7 @@ Task T041-T046: All contract tests for validation CLI
 1. **Foundation** (Phase 1-2): Setup + Foundational → 15 tasks → Core infrastructure ready
 2. **MVP** (Phase 3-4): Add US1 + US2 → 27 tasks total → Test independently → Deploy/Demo
 3. **Quality** (Phase 5): Add US3 tests → 48 tasks total → Comprehensive test coverage
-4. **Complete** (Phase 6-7): Add US4 + Polish → 60 tasks total → Full feature with MCP server support
+4. **Complete** (Phase 6-7): Add US4 + Polish → 62 tasks total → Full feature with MCP server support and migration utilities
 
 Each increment adds value without breaking previous functionality.
 
@@ -320,7 +322,7 @@ With 3 developers after Foundational phase completes:
 
 ## Task Summary
 
-**Total Tasks**: 60 tasks across 7 phases
+**Total Tasks**: 62 tasks across 7 phases
 
 **Tasks per User Story**:
 - Setup (Phase 1): 4 tasks
@@ -329,9 +331,9 @@ With 3 developers after Foundational phase completes:
 - User Story 2 - Validation (P1): 7 tasks
 - User Story 3 - Tests (P2): 21 tasks
 - User Story 4 - MCP Servers (P3): 4 tasks
-- Polish (Phase 7): 8 tasks
+- Polish (Phase 7): 10 tasks (includes UV config migration T057-T058)
 
-**Parallel Opportunities**: 34 tasks marked [P] can run in parallel within their phases
+**Parallel Opportunities**: 36 tasks marked [P] can run in parallel within their phases
 
 **MVP Scope**: 27 tasks (Phases 1-4: Setup + Foundational + US1 + US2)
 

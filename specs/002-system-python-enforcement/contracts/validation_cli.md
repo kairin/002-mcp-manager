@@ -179,11 +179,16 @@ Timestamp: 2025-10-15T14:30:00.123456
 
 **Given**: UV is not installed
 **When**: User runs `mcp-manager validate`
-**Then**: Command exits with code 2 and error: "UV not found in PATH"
+**Then**: Command exits with code 2 (ERROR) and displays:
+```
+✗ ERROR: Validation could not complete
+  UV package manager not found in PATH
+  Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 **Given**: Permission denied reading UV config
 **When**: User runs `mcp-manager validate`
-**Then**: Command exits with code 2 and error: "Cannot read UV configuration"
+**Then**: Command exits with code 2 (ERROR) and error: "Cannot read UV configuration"
 
 ## Performance Contracts
 
