@@ -93,6 +93,11 @@ warn_unused_ignores = true
 warn_unreachable = true
 strict_equality = true
 
+[tool.uv]
+# Enforce system Python 3.13 for all UV operations
+# This ensures consistency across development environments
+python = "3.13"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

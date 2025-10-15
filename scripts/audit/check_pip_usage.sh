@@ -10,16 +10,19 @@ cd "$REPO_ROOT"
 
 echo "Checking for pip usage in codebase..."
 
-# Search for pip commands in Python files, shell scripts, and documentation
+# Search for standalone pip commands (not "uv pip") in files
 # Excluding this audit script itself and node_modules
-violations=$(grep -r "pip install\|pip freeze\|pip list\|pip show" \
+# Use negative lookbehind to exclude "uv pip" but catch standalone "pip"
+violations=$(grep -rE '\bpip (install|freeze|list|show|uninstall|download)\b' \
     --include="*.py" \
     --include="*.sh" \
     --include="*.md" \
     --exclude-dir="node_modules" \
     --exclude-dir=".git" \
+    --exclude-dir=".venv" \
+    --exclude-dir="venv" \
     --exclude="check_pip_usage.sh" \
-    . 2>/dev/null || true)
+    . 2>/dev/null | grep -v "uv pip" || true)
 
 if [[ -n "$violations" ]]; then
     echo "❌ FAIL: Found pip usage in the following locations:"

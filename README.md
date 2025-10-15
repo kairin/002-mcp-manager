@@ -37,11 +37,11 @@ MCP Manager is a **centralized management system** for Model Context Protocol (M
 git clone https://github.com/kairin/mcp-manager.git
 cd mcp-manager
 
-# Install using pip
-pip install -e .
+# Install using uv
+uv pip install -e .
 
 # Or install from PyPI (coming soon)
-pip install mcp-manager
+uv pip install mcp-manager
 ```
 
 ### 2. Initialize MCP configuration
@@ -96,10 +96,49 @@ mcp-manager diagnose
 
 ## 🔧 Prerequisites
 
-- **Python 3.11+**
+- **Python 3.13** (enforced via UV)
+- **UV package manager** for Python dependency management
 - **Claude Code CLI** installed and configured
 - **Git** for repository management
 - **Node.js 18+** (for stdio-based MCP servers)
+
+## 🛡️ Project Health & Quality
+
+This project uses **automated health checks** enforced on every commit via pre-commit hooks:
+
+### Automated Audits
+- **UV-First Policy**: Ensures all Python package management uses `uv` (not `pip`)
+- **Dependency Health**: Checks for outdated Python and JavaScript dependencies
+- **Repository Organization**: Validates clean root directory structure
+- **MCP Config Validation**: Cross-platform compatibility checks for MCP server configurations
+
+### Running Audits Manually
+```bash
+# Run all project health audits
+./scripts/run_all_audits.sh
+
+# Run individual audits
+./scripts/audit/check_pip_usage.sh        # UV-first policy
+./scripts/audit/check_outdated.sh         # Dependency health
+./scripts/audit/find_root_files.sh        # Repository organization
+./scripts/audit/check_mcp_configs.py      # MCP config validation
+```
+
+### Pre-Commit Integration
+The project uses [pre-commit hooks](https://pre-commit.com/) to automatically run:
+- Project health audits
+- Code formatting (Black)
+- Linting (Ruff)
+- Type checking (mypy)
+- File validation (trailing whitespace, YAML, JSON)
+
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+```
 
 ## 📚 Core functionality
 
