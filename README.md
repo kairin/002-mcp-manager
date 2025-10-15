@@ -272,6 +272,16 @@ server_status = manager.check_server("context7")
 metrics = manager.get_metrics()
 ```
 
+## 🌟 Core Principles
+
+This project is governed by a constitution that ensures consistency, quality, and a seamless developer experience across all supported platforms. Key principles include:
+
+- **Platform Agnosticism**: A single, canonical configuration works everywhere.
+- **Correctness by Design**: Invalid configurations are made impossible through validation and type-safe models.
+- **Developer Experience First**: The CLI is designed to be intuitive, with smart defaults and clear error messages.
+- **Comprehensive Testing**: All configurations are tested across all supported platforms (Claude, Gemini, Copilot).
+- **Security by Default**: Credentials are never hardcoded; they are managed via environment variables.
+
 ## 🌟 Architecture
 
 ```
