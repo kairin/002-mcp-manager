@@ -21,6 +21,10 @@ try {
 // MCP Manager - Modern Web Development Stack Configuration
 // Constitutional compliance: Astro.build (>=4.0) with TypeScript strict mode
 export default defineConfig({
+  // Source and public directories after project restructure
+  srcDir: './frontend/src',
+  publicDir: './frontend/public',
+
   // GitHub Pages deployment configuration
   site: 'https://kairin.github.io',
   base: '/mcp-manager',

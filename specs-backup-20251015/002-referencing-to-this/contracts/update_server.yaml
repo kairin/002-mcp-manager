@@ -1,0 +1,100 @@
+# API Contract: MCP Server Update Operation
+
+operation: update_server
+description: Check for and apply updates to npm-based MCP servers
+
+input:
+  server_name:
+    type: string
+    required: true
+    description: Name of the MCP server to update
+    example: "shadcn"
+
+  dry_run:
+    type: boolean
+    required: false
+    default: false
+    description: If true, check for updates without applying them
+
+output:
+  updated:
+    type: boolean
+    description: Whether the server was actually updated
+
+  current_version:
+    type: string
+    nullable: true
+    description: Version before update (null for HTTP servers)
+
+  latest_version:
+    type: string
+    nullable: true
+    description: Latest available version (null if no update available)
+
+  update_type:
+    type: string
+    enum: ["major", "minor", "patch", "none"]
+    description: Semantic version category of the update
+
+  changes:
+    type: string
+    nullable: true
+    description: Description of changes or why no update
+
+errors:
+  ServerNotFoundError:
+    description: The specified server_name does not exist in configuration
+
+  UpdateCheckError:
+    description: Failed to check for updates (network, npm unavailable, etc.)
+
+  NoUpdateAvailableError:
+    description: Server is already at the latest version
+
+  UpdateFailedError:
+    description: Update check succeeded but applying the update failed
+
+examples:
+  - description: "Dry-run update check"
+    input:
+      server_name: "shadcn"
+      dry_run: true
+    output:
+      updated: false
+      current_version: "1.2.3"
+      latest_version: "1.3.0"
+      update_type: "minor"
+      changes: "New version available (dry-run mode)"
+
+  - description: "Actual update applied"
+    input:
+      server_name: "shadcn"
+      dry_run: false
+    output:
+      updated: true
+      current_version: "1.2.3"
+      latest_version: "1.3.0"
+      update_type: "minor"
+      changes: "Updated from 1.2.3 to 1.3.0"
+
+  - description: "No update available"
+    input:
+      server_name: "shadcn"
+      dry_run: false
+    output:
+      updated: false
+      current_version: "1.3.0"
+      latest_version: "1.3.0"
+      update_type: "none"
+      changes: "Already at latest version"
+
+  - description: "HTTP server (not updatable)"
+    input:
+      server_name: "context7"
+      dry_run: false
+    output:
+      updated: false
+      current_version: null
+      latest_version: null
+      update_type: "none"
+      changes: "HTTP servers do not support version updates"
