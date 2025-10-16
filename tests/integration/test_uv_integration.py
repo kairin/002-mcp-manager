@@ -102,12 +102,16 @@ class TestUvConfigParsingRealFile:
 
             # Test 2: Both exist, should prefer uv.toml
             pyproject_toml = project_root / "pyproject.toml"
-            pyproject_toml.touch()
+            pyproject_toml.write_text(
+                "[tool.uv]\n"
+                'python-downloads = "never"\n'
+                'python-preference = "only-system"\n'
+            )
 
             path = get_uv_config_path(project_root)
             assert path == uv_toml
 
-            # Test 3: Only pyproject.toml exists
+            # Test 3: Only pyproject.toml exists (with [tool.uv] section)
             uv_toml.unlink()
 
             path = get_uv_config_path(project_root)
