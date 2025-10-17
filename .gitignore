@@ -177,3 +177,10 @@ temp/
 *.crt
 credentials.json
 secrets.json
+
+# MCP Configuration Files (may contain API keys)
+.claude.json
+.gemini/
+.config/gemini/settings.json
+**/claude.json
+**/gemini/settings.json

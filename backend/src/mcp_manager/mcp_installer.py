@@ -373,7 +373,7 @@ class MCPInstaller:
     def _add_to_claude_config(
         self, server_name: str, server_spec: dict[str, Any]
     ) -> bool:
-        """Add server configuration to .claude.json."""
+        """Add server configuration to .claude.json using environment variable references."""
         try:
             # Load existing config
             if self.claude_config_path.exists():
@@ -387,7 +387,20 @@ class MCPInstaller:
 
             if server_spec["type"] == "http":
                 server_config["url"] = server_spec["url"]
-                server_config["headers"] = {}  # Will be populated by auth setup
+
+                # SECURITY FIX: Use environment variable references, not actual tokens
+                server_config["headers"] = {}
+                for env_var in server_spec.get("requires_env", []):
+                    if env_var == "CONTEXT7_API_KEY":
+                        server_config["headers"]["CONTEXT7_API_KEY"] = "${CONTEXT7_API_KEY}"
+                    elif env_var == "GITHUB_PERSONAL_ACCESS_TOKEN" or env_var == "GH_TOKEN":
+                        server_config["headers"]["Authorization"] = "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+                    elif env_var == "HUGGINGFACE_TOKEN" or env_var == "HF_TOKEN":
+                        server_config["headers"]["Authorization"] = "Bearer ${HUGGINGFACE_TOKEN}"
+                    else:
+                        # Generic pattern for other tokens
+                        server_config["headers"]["Authorization"] = f"Bearer ${{{env_var}}}"
+
             elif server_spec["type"] == "stdio":
                 server_config["command"] = server_spec["command"]
                 server_config["args"] = server_spec["args"]

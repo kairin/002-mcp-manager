@@ -100,7 +100,11 @@ class HuggingFaceIntegration:
         return self.prompt_for_hf_token()
 
     def configure_hf_mcp_server(self, token: str | None = None) -> dict[str, Any]:
-        """Configure the Hugging Face MCP server with authentication."""
+        """Configure the Hugging Face MCP server with authentication using environment variables.
+
+        SECURITY FIX: Returns configuration with environment variable reference,
+        not the actual token value.
+        """
         if not token:
             token = self.get_or_prompt_token()
 
@@ -108,15 +112,27 @@ class HuggingFaceIntegration:
             console.print(
                 "[yellow]Warning: No HF token provided. Server may have limited functionality.[/yellow]"
             )
+            return {
+                "type": "http",
+                "url": "https://huggingface.co/mcp",
+                "headers": {"Authorization": "Bearer ${HUGGINGFACE_TOKEN}"},
+            }
+
+        # Store token in cache for later use, but return env var reference in config
+        if token:
+            self.save_hf_token_to_cache(token)
 
         return {
             "type": "http",
             "url": "https://huggingface.co/mcp",
-            "headers": {"Authorization": f"Bearer {token}" if token else None},
+            "headers": {"Authorization": "Bearer ${HUGGINGFACE_TOKEN}"},
         }
 
     def update_claude_config(self, dry_run: bool = False) -> bool:
-        """Update Claude configuration with HF MCP server."""
+        """Update Claude configuration with HF MCP server using environment variables.
+
+        SECURITY FIX: Stores environment variable reference in config, not actual token.
+        """
         try:
             # Load existing config
             config = {}
@@ -130,16 +146,25 @@ class HuggingFaceIntegration:
 
             # Check if hf-mcp-server already configured
             existing_hf = config["mcpServers"].get("hf-mcp-server", {})
-            existing_token = existing_hf.get("headers", {}).get("Authorization")
+            existing_auth = existing_hf.get("headers", {}).get("Authorization")
 
-            if existing_token and existing_token != "None":
+            # Check if already using environment variable
+            if existing_auth and "${HUGGINGFACE_TOKEN}" in existing_auth:
                 console.print(
-                    "[cyan]HF MCP server already configured with token[/cyan]"
+                    "[green]✓ HF MCP server already configured with environment variable[/green]"
                 )
-                if not Confirm.ask("Update with new token?"):
-                    return True
+                return True
 
-            # Configure HF MCP server
+            # If hardcoded token exists, warn about security
+            if existing_auth and not existing_auth.startswith("Bearer ${"):
+                console.print(
+                    "[yellow]⚠️  Found hardcoded token in configuration![/yellow]"
+                )
+                console.print(
+                    "[yellow]Migrating to environment variable reference...[/yellow]"
+                )
+
+            # Configure HF MCP server (returns env var reference)
             hf_config = self.configure_hf_mcp_server()
 
             if dry_run:
@@ -154,7 +179,13 @@ class HuggingFaceIntegration:
             with open(self.claude_config_path, "w") as f:
                 json.dump(config, f, indent=2)
 
-            console.print("[green]✓ Successfully configured HF MCP server[/green]")
+            console.print(
+                "[green]✓ Successfully configured HF MCP server with environment variable reference[/green]"
+            )
+            console.print(
+                "[cyan]💡 Set the token: export HUGGINGFACE_TOKEN=your_token_here[/cyan]"
+            )
+
             return True
 
         except Exception as e:

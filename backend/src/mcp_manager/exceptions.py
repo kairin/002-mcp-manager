@@ -64,3 +64,27 @@ class ShellProfileError(MCPManagerError):
     """
 
     pass
+
+
+class InvalidPathError(MCPManagerError):
+    """Invalid or inaccessible path provided.
+
+    Raised when:
+    - Path does not exist
+    - Path is not accessible due to permissions
+    - Path format is invalid
+    """
+
+    pass
+
+
+class UpdateCheckError(MCPManagerError):
+    """Update check operation failed.
+
+    Raised when:
+    - Unable to check for package updates
+    - Network timeout during update check
+    - npm or package manager not available
+    """
+
+    pass
