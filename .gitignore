@@ -146,6 +146,8 @@ Thumbs.db
 
 # Node.js
 node_modules/
+web/dist/
+web/.astro/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
