@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!scripts/**/lib/
 lib64/
 parts/
 sdist/
@@ -158,8 +159,10 @@ yarn-error.log*
 *.backup
 .mcp-manager/
 config/backups/
-logs/
+logs/*
+!logs/.gitkeep
 *.log
+!scripts/local-ci/lib/
 
 # Local development
 .env.local
