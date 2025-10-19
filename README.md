@@ -6,15 +6,17 @@ A simple shell script to switch between different MCP (Model Context Protocol) s
 
 Claude Code supports multiple MCP servers, but loading all of them consumes significant context tokens (~85K). This script lets you quickly switch between different profile configurations based on your current needs:
 
-- **dev** (7K tokens) - Minimal profile for basic coding (github, markitdown)
-- **ui** (12K tokens) - UI/Design work (github, shadcn-ui, shadcn, markitdown)
-- **full** (85K tokens) - All servers for complex tasks (github, shadcn-ui, context7, shadcn, playwright, markitdown, hf-mcp-server)
+- **dev** (7K tokens) - Minimal profile for basic coding
+- **ui** (12K tokens) - UI/Design work
+- **full** (85K tokens) - All servers for complex tasks
+
+Server lists are dynamically read from configuration files and may vary based on your setup.
 
 ## Installation
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/kairin/mcp-manager.git ~/Apps/002-mcp-manager
+git clone https://github.com/kairin/002-mcp-manager.git ~/Apps/002-mcp-manager
 ```
 
 ### 2. Add to your PATH
@@ -28,7 +30,37 @@ export PATH="$HOME/Apps/002-mcp-manager/scripts/mcp:$PATH"
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
+### 4. Create profile configurations (if needed)
+
+If you don't already have MCP profile configs, you need to create them in `~/.config/claude-code/`:
+
+- `mcp-servers-dev.json` - Minimal servers (github, markitdown)
+- `mcp-servers-ui.json` - UI work servers (github, shadcn, markitdown)
+- `mcp-servers-full.json` - All servers
+
+**Note:** The script requires these three profile files to exist. You can customize the servers in each profile based on your needs.
+
 ## Usage
+
+### Interactive Mode (Default)
+
+Simply run the command without arguments to launch an interactive menu:
+
+```bash
+mcp-profile
+```
+
+This displays a numbered menu where you can:
+1. Switch to DEV profile (Minimal, ~7K tokens)
+2. Switch to UI profile (Design work, ~12K tokens)
+3. Switch to FULL profile (All servers, ~85K tokens)
+4. Show detailed status
+5. Show recent backups
+6. Quit
+
+### Command Line Mode
+
+You can also use direct commands:
 
 ```bash
 # Switch to minimal profile (7K tokens)
@@ -46,7 +78,7 @@ mcp-profile status
 # List all available profiles
 mcp-profile list
 
-# Create manual backup
+# Show recent backups
 mcp-profile backup
 
 # Show help
@@ -57,37 +89,26 @@ mcp-profile help
 
 - **Must restart Claude Code** after switching profiles for changes to take effect
 - Automatic backups are created in `~/.config/claude-code/backups/` before each switch
-- Original configuration files are in `~/.config/claude-code/profiles/`
+- Profile configuration files are stored in `~/.config/claude-code/`
 
 ## Profile Details
 
+The server lists shown below are examples. Use `mcp-profile status` to see the actual servers in each profile.
+
 ### dev (Minimal - 7K tokens)
-Best for: Basic coding, git operations, document processing
-```
-- github (Git operations, PR management)
-- markitdown (Document conversion)
-```
+**Best for:** Basic coding, git operations, document processing
+
+**Typical servers:** github, markitdown
 
 ### ui (UI/Design - 12K tokens)
-Best for: Frontend development, component work
-```
-- github (Git operations)
-- shadcn-ui (Component registry)
-- shadcn (UI tooling)
-- markitdown (Document conversion)
-```
+**Best for:** Frontend development, component work
+
+**Typical servers:** github, shadcn, markitdown
 
 ### full (All Servers - 85K tokens)
-Best for: Complex tasks requiring all capabilities
-```
-- github (Git operations)
-- shadcn-ui (Component registry)
-- context7 (Library documentation)
-- shadcn (UI tooling)
-- playwright (Browser automation)
-- markitdown (Document conversion)
-- hf-mcp-server (Hugging Face models)
-```
+**Best for:** Complex tasks requiring all capabilities
+
+**Typical servers:** context7, github, hf-mcp-server, markitdown, playwright, shadcn, shadcn-ui
 
 ## How It Works
 
@@ -106,26 +127,34 @@ When you switch profiles, the script:
 MCP server configurations are stored in:
 ```
 ~/.config/claude-code/
-├── mcp_servers.json          # Active configuration
-├── profiles/
-│   ├── mcp-servers-dev.json  # Minimal profile
-│   ├── mcp-servers-ui.json   # UI profile
-│   └── mcp-servers-full.json # Full profile
+├── mcp-servers.json          # Active configuration
+├── mcp-servers-dev.json      # Minimal profile
+├── mcp-servers-ui.json       # UI profile
+├── mcp-servers-full.json     # Full profile
 └── backups/
     └── mcp-servers-backup-YYYYMMDD_HHMMSS.json
 ```
 
 ## Requirements
 
-- Claude Code CLI installed
-- Bash or Zsh shell
-- MCP servers configured in `~/.config/claude-code/profiles/`
+- **Claude Code** - The CLI must be installed
+- **Bash or Zsh** - Shell environment
+- **jq** - JSON processor for reading server lists
+  - Ubuntu/Debian: `sudo apt install jq`
+  - macOS: `brew install jq`
+- **MCP profile configs** - Must exist in `~/.config/claude-code/`
+  - `mcp-servers-dev.json`
+  - `mcp-servers-ui.json`
+  - `mcp-servers-full.json`
 
 ## Troubleshooting
 
 ### Profile not switching
 - Make sure to restart Claude Code after switching profiles
-- Check that profile files exist in `~/.config/claude-code/profiles/`
+- Check that profile files exist in `~/.config/claude-code/`
+  - `mcp-servers-dev.json`
+  - `mcp-servers-ui.json`
+  - `mcp-servers-full.json`
 
 ### Script not found
 - Verify the script is in your PATH: `echo $PATH`
