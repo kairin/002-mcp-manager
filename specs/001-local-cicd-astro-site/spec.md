@@ -7,6 +7,19 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+## Clarifications
+
+### Session 2025-10-19
+- Q: What should happen if the local CI/CD script fails? → A: The script should attempt to automatically fix the issues (e.g., run `prettier --write`).
+- Q: How should the system handle different environments (local vs. production)? → A: Use different configuration files for each environment (e.g., `.env.local`, `.env.production`).
+- Q: What types of tests should be included in the CI/CD pipeline? → A: Unit tests, integration tests, and end-to-end tests.
+- Q: What approach should the local CI/CD pipeline use for managing secrets and environment variables? → A: Use `.env` files with `.gitignore` patterns + validation step in pre-commit hook to block secrets
+- Q: What level of logging and observability should the local CI/CD pipeline provide? → A: Structured - Show step-by-step progress with timestamps, warnings, and errors in machine-parseable format (JSON)
+- Q: What should happen if the GitHub Pages deployment fails after a successful local CI/CD run? → A: Rollback automatically - Revert to last known good deployment and notify developer via email/log
+- Q: What performance targets should the Astro website meet? → A: High - Page load < 1.5 seconds on 3G, Lighthouse Performance score > 90
+- Q: What should be the PRIMARY architectural principle that governs this project? → A: Modular-First Design - Every feature must be independently buildable, testable, and deployable with clear separation of concerns
+
+
 ### User Story 1 - Local CI/CD Execution (Priority: P1)
 
 As a developer, I want to run all CI/CD processes locally before pushing to the remote repository, so that I can avoid incurring additional charges on GitHub Actions.
@@ -48,8 +61,10 @@ As a project owner, I want to have a website built with Astro.build and hosted o
 
 ### Edge Cases
 
--   What happens if the local CI/CD script fails?
--   How does the system handle different environments (local vs. production)?
+-   If the local CI/CD script fails, it should attempt to automatically fix the issues (e.g., run `prettier --write`). If it cannot fix the issues, it should exit with a non-zero exit code.
+-   The system will handle different environments (local vs. production) using different configuration files (e.g., `.env.local`, `.env.production`).
+-   If a developer attempts to commit files containing secrets or API keys, the pre-commit hook MUST block the commit and display an error message identifying the offending file(s).
+-   If GitHub Pages deployment fails after a successful local CI/CD run, the system MUST automatically rollback to the last known good deployment and notify the developer via log file (and optionally email).
 
 ## Requirements *(mandatory)*
 
@@ -63,12 +78,34 @@ As a project owner, I want to have a website built with Astro.build and hosted o
 -   **FR-006**: The system MUST include a Text-based User Interface (TUI) to make it easy when running the app, so that the options are available to user without having to remember flags and what functions or features of the app.
 -   **FR-007**: The local CI/CD script MUST execute linting, testing, and building the Astro site for GitHub Pages.
 -   **FR-008**: The modular implementation should be structured with separate folders for the website, TUI, and scripts, and be component-based with reusable modules.
+-   **FR-009**: The system MUST use `.env` files with `.gitignore` patterns for secrets management and MUST include a pre-commit hook validation step to block accidental secrets commits.
+-   **FR-010**: The local CI/CD script MUST provide structured logging with step-by-step progress, timestamps, warnings, and errors in machine-parseable format (JSON) to enable debugging and monitoring.
+-   **FR-011**: The GitHub Pages deployment workflow MUST include automatic rollback capability to revert to the last known good deployment if deployment fails, with notification to the developer via log file.
+
+### Non-Functional Requirements (Quality Attributes)
+
+-   **NFR-001**: The Astro website MUST achieve a page load time of less than 1.5 seconds on 3G connections.
+-   **NFR-002**: The Astro website MUST achieve a Lighthouse Performance score greater than 90.
+-   **NFR-003**: The local CI/CD pipeline MUST complete all checks (linting, testing, building) in under 5 minutes for typical changes.
+
+## Architectural Principles
+
+This feature MUST comply with the project constitution defined in `.specify/memory/constitution.md`.
+
+**Primary Principle**: Modular-First Design - Every feature must be independently buildable, testable, and deployable with clear separation of concerns.
+
+**Key Compliance Requirements**:
+- Local-First CI/CD execution (100% local before push)
+- Structured observability (JSON logging with timestamps)
+- Security by default (pre-commit secret validation)
+- Test coverage completeness (unit, integration, e2e)
+- Performance standards (page load < 1.5s, Lighthouse > 90)
 
 ## Assumptions
 
 -   The user has a GitHub account and is familiar with GitHub Pages.
 -   The user has Node.js and npm (or a similar package manager) installed on their local machine.
--   The "testing" in the CI/CD process refers to unit tests.
+-   The "testing" in the CI/CD process refers to unit tests, integration tests, and end-to-end tests.
 
 ## Success Criteria *(mandatory)*
 
@@ -78,3 +115,5 @@ As a project owner, I want to have a website built with Astro.build and hosted o
 -   **SC-002**: GitHub Actions usage for CI/CD is reduced to zero, with actions only used for deployment.
 -   **SC-003**: A developer can set up and run the entire local CI/CD pipeline in under 10 minutes.
 -   **SC-004**: The project structure is clear and well-documented, allowing a new developer to understand the different modules within 30 minutes.
+-   **SC-005**: The deployed Astro website achieves page load times under 1.5 seconds on 3G connections in 95% of tested scenarios.
+-   **SC-006**: The deployed Astro website achieves a Lighthouse Performance score of 90 or higher.
