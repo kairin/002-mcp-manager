@@ -1,0 +1,172 @@
+#!/bin/bash
+
+# MCP Profile Switcher for Claude Code
+# Part of 002-mcp-manager project
+# Usage: mcp-profile [dev|ui|full|status|list|backup]
+
+CONFIG_DIR="$HOME/.config/claude-code"
+ACTIVE_CONFIG="$CONFIG_DIR/mcp-servers.json"
+BACKUP_DIR="$CONFIG_DIR/backups"
+
+# Create backup directory if it doesn't exist
+mkdir -p "$BACKUP_DIR"
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Profile definitions (name, description, servers, token estimate)
+declare -A PROFILES
+PROFILES[dev]="Minimal|github, markitdown|7K"
+PROFILES[ui]="UI/Design work|github, shadcn, markitdown|12K"
+PROFILES[full]="All servers|github, shadcn-ui, context7, shadcn, hf-mcp-server, playwright, markitdown|85K"
+
+show_status() {
+    echo -e "${BLUE}=== MCP Profile Status ===${NC}"
+    echo ""
+
+    if [ ! -f "$ACTIVE_CONFIG" ]; then
+        echo -e "${RED}No active profile found${NC}"
+        echo -e "${YELLOW}Run 'mcp-profile <profile-name>' to set one${NC}"
+        return
+    fi
+
+    # Count servers in active config
+    SERVER_COUNT=$(jq '.mcpServers | length' "$ACTIVE_CONFIG" 2>/dev/null || echo "0")
+
+    # Try to identify which profile is active by comparing
+    ACTIVE_PROFILE="CUSTOM"
+    for profile in dev ui full; do
+        if cmp -s "$ACTIVE_CONFIG" "$CONFIG_DIR/mcp-servers-$profile.json" 2>/dev/null; then
+            ACTIVE_PROFILE=$profile
+            break
+        fi
+    done
+
+    # Display active profile
+    if [ "$ACTIVE_PROFILE" != "CUSTOM" ]; then
+        IFS='|' read -r desc servers tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
+
+        # Color based on token usage
+        if [ "$tokens" == "7K" ]; then
+            TOKEN_COLOR=$GREEN
+        elif [ "$tokens" == "12K" ]; then
+            TOKEN_COLOR=$YELLOW
+        else
+            TOKEN_COLOR=$RED
+        fi
+
+        echo -e "Active Profile: ${CYAN}${ACTIVE_PROFILE^^}${NC}"
+        echo -e "Description: $desc"
+        echo -e "Servers: $servers"
+        echo -e "Context Usage: ${TOKEN_COLOR}~$tokens tokens${NC}"
+    else
+        echo -e "Active Profile: ${YELLOW}CUSTOM${NC}"
+        echo -e "Description: Custom configuration"
+        echo -e "Server count: $SERVER_COUNT"
+    fi
+
+    echo ""
+    list_profiles
+}
+
+list_profiles() {
+    echo -e "${BLUE}Available Profiles:${NC}"
+    for profile in dev ui full; do
+        IFS='|' read -r desc servers tokens <<< "${PROFILES[$profile]}"
+        printf "  %-6s - %s - ~%s tokens\n" "$profile" "$desc" "$tokens"
+    done
+    echo ""
+    echo "Usage: mcp-profile [dev|ui|full|status|list|backup]"
+}
+
+switch_profile() {
+    PROFILE=$1
+    PROFILE_FILE="$CONFIG_DIR/mcp-servers-$PROFILE.json"
+
+    if [ ! -f "$PROFILE_FILE" ]; then
+        echo -e "${RED}Error: Profile '$PROFILE' not found${NC}"
+        echo "Looking for: $PROFILE_FILE"
+        echo ""
+        list_profiles
+        exit 1
+    fi
+
+    # Backup current config
+    if [ -f "$ACTIVE_CONFIG" ]; then
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        cp "$ACTIVE_CONFIG" "$BACKUP_DIR/mcp-servers-backup-$TIMESTAMP.json"
+        echo -e "${BLUE}✓ Backed up current config${NC}"
+        echo "  → $BACKUP_DIR/mcp-servers-backup-$TIMESTAMP.json"
+        echo ""
+    fi
+
+    # Copy profile to active config
+    cp "$PROFILE_FILE" "$ACTIVE_CONFIG"
+
+    echo -e "${GREEN}✓ Switched to '$PROFILE' profile${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠  IMPORTANT: Restart Claude Code for changes to take effect${NC}"
+    echo ""
+
+    # Show new status
+    show_status
+}
+
+show_backups() {
+    echo -e "${BLUE}=== Recent Backups ===${NC}"
+    echo ""
+
+    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No backups found${NC}"
+        return
+    fi
+
+    ls -lht "$BACKUP_DIR"/*.json 2>/dev/null | head -10 | while read -r line; do
+        echo "  $line"
+    done
+    echo ""
+    echo "Backup directory: $BACKUP_DIR"
+}
+
+# Main script logic
+case "${1:-status}" in
+    dev|ui|full)
+        switch_profile "$1"
+        ;;
+    status|"")
+        show_status
+        ;;
+    list)
+        list_profiles
+        ;;
+    backup|backups)
+        show_backups
+        ;;
+    help|--help|-h)
+        echo -e "${CYAN}MCP Profile Switcher${NC}"
+        echo ""
+        echo "Manages MCP server profiles for Claude Code"
+        echo ""
+        echo "Commands:"
+        echo "  dev        - Switch to minimal development profile"
+        echo "  ui         - Switch to UI work profile"
+        echo "  full       - Switch to full profile (all servers)"
+        echo "  status     - Show current active profile (default)"
+        echo "  list       - List all available profiles"
+        echo "  backup     - Show recent backups"
+        echo "  help       - Show this help message"
+        echo ""
+        echo "Note: Restart Claude Code after switching profiles"
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        echo ""
+        show_status
+        exit 1
+        ;;
+esac
