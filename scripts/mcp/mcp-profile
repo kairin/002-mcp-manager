@@ -19,11 +19,24 @@ RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Profile definitions (name, description, servers, token estimate)
+# Profile definitions (name, description, token estimate)
+# Server lists are read dynamically from config files
 declare -A PROFILES
-PROFILES[dev]="Minimal|github, markitdown|7K"
-PROFILES[ui]="UI/Design work|github, shadcn, markitdown|12K"
-PROFILES[full]="All servers|github, shadcn-ui, context7, shadcn, hf-mcp-server, playwright, markitdown|85K"
+PROFILES[dev]="Minimal|7K"
+PROFILES[ui]="UI/Design work|12K"
+PROFILES[full]="All servers|85K"
+
+# Function to get servers from profile config
+get_servers() {
+    local profile=$1
+    local config_file="$CONFIG_DIR/mcp-servers-$profile.json"
+
+    if [ -f "$config_file" ]; then
+        jq -r '.mcpServers | keys | join(", ")' "$config_file" 2>/dev/null || echo "unknown"
+    else
+        echo "unknown"
+    fi
+}
 
 show_status() {
     echo -e "${BLUE}=== MCP Profile Status ===${NC}"
@@ -49,7 +62,8 @@ show_status() {
 
     # Display active profile
     if [ "$ACTIVE_PROFILE" != "CUSTOM" ]; then
-        IFS='|' read -r desc servers tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
+        IFS='|' read -r desc tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
+        servers=$(get_servers "$ACTIVE_PROFILE")
 
         # Color based on token usage
         if [ "$tokens" == "7K" ]; then
@@ -77,7 +91,7 @@ show_status() {
 list_profiles() {
     echo -e "${BLUE}Available Profiles:${NC}"
     for profile in dev ui full; do
-        IFS='|' read -r desc servers tokens <<< "${PROFILES[$profile]}"
+        IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
         printf "  %-6s - %s - ~%s tokens\n" "$profile" "$desc" "$tokens"
     done
     echo ""
@@ -133,12 +147,106 @@ show_backups() {
     echo "Backup directory: $BACKUP_DIR"
 }
 
+interactive_menu() {
+    while true; do
+        echo -e "${CYAN}=== MCP Profile Switcher ===${NC}"
+        echo ""
+
+        # Show current profile
+        if [ -f "$ACTIVE_CONFIG" ]; then
+            SERVER_COUNT=$(jq '.mcpServers | length' "$ACTIVE_CONFIG" 2>/dev/null || echo "0")
+            ACTIVE_PROFILE="CUSTOM"
+
+            for profile in dev ui full; do
+                if cmp -s "$ACTIVE_CONFIG" "$CONFIG_DIR/mcp-servers-$profile.json" 2>/dev/null; then
+                    ACTIVE_PROFILE=$profile
+                    break
+                fi
+            done
+
+            if [ "$ACTIVE_PROFILE" != "CUSTOM" ]; then
+                IFS='|' read -r desc tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
+                echo -e "Current profile: ${CYAN}${ACTIVE_PROFILE^^}${NC} ($desc, ~$tokens tokens)"
+            else
+                echo -e "Current profile: ${YELLOW}CUSTOM${NC} ($SERVER_COUNT servers)"
+            fi
+        else
+            echo -e "Current profile: ${RED}None${NC}"
+        fi
+
+        echo ""
+        echo "Select an action:"
+
+        PS3=$'\n'"${BLUE}Enter choice [1-6]: ${NC}"
+
+        options=(
+            "Switch to DEV profile (Minimal, ~7K tokens)"
+            "Switch to UI profile (Design work, ~12K tokens)"
+            "Switch to FULL profile (All servers, ~85K tokens)"
+            "Show detailed status"
+            "Show recent backups"
+            "Quit"
+        )
+
+        select opt in "${options[@]}"; do
+            case $REPLY in
+                1)
+                    echo ""
+                    switch_profile "dev"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                2)
+                    echo ""
+                    switch_profile "ui"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                3)
+                    echo ""
+                    switch_profile "full"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                4)
+                    echo ""
+                    show_status
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                5)
+                    echo ""
+                    show_backups
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                6)
+                    echo ""
+                    echo -e "${GREEN}Goodbye!${NC}"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "${RED}Invalid option. Please select 1-6.${NC}"
+                    ;;
+            esac
+        done
+
+        # Clear screen for next iteration (optional)
+        clear
+    done
+}
+
 # Main script logic
-case "${1:-status}" in
+case "${1:-interactive}" in
     dev|ui|full)
         switch_profile "$1"
         ;;
-    status|"")
+    status)
         show_status
         ;;
     list)
@@ -156,17 +264,21 @@ case "${1:-status}" in
         echo "  dev        - Switch to minimal development profile"
         echo "  ui         - Switch to UI work profile"
         echo "  full       - Switch to full profile (all servers)"
-        echo "  status     - Show current active profile (default)"
+        echo "  status     - Show current active profile"
         echo "  list       - List all available profiles"
         echo "  backup     - Show recent backups"
         echo "  help       - Show this help message"
+        echo "  (no args)  - Interactive menu (default)"
         echo ""
         echo "Note: Restart Claude Code after switching profiles"
+        ;;
+    interactive|"")
+        interactive_menu
         ;;
     *)
         echo -e "${RED}Unknown command: $1${NC}"
         echo ""
-        show_status
+        list_profiles
         exit 1
         ;;
 esac
