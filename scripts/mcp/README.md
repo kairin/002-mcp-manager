@@ -17,15 +17,18 @@ mcp-profile [command]
 
 **Commands:**
 - `dev` - Switch to minimal development profile (~7K tokens)
-  - Servers: github, markitdown
+  - Servers: github, markitdown (dynamically read from profile)
 - `ui` - Switch to UI work profile (~12K tokens)
-  - Servers: github, shadcn, markitdown
+  - Servers: github, markitdown, playwright, shadcn, shadcn-ui (dynamically read from profile)
 - `full` - Switch to full profile (~85K tokens)
-  - Servers: github, shadcn-ui, context7, shadcn, hf-mcp-server, playwright, markitdown
+  - Servers: All 7 servers including hf-mcp-server and context7 (dynamically read from profile)
 - `status` - Show current active profile (default)
-- `list` - List all available profiles
+- `list` - List all available profiles with their server configurations
+- `test` - Test API keys for active MCP servers (GitHub, HuggingFace, Context7)
 - `backup` - Show recent backups
 - `help` - Show help message
+
+**Note:** Server lists are dynamically read from profile files and may vary based on your setup.
 
 **Examples:**
 ```bash
@@ -35,8 +38,11 @@ mcp-profile dev
 # Check current profile
 mcp-profile status
 
-# List available profiles
+# List available profiles with server details
 mcp-profile list
+
+# Test API keys for active servers
+mcp-profile test
 
 # View recent backups
 mcp-profile backup
@@ -44,7 +50,8 @@ mcp-profile backup
 
 **Important Notes:**
 - You **must restart Claude Code** after switching profiles for changes to take effect
-- Claude Code reads the config at startup from `~/.config/claude-code/mcp-servers.json`
+- Claude Code reads the config at startup from `~/.claude.json`
+- Changes are project-specific (detected via git root or current directory)
 - Each profile switch automatically creates a timestamped backup
 - Backups are stored in `~/.config/claude-code/backups/`
 
@@ -62,15 +69,20 @@ The script is automatically available via PATH. Two methods are configured:
 
 ## Configuration Files
 
-All MCP configurations are stored in `~/.config/claude-code/`:
+MCP configurations are managed in the following locations:
+
 ```
+~/.claude.json                          # Claude Code main config (active)
 ~/.config/claude-code/
-├── mcp-servers.json         # Active config (what Claude Code uses)
-├── mcp-servers-dev.json     # DEV profile
-├── mcp-servers-ui.json      # UI profile
-├── mcp-servers-full.json    # FULL profile
-└── backups/                 # Automatic backups
+├── profiles/                           # Profile definitions
+│   ├── dev.json                        # Minimal profile
+│   ├── ui.json                         # UI profile
+│   └── full.json                       # Full profile
+└── backups/                            # Automatic backups
+    └── claude-backup-YYYYMMDD_HHMMSS.json
 ```
+
+The `~/.claude.json` file contains project-specific MCP server configurations. The script updates the `mcpServers` section for the current project when switching profiles.
 
 ## Workflow
 
@@ -117,7 +129,7 @@ echo $PATH | grep "002-mcp-manager"
 **Changes not taking effect:**
 - Make sure you **fully exit** Claude Code (not just switch to another window)
 - Verify the profile switched: `mcp-profile status`
-- Check the active config: `cat ~/.config/claude-code/mcp-servers.json`
+- Check the active config: `cat ~/.claude.json | jq '.projects'`
 
 **Need to restore a backup:**
 ```bash
@@ -125,6 +137,18 @@ echo $PATH | grep "002-mcp-manager"
 mcp-profile backup
 
 # Manually restore (replace TIMESTAMP)
-cp ~/.config/claude-code/backups/mcp-servers-backup-TIMESTAMP.json \
-   ~/.config/claude-code/mcp-servers.json
+cp ~/.config/claude-code/backups/claude-backup-YYYYMMDD_HHMMSS.json \
+   ~/.claude.json
+```
+
+**Testing API Keys:**
+```bash
+# Test all active server authentication
+mcp-profile test
+
+# This will test:
+# - GitHub API authentication (via gh CLI)
+# - HuggingFace MCP OAuth (via Claude Code MCP connection)
+# - HuggingFace CLI token (via hf auth whoami)
+# - Context7 API key (via direct API call)
 ```

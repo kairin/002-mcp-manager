@@ -255,7 +255,7 @@ This command will:
 === MCP API Key Testing ===
 
 Project: /home/user/Apps/my-project
-Active servers (6): github, markitdown, playwright, shadcn, shadcn-ui, context7
+Active servers (7): github, markitdown, playwright, shadcn, shadcn-ui, hf-mcp-server, context7
 
 Testing API keys for servers that require authentication...
 
@@ -265,13 +265,29 @@ Testing GitHub API...
   - Token scopes: 'repo', 'workflow', 'write:packages'
   Rate limit: Limit: 5000/hour | Used: 10 | Remaining: 4990
 
+Testing HuggingFace MCP Server (OAuth)...
+✓ HuggingFace MCP OAuth session active
+  Status: Connected via Claude Code
+  OAuth authentication verified through MCP
+
+Testing HuggingFace CLI Token...
+✓ HuggingFace CLI token valid
+  Username: myuser
+  Organizations: 2 (org1, org2)
+  Token source: Environment variable (HF_TOKEN)
+
+Token can be used for:
+  ✓ hf CLI commands (model/dataset download, upload)
+  ✓ Python transformers/datasets libraries
+  ✓ Direct API access in scripts
+
 Testing Context7 API...
 ✓ Context7 API key valid
   HTTP Status: 200 OK
   Connection: Successful
 
 Test Summary:
-  Profile servers tested: 2
+  Profile servers tested: 4
   Servers not requiring API keys are working automatically
 ```
 
@@ -280,8 +296,50 @@ Test Summary:
 - To verify credentials before starting work
 - To troubleshoot MCP server connection issues
 - To check rate limits on GitHub API
+- To verify HuggingFace authentication for both MCP OAuth and CLI token
 
 **Note:** The test command shows real API responses, not hardcoded messages. Servers like `markitdown`, `playwright`, and `shadcn` don't require external API keys and work automatically.
+
+### Setting up HuggingFace Authentication
+
+The `hf-mcp-server` uses OAuth authentication through Claude Code, but you may also want to set up CLI token authentication for direct HuggingFace CLI usage:
+
+**Option 1: Login via CLI (Recommended)**
+```bash
+# Install the HuggingFace CLI
+pip install -U huggingface_hub[cli]
+
+# Login interactively
+hf auth login
+
+# Token will be stored in ~/.cache/huggingface/token
+```
+
+**Option 2: Environment Variable**
+
+Add to your `~/.zshrc` or `~/.bashrc`:
+```bash
+export HF_TOKEN='hf_your_token_here'
+```
+
+Then reload your shell:
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+**Get your token:**
+1. Go to https://huggingface.co/settings/tokens
+2. Create a new token with at least read permissions
+3. Use it in either method above
+
+**Test your setup:**
+```bash
+# Test with the modern CLI command
+hf auth whoami
+
+# Or use the mcp-profile test command
+mcp-profile test
+```
 
 ## Requirements
 
