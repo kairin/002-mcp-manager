@@ -1,15 +1,16 @@
 #!/bin/bash
 
-# MCP Profile Switcher for Claude Code
+# MCP Profile Switcher for Claude Code (Terminal CLI)
 # Part of 002-mcp-manager project
 # Usage: mcp-profile [dev|ui|full|status|list|backup]
 
-CONFIG_DIR="$HOME/.config/claude-code"
-ACTIVE_CONFIG="$CONFIG_DIR/mcp-servers.json"
-BACKUP_DIR="$CONFIG_DIR/backups"
+# Configuration paths
+CLAUDE_CONFIG="$HOME/.claude.json"
+PROFILES_DIR="$HOME/.config/claude-code/profiles"
+BACKUP_DIR="$HOME/.config/claude-code/backups"
 
-# Create backup directory if it doesn't exist
-mkdir -p "$BACKUP_DIR"
+# Create directories if they don't exist
+mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -20,68 +21,118 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Profile definitions (name, description, token estimate)
-# Server lists are read dynamically from config files
 declare -A PROFILES
-PROFILES[dev]="Minimal|7K"
-PROFILES[ui]="UI/Design work|12K"
-PROFILES[full]="All servers|85K"
+PROFILES[dev]="Minimal development|~7K"
+PROFILES[ui]="UI/Design work|~12K"
+PROFILES[full]="All servers|~85K"
 
-# Function to get servers from profile config
-get_servers() {
+# Function to get current project path
+get_project_path() {
+    pwd
+}
+
+# Function to check if jq is installed
+check_dependencies() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}Error: jq is required but not installed${NC}"
+        echo "Install with: sudo apt install jq"
+        exit 1
+    fi
+
+    if [ ! -f "$CLAUDE_CONFIG" ]; then
+        echo -e "${RED}Error: Claude Code config not found at $CLAUDE_CONFIG${NC}"
+        echo "Have you run Claude Code at least once?"
+        exit 1
+    fi
+}
+
+# Function to get servers from profile file
+get_servers_from_profile() {
     local profile=$1
-    local config_file="$CONFIG_DIR/mcp-servers-$profile.json"
+    local profile_file="$PROFILES_DIR/$profile.json"
 
-    if [ -f "$config_file" ]; then
-        jq -r '.mcpServers | keys | join(", ")' "$config_file" 2>/dev/null || echo "unknown"
+    if [ -f "$profile_file" ]; then
+        jq -r 'keys | join(", ")' "$profile_file" 2>/dev/null || echo "unknown"
     else
         echo "unknown"
     fi
 }
 
-show_status() {
-    echo -e "${BLUE}=== MCP Profile Status ===${NC}"
-    echo ""
+# Function to get current active servers for project
+get_active_servers() {
+    local project_path=$(get_project_path)
 
-    if [ ! -f "$ACTIVE_CONFIG" ]; then
-        echo -e "${RED}No active profile found${NC}"
-        echo -e "${YELLOW}Run 'mcp-profile <profile-name>' to set one${NC}"
-        return
+    if jq -e --arg path "$project_path" '.projects[$path].mcpServers' "$CLAUDE_CONFIG" &>/dev/null; then
+        jq -r --arg path "$project_path" '.projects[$path].mcpServers | keys | join(", ")' "$CLAUDE_CONFIG" 2>/dev/null || echo "none"
+    else
+        echo "none"
     fi
+}
 
-    # Count servers in active config
-    SERVER_COUNT=$(jq '.mcpServers | length' "$ACTIVE_CONFIG" 2>/dev/null || echo "0")
+# Function to count active servers
+count_active_servers() {
+    local project_path=$(get_project_path)
 
-    # Try to identify which profile is active by comparing
-    ACTIVE_PROFILE="CUSTOM"
+    jq --arg path "$project_path" '(.projects[$path].mcpServers // {}) | length' "$CLAUDE_CONFIG" 2>/dev/null || echo "0"
+}
+
+# Function to identify active profile
+identify_active_profile() {
+    local project_path=$(get_project_path)
+
+    # Get current servers config from Claude config
+    local current_servers=$(jq --arg path "$project_path" '.projects[$path].mcpServers // {}' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    # Compare with each profile
     for profile in dev ui full; do
-        if cmp -s "$ACTIVE_CONFIG" "$CONFIG_DIR/mcp-servers-$profile.json" 2>/dev/null; then
-            ACTIVE_PROFILE=$profile
-            break
+        local profile_file="$PROFILES_DIR/$profile.json"
+        if [ -f "$profile_file" ]; then
+            local profile_servers=$(cat "$profile_file")
+
+            # Compare JSON objects (ignore whitespace/formatting)
+            if [ "$(echo "$current_servers" | jq -S .)" = "$(echo "$profile_servers" | jq -S .)" ]; then
+                echo "$profile"
+                return
+            fi
         fi
     done
 
-    # Display active profile
-    if [ "$ACTIVE_PROFILE" != "CUSTOM" ]; then
-        IFS='|' read -r desc tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
-        servers=$(get_servers "$ACTIVE_PROFILE")
+    echo "CUSTOM"
+}
+
+show_status() {
+    check_dependencies
+
+    local project_path=$(get_project_path)
+    local active_profile=$(identify_active_profile)
+    local server_count=$(count_active_servers)
+    local servers=$(get_active_servers)
+
+    echo -e "${BLUE}=== MCP Profile Status ===${NC}"
+    echo ""
+    echo -e "Project: ${CYAN}$project_path${NC}"
+    echo ""
+
+    if [ "$active_profile" != "CUSTOM" ]; then
+        IFS='|' read -r desc tokens <<< "${PROFILES[$active_profile]}"
 
         # Color based on token usage
-        if [ "$tokens" == "7K" ]; then
+        if [[ "$tokens" == *"7K"* ]]; then
             TOKEN_COLOR=$GREEN
-        elif [ "$tokens" == "12K" ]; then
+        elif [[ "$tokens" == *"12K"* ]]; then
             TOKEN_COLOR=$YELLOW
         else
             TOKEN_COLOR=$RED
         fi
 
-        echo -e "Active Profile: ${CYAN}${ACTIVE_PROFILE^^}${NC}"
+        echo -e "Active Profile: ${CYAN}${active_profile^^}${NC}"
         echo -e "Description: $desc"
-        echo -e "Servers: $servers"
-        echo -e "Context Usage: ${TOKEN_COLOR}~$tokens tokens${NC}"
+        echo -e "Servers ($server_count): $servers"
+        echo -e "Context Usage: ${TOKEN_COLOR}$tokens tokens${NC}"
     else
         echo -e "Active Profile: ${YELLOW}CUSTOM${NC}"
         echo -e "Description: Custom configuration"
-        echo -e "Server count: $SERVER_COUNT"
+        echo -e "Servers ($server_count): $servers"
     fi
 
     echo ""
@@ -92,15 +143,20 @@ list_profiles() {
     echo -e "${BLUE}Available Profiles:${NC}"
     for profile in dev ui full; do
         IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
-        printf "  %-6s - %s - ~%s tokens\n" "$profile" "$desc" "$tokens"
+        servers=$(get_servers_from_profile "$profile")
+        printf "  %-6s - %s - %s\n" "$profile" "$desc" "$tokens"
+        printf "           Servers: %s\n" "$servers"
     done
     echo ""
     echo "Usage: mcp-profile [dev|ui|full|status|list|backup]"
 }
 
 switch_profile() {
-    PROFILE=$1
-    PROFILE_FILE="$CONFIG_DIR/mcp-servers-$PROFILE.json"
+    check_dependencies
+
+    local PROFILE=$1
+    local PROFILE_FILE="$PROFILES_DIR/$PROFILE.json"
+    local project_path=$(get_project_path)
 
     if [ ! -f "$PROFILE_FILE" ]; then
         echo -e "${RED}Error: Profile '$PROFILE' not found${NC}"
@@ -110,17 +166,22 @@ switch_profile() {
         exit 1
     fi
 
-    # Backup current config
-    if [ -f "$ACTIVE_CONFIG" ]; then
-        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-        cp "$ACTIVE_CONFIG" "$BACKUP_DIR/mcp-servers-backup-$TIMESTAMP.json"
-        echo -e "${BLUE}✓ Backed up current config${NC}"
-        echo "  → $BACKUP_DIR/mcp-servers-backup-$TIMESTAMP.json"
-        echo ""
-    fi
+    # Backup current Claude config
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    cp "$CLAUDE_CONFIG" "$BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+    echo -e "${BLUE}✓ Backed up Claude config${NC}"
+    echo "  → $BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+    echo ""
 
-    # Copy profile to active config
-    cp "$PROFILE_FILE" "$ACTIVE_CONFIG"
+    # Read profile servers
+    local new_servers=$(cat "$PROFILE_FILE")
+
+    # Update Claude config with new servers for current project
+    # This creates the project entry if it doesn't exist
+    jq --arg path "$project_path" \
+       --argjson servers "$new_servers" \
+       '.projects[$path].mcpServers = $servers' \
+       "$CLAUDE_CONFIG" > "$CLAUDE_CONFIG.tmp" && mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
 
     echo -e "${GREEN}✓ Switched to '$PROFILE' profile${NC}"
     echo ""
@@ -148,34 +209,30 @@ show_backups() {
 }
 
 interactive_menu() {
+    check_dependencies
+
     while true; do
+        clear
         echo -e "${CYAN}=== MCP Profile Switcher ===${NC}"
         echo ""
 
-        # Show current profile
-        if [ -f "$ACTIVE_CONFIG" ]; then
-            SERVER_COUNT=$(jq '.mcpServers | length' "$ACTIVE_CONFIG" 2>/dev/null || echo "0")
-            ACTIVE_PROFILE="CUSTOM"
+        # Show current status
+        local project_path=$(get_project_path)
+        local active_profile=$(identify_active_profile)
+        local server_count=$(count_active_servers)
 
-            for profile in dev ui full; do
-                if cmp -s "$ACTIVE_CONFIG" "$CONFIG_DIR/mcp-servers-$profile.json" 2>/dev/null; then
-                    ACTIVE_PROFILE=$profile
-                    break
-                fi
-            done
+        echo -e "Project: ${CYAN}$project_path${NC}"
 
-            if [ "$ACTIVE_PROFILE" != "CUSTOM" ]; then
-                IFS='|' read -r desc tokens <<< "${PROFILES[$ACTIVE_PROFILE]}"
-                echo -e "Current profile: ${CYAN}${ACTIVE_PROFILE^^}${NC} ($desc, ~$tokens tokens)"
-            else
-                echo -e "Current profile: ${YELLOW}CUSTOM${NC} ($SERVER_COUNT servers)"
-            fi
+        if [ "$active_profile" != "CUSTOM" ]; then
+            IFS='|' read -r desc tokens <<< "${PROFILES[$active_profile]}"
+            echo -e "Current profile: ${CYAN}${active_profile^^}${NC} ($desc, $tokens tokens)"
         else
-            echo -e "Current profile: ${RED}None${NC}"
+            echo -e "Current profile: ${YELLOW}CUSTOM${NC} ($server_count servers)"
         fi
 
         echo ""
         echo "Select an action:"
+        echo ""
 
         PS3=$'\n'"${BLUE}Enter choice [1-6]: ${NC}"
 
@@ -235,9 +292,6 @@ interactive_menu() {
                     ;;
             esac
         done
-
-        # Clear screen for next iteration (optional)
-        clear
     done
 }
 
@@ -258,7 +312,7 @@ case "${1:-interactive}" in
     help|--help|-h)
         echo -e "${CYAN}MCP Profile Switcher${NC}"
         echo ""
-        echo "Manages MCP server profiles for Claude Code"
+        echo "Manages MCP server profiles for Claude Code terminal CLI"
         echo ""
         echo "Commands:"
         echo "  dev        - Switch to minimal development profile"
@@ -270,7 +324,13 @@ case "${1:-interactive}" in
         echo "  help       - Show this help message"
         echo "  (no args)  - Interactive menu (default)"
         echo ""
-        echo "Note: Restart Claude Code after switching profiles"
+        echo "Configuration:"
+        echo "  Claude config: $CLAUDE_CONFIG"
+        echo "  Profiles dir:  $PROFILES_DIR"
+        echo "  Backups dir:   $BACKUP_DIR"
+        echo ""
+        echo "Note: Changes apply to current project: $(get_project_path)"
+        echo "      Restart Claude Code after switching profiles"
         ;;
     interactive|"")
         interactive_menu
