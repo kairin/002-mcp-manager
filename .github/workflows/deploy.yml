@@ -1,0 +1,210 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Astro Site to GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: ./web
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./web/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Save deployment state on success
+        if: success()
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ID="deploy-\$(date +%s)"
+          COMMIT_SHA="\${{ github.sha }}"
+          TIMESTAMP="\$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"
+          MAX_ATTEMPTS=3
+
+          mkdir -p .github
+
+          # Feature 002: Create deployment state JSON (US2)
+          jq -n \
+            --arg deployment_id "\$DEPLOY_ID" \
+            --arg timestamp "\$TIMESTAMP" \
+            --arg commit_sha "\$COMMIT_SHA" \
+            --arg status "success" \
+            --argjson attempts 1 \
+            '{
+              currentDeployment: {
+                deployment_id: \$deployment_id,
+                timestamp: \$timestamp,
+                commit_sha: \$commit_sha,
+                status: \$status,
+                git_operations_attempts: \$attempts
+              },
+              lastKnownGood: {
+                deployment_id: \$deployment_id,
+                commit_sha: \$commit_sha,
+                timestamp: \$timestamp
+              }
+            }' > .github/deployment-state.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Feature 002: Retry logic with exponential backoff (US2 - FR-003, FR-004)
+          for attempt in \$(seq 1 \$MAX_ATTEMPTS); do
+            echo "Git operation attempt \$attempt/\$MAX_ATTEMPTS"
+
+            if git add .github/deployment-state.json && \
+               git commit -m "chore: Update deployment state [\$DEPLOY_ID]" && \
+               git push origin HEAD:main; then
+              echo "Deployment state persisted (attempt \$attempt/\$MAX_ATTEMPTS)"
+              exit 0
+            fi
+
+            # Update attempts in JSON for next retry
+            jq --argjson new_attempt \$((\$attempt + 1)) \
+               '.currentDeployment.git_operations_attempts = \$new_attempt' \
+               .github/deployment-state.json > .github/deployment-state.tmp.json
+            mv .github/deployment-state.tmp.json .github/deployment-state.json
+
+            # Exponential backoff (skip on last attempt)
+            if [ \$attempt -lt \$MAX_ATTEMPTS ]; then
+              sleep_duration=\$((2 ** \$attempt))
+              echo "Retrying in \${sleep_duration} seconds..."
+              sleep \$sleep_duration
+            fi
+          done
+
+          # All attempts exhausted
+          echo "::error::Failed to persist deployment state after \$MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          set +e  # Allow failures in rollback section
+
+          echo "::error::Deployment failed! Recording failure..."
+
+          if [ -f .github/deployment-state.json ]; then
+            LAST_GOOD_SHA=\$(jq -r '.lastKnownGood.commit_sha // empty' .github/deployment-state.json)
+
+            if [ -n "\$LAST_GOOD_SHA" ]; then
+              echo "::warning::Last known good commit: \$LAST_GOOD_SHA"
+              echo "::warning::To rollback: git revert \${{ github.sha }}"
+            fi
+
+            # Feature 002: Record failed deployment with new schema (US2)
+            DEPLOY_ID="deploy-\$(date +%s)"
+            TIMESTAMP="\$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"
+            COMMIT_SHA="\${{ github.sha }}"
+
+            # Read existing lastKnownGood
+            EXISTING_GOOD=\$(jq -c '.lastKnownGood' .github/deployment-state.json)
+
+            # Create failure record
+            jq -n \
+              --arg deployment_id "\$DEPLOY_ID" \
+              --arg timestamp "\$TIMESTAMP" \
+              --arg commit_sha "\$COMMIT_SHA" \
+              --arg status "failure" \
+              --arg error_message "GitHub Actions deployment failed" \
+              --argjson attempts 1 \
+              --argjson last_known_good "\$EXISTING_GOOD" \
+              '{
+                currentDeployment: {
+                  deployment_id: \$deployment_id,
+                  timestamp: \$timestamp,
+                  commit_sha: \$commit_sha,
+                  status: \$status,
+                  git_operations_attempts: \$attempts,
+                  error_message: \$error_message
+                },
+                lastKnownGood: \$last_known_good
+              }' > .github/deployment-state.json
+
+            git config user.name "github-actions[bot]" || true
+            git config user.email "github-actions[bot]@users.noreply.github.com" || true
+            git add .github/deployment-state.json || true
+            git commit -m "chore: Record failed deployment [\$DEPLOY_ID]" || true
+            git push || true
+          else
+            echo "::error::No deployment state file found. Manual rollback required."
+          fi
+
+          exit 1
+
+  lighthouse:
+    name: Run Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
+
+      - name: Run Lighthouse CI
+        env:
+          LHCI_GITHUB_APP_TOKEN: \${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: |
+          lhci autorun \
+            --collect.url="https://\${{ github.repository_owner }}.github.io/\${{ github.event.repository.name }}/" \
+            --collect.numberOfRuns=3 \
+            --assert.preset="lighthouse:recommended" \
+            --assert.assertions.performance=0.9 \
+            --upload.target=temporary-public-storage
+
+      - name: Verify Performance Score
+        run: |
+          echo "::notice::Lighthouse CI completed."
+          echo "::notice::Verify performance score > 90 (NFR-002)"
+          echo "::notice::Check logs above for detailed results"

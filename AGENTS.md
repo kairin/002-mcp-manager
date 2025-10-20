@@ -1,17 +1,113 @@
-# MCP Manager - Claude Code Integration
+# MCP Profile Switcher - AI Agent Instructions
 
-> 🤖 **CRITICAL**: This file contains NON-NEGOTIABLE requirements that ALL AI assistants (Claude, Gemini, ChatGPT, etc.) working on this repository MUST follow at ALL times.
+> 🤖 **CRITICAL**: This file (AGENTS.md) is the PRIMARY instruction document for ALL AI assistants (Claude, Gemini, ChatGPT, etc.) working on this repository. ALL requirements in this file are NON-NEGOTIABLE and MUST be followed at ALL times.
+
+> 📝 **NOTE**: CLAUDE.md and GEMINI.md are symlinks to this AGENTS.md file to ensure consistent instructions across all AI platforms.
 
 ## 🎯 Project Overview
 
-**MCP Manager** is a centralized management system for Model Context Protocol (MCP) servers used by Claude Code. It automates installation, configuration, and maintenance of MCP servers, ensuring consistent availability across all projects while providing monitoring, auditing, and troubleshooting capabilities.
+**MCP Profile Switcher** is a simple shell script utility for managing Claude Code's MCP (Model Context Protocol) server configurations. It allows users to quickly switch between different server profiles to optimize context token usage based on their current workflow needs.
 
-**Repository**: https://github.com/kairin/mcp-manager
-**Integration**: Prepared for [spec-kit](https://github.com/kairin/spec-kit) workflow
+**Repository**: https://github.com/kairin/002-mcp-manager
+**Type**: Shell utility script
+**Language**: Bash
+**Primary File**: `scripts/mcp/mcp-profile`
 
 ## ⚡ NON-NEGOTIABLE REQUIREMENTS
 
-### 🚨 CRITICAL: Branch Management & Git Strategy (MANDATORY)
+### 🚨 CRITICAL: Project Scope & Philosophy
+
+**THIS IS A SIMPLE SHELL SCRIPT PROJECT**
+- Keep it simple - resist over-engineering
+- One shell script, one purpose: switch MCP profiles
+- No Python backends, no web frameworks, no complex dependencies
+- Dynamic data reading from JSON configs (no hardcoded values)
+- Modern best practices (XDG standards)
+
+### 🚨 CRITICAL: File Structure (MANDATORY)
+
+```
+002-mcp-manager/
+├── .git/                    # Version control
+├── .gitignore              # Git ignore patterns
+├── LICENSE                 # MIT license
+├── README.md               # User documentation
+├── AGENTS.md               # AI agent instructions (this file)
+├── CLAUDE.md               # Symlink → AGENTS.md
+├── GEMINI.md               # Symlink → AGENTS.md
+└── scripts/
+    └── mcp/
+        ├── mcp-profile     # Main shell script
+        └── README.md       # Script documentation
+```
+
+**TOTAL FILES**: 5 essential files + 3 documentation/config files
+
+### 🚨 CRITICAL: No Hardcoded Values
+
+All dynamic data MUST be read from source files:
+
+**✅ CORRECT - Dynamic:**
+```bash
+# Read server list from actual JSON config
+servers=$(jq -r '.mcpServers | keys | join(", ")' "$config_file")
+```
+
+**❌ WRONG - Hardcoded:**
+```bash
+# Hardcoded server list
+servers="github, markitdown, shadcn"
+```
+
+**Why This Matters:**
+- Single source of truth (JSON config files)
+- Always accurate
+- Changes to configs automatically reflected
+- Fully verifiable
+
+### 🚨 CRITICAL: XDG Base Directory Compliance
+
+Follow modern Linux/Unix standards:
+
+**✅ User Binaries**: `~/.local/bin/`
+```bash
+~/.local/bin/github-mcp-server    # NOT ~/bin/
+```
+
+**✅ User Configurations**:
+```bash
+~/.claude.json                             # Main Claude Code config (project-scoped)
+~/.config/claude-code/profiles/dev.json    # Dev profile definition
+~/.config/claude-code/profiles/ui.json     # UI profile definition
+~/.config/claude-code/profiles/full.json   # Full profile definition
+~/.config/claude-code/backups/             # Automatic backups
+```
+
+**✅ Project Scripts**: `~/Apps/002-mcp-manager/scripts/mcp/`
+
+**❌ NEVER USE**:
+- `~/bin/` (legacy location)
+- `/usr/bin/` (requires root, wrong for user scripts)
+- Random locations not in PATH
+
+### 🚨 CRITICAL: Dependencies
+
+**Required:**
+- Bash or Zsh shell
+- `jq` - JSON processor (CRITICAL for reading server lists)
+- Claude Code CLI
+- Git
+
+**Installation Verification:**
+```bash
+# Check jq is installed
+which jq || echo "❌ jq not installed"
+
+# Check script is executable
+test -x scripts/mcp/mcp-profile || echo "❌ Not executable"
+```
+
+### 🚨 CRITICAL: Branch Management & Git Strategy
 
 #### Branch Preservation (MANDATORY)
 - **NEVER DELETE BRANCHES** without explicit user permission
@@ -23,296 +119,261 @@
 **Format**: `YYYYMMDD-HHMMSS-type-short-description`
 
 Examples:
-- `20250923-143000-feat-mcp-server-manager`
-- `20250923-143515-fix-configuration-audit`
-- `20250923-144030-docs-api-reference`
+- `20251019-143000-feat-dynamic-server-detection`
+- `20251019-143515-fix-symlink-paths`
+- `20251019-144030-docs-installation-guide`
 
 #### GitHub Safety Strategy (MANDATORY)
 ```bash
 # MANDATORY: Every commit must use this workflow
-DATETIME=$(date +"%Y%m%d-%H%M%S")
-BRANCH_NAME="${DATETIME}-feat-description"
-git checkout -b "$BRANCH_NAME"
+git checkout -b "$(date +%Y%m%d-%H%M%S)-type-description"
 git add .
 git commit -m "Descriptive commit message
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 Co-Authored-By: Claude <noreply@anthropic.com>"
-git push -u origin "$BRANCH_NAME"
+git push -u origin "$(git branch --show-current)"
 git checkout main
-git merge "$BRANCH_NAME" --no-ff
+git merge "$(git branch --show-current)" --no-ff
 git push origin main
-# NEVER: git branch -d "$BRANCH_NAME"
+# NEVER: git branch -d (preserve all branches)
 ```
 
-### 🚨 CRITICAL: Python Development Standards (MANDATORY)
+### 🚨 CRITICAL: Security Requirements
 
-#### Python Version & Dependencies
-- **Python 3.11+**: Minimum required version
-- **Modern Type Hints**: Full type annotations required
-- **Pydantic v2**: For configuration and data validation
-- **Rich**: For CLI output and progress indicators
-- **Typer**: For CLI interface with modern features
+**NEVER commit:**
+- API keys or tokens
+- Personal email addresses (use privacy-protected: noreply@)
+- Hardcoded credentials
+- Real secrets in example configs
 
-#### Code Quality (NON-NEGOTIABLE)
+**Security Scan Before Every Commit:**
 ```bash
-# MANDATORY: Code quality checks before every commit
-black src/ tests/                    # Code formatting
-ruff check src/ tests/               # Linting and imports
-mypy src/                           # Type checking
-pytest tests/ --cov=mcp_manager     # Testing with coverage >80%
+# Scan for actual secrets
+git ls-files | xargs grep -l -E "(ghp_[a-zA-Z0-9]{36}|ghs_[a-zA-Z0-9]{36}|sk-[a-zA-Z0-9]{48})"
+
+# Verify no hardcoded credentials
+grep -r "API_KEY.*=" . --include="*.sh" --include="*.json"
 ```
 
-#### Project Structure (MANDATORY)
+**✅ ACCEPTABLE**:
+- Development paths: `/home/kkk/Apps/002-mcp-manager`
+- Binary locations: `~/.local/bin/github-mcp-server`
+- Environment variable names: `GITHUB_PERSONAL_ACCESS_TOKEN`
+- Privacy-protected emails: `noreply@anthropic.com`
+
+## 📋 Core Functionality
+
+### Profile Management
+
+The script manages three profiles:
+
+1. **dev** (~7K tokens) - Minimal servers (github, markitdown)
+2. **ui** (~12K tokens) - UI/design work (github, markitdown, playwright, shadcn, shadcn-ui)
+3. **full** (~85K tokens) - All 6 servers (adds hf-mcp-server)
+
+### Active MCP Servers (6 Working)
+
+- **github** - GitHub API integration (stdio)
+- **markitdown** - Document to markdown conversion (stdio)
+- **playwright** - Browser automation (stdio)
+- **shadcn** - shadcn/ui CLI (stdio)
+- **shadcn-ui** - shadcn/ui components server (stdio)
+- **hf-mcp-server** - HuggingFace Hub integration (http)
+
+**Note**: context7 was removed due to persistent SSE connection issues.
+
+### Key Operations
+
+**Interactive Mode (Default)**:
+```bash
+mcp-profile           # Launch interactive menu with numbered selections
 ```
-mcp-manager/
-├── src/mcp_manager/           # Main package
-│   ├── __init__.py           # Package exports
-│   ├── cli.py                # CLI interface
-│   ├── core.py               # Core MCP management
-│   ├── models.py             # Pydantic models
-│   ├── exceptions.py         # Custom exceptions
-│   ├── config.py             # Configuration management
-│   ├── health.py             # Health monitoring
-│   └── utils.py              # Utility functions
-├── tests/                    # Test suite
-├── docs/                     # Documentation
-├── scripts/                  # Utility scripts
-├── pyproject.toml            # Project configuration
-├── README.md                 # Project documentation
-├── CLAUDE.md                 # This file - AI instructions
-└── LICENSE                   # MIT License
+
+**Command Line Mode**:
+```bash
+mcp-profile status    # Show current profile
+mcp-profile dev       # Switch to dev profile
+mcp-profile ui        # Switch to ui profile
+mcp-profile full      # Switch to full profile
+mcp-profile list      # List available profiles
+mcp-profile backup    # Show recent backups
+mcp-profile help      # Show help message
 ```
 
-### 🚨 CRITICAL: Spec-Kit Integration (MANDATORY)
+### How It Works
 
-#### Spec-Kit Workflow Commands
-This project is prepared for [spec-kit](https://github.com/kairin/spec-kit) integration with the following workflow:
+1. **Project Detection**: Uses git root to find project path (works from any subdirectory)
+2. **Profile Detection**: Compares project's MCP config with profile files using JSON comparison
+3. **Server Reading**: Uses `jq` to dynamically read server lists from profile JSON files
+4. **Backup Creation**: Automatic timestamped backups of `~/.claude.json` before switching
+5. **Profile Switching**: Updates project-specific MCP servers in `~/.claude.json`
+6. **Status Display**: Shows current profile with color-coded token usage
 
-1. **`/constitution`** - Establish project principles
-2. **`/specify`** - Define MCP management requirements
-3. **`/plan`** - Create technical implementation plan
-4. **`/tasks`** - Generate actionable task breakdown
-5. **`/implement`** - Execute implementation
+## 🎯 Code Quality Standards
 
-#### Constitutional Principles (MANDATORY)
-- **Global Configuration First**: All MCP servers managed globally by default
-- **Zero Downtime Operations**: Configuration changes must not break existing setups
-- **Security by Design**: Secure credential storage and rotation
-- **Performance Monitoring**: Health checks and performance tracking
-- **User-Centric Design**: Intuitive CLI with helpful error messages
+### Shell Script Best Practices
 
-### 🚨 CRITICAL: MCP Server Management (MANDATORY)
+**✅ DO:**
+- Use `set -euo pipefail` for error handling (if appropriate)
+- Quote all variables: `"$variable"`
+- Use `local` for function variables
+- Provide clear error messages
+- Use color coding for output clarity
 
-#### Supported MCP Server Types
-| Server | Type | Implementation | Priority |
-|--------|------|----------------|----------|
-| context7 | HTTP | ✅ Required | High |
-| shadcn | stdio | ✅ Required | High |
-| github | HTTP | ✅ Required | High |
-| playwright | stdio | ✅ Required | High |
-| hf-mcp-server | HTTP | ✅ Required | High |
+**❌ DON'T:**
+- Hardcode server lists or data
+- Use global variables unnecessarily
+- Ignore error conditions
+- Make assumptions about file locations
+- Skip input validation
 
-#### Configuration Management (MANDATORY)
-```python
-# Global configuration structure (MANDATORY)
-{
-    "mcpServers": {
-        "context7": {
-            "type": "http",
-            "url": "https://mcp.context7.com/mcp",
-            "headers": {"CONTEXT7_API_KEY": "..."}
-        },
-        "shadcn": {
-            "type": "stdio",
-            "command": "npx",
-            "args": ["shadcn@latest", "mcp"],
-            "env": {}
-        }
-        # ... other servers
-    }
+### Testing Requirements
+
+Before committing changes to the script:
+
+```bash
+# Test all profiles
+mcp-profile dev
+mcp-profile status    # Verify shows DEV
+mcp-profile ui
+mcp-profile status    # Verify shows UI
+mcp-profile full
+mcp-profile status    # Verify shows FULL
+
+# Verify server lists match configs
+jq '.projects["/home/kkk/Apps/002-mcp-manager"].mcpServers | keys' ~/.claude.json
+
+# Test from different directories
+cd ~
+mcp-profile status    # Should still detect correct project via git root
+
+# Test error conditions
+mcp-profile invalid   # Should show error message
+```
+
+## 🔧 Maintenance Guidelines
+
+### Adding New Profiles
+
+To add a new profile (e.g., "lite"):
+
+1. Create profile config: `~/.config/claude-code/profiles/lite.json`
+2. Add to PROFILES array in script: `PROFILES[lite]="Description|XK"`
+3. Add to profile comparison loop: `for profile in dev ui full lite`
+4. Update AGENTS.md and README.md documentation
+5. Test thoroughly
+
+### Modifying Server Lists
+
+**NEVER** modify hardcoded values. Server lists are read dynamically:
+
+```bash
+# Profile files are read from ~/.config/claude-code/profiles/
+get_servers_from_profile() {
+    local profile=$1
+    jq -r 'keys | join(", ")' "$PROFILES_DIR/$profile.json"
 }
 ```
 
-#### Health Monitoring (MANDATORY)
-- **Connectivity Tests**: Regular HTTP/stdio connectivity validation
-- **Performance Metrics**: Response time and reliability tracking
-- **Error Detection**: Automatic issue identification and reporting
-- **Recovery Actions**: Automated recovery for common issues
+To change servers:
+1. Edit profile files in `~/.config/claude-code/profiles/`
+2. Or use `claude mcp add/remove` commands to modify `~/.claude.json`
+3. Then run `mcp-profile <profile>` to sync
 
-## 🏗️ Development Standards
+## 📚 Documentation Requirements
 
-### CLI Interface (MANDATORY)
+### README.md
+
+Must include:
+- Clear installation instructions
+- Usage examples
+- Profile descriptions (dynamic, not hardcoded)
+- Requirements (including `jq`)
+- Troubleshooting section
+- Configuration file locations
+
+### Script Comments
+
 ```bash
-# Primary commands (REQUIRED)
-mcp-manager audit              # Audit all MCP configurations
-mcp-manager init --global      # Initialize global configuration
-mcp-manager add <name> [opts]  # Add new MCP server
-mcp-manager remove <name>      # Remove MCP server
-mcp-manager status             # Check server health
-mcp-manager update [--all]     # Update servers
-mcp-manager diagnose          # Troubleshoot issues
-mcp-manager migrate           # Migrate project configs to global
-
-# Configuration commands
-mcp-manager config show       # Show current configuration
-mcp-manager config backup     # Create configuration backup
-mcp-manager config restore    # Restore from backup
-
-# Monitoring commands
-mcp-manager monitor           # Real-time health monitoring
-mcp-manager metrics           # Performance metrics
-mcp-manager logs             # View operation logs
+# Function: get_servers
+# Purpose: Dynamically read server list from profile config
+# Args: $1 - profile name (dev|ui|full)
+# Returns: Comma-separated server list
+get_servers() {
+    # Implementation
+}
 ```
 
-### Testing Requirements (MANDATORY)
-- **Unit Tests**: >80% code coverage required
-- **Integration Tests**: Real MCP server interaction tests
-- **CLI Tests**: Command-line interface testing
-- **Performance Tests**: Response time and resource usage
-- **Error Handling**: Comprehensive error scenario testing
+## ✅ Pre-Commit Checklist
 
-### Documentation (MANDATORY)
-- **API Documentation**: Complete Python API reference
-- **CLI Documentation**: Comprehensive command reference
-- **Configuration Guide**: Setup and configuration instructions
-- **Troubleshooting Guide**: Common issues and solutions
-- **Contributing Guide**: Development setup and contribution process
+Before committing any changes:
 
-## 🔧 Implementation Guidelines
+- [ ] No hardcoded server lists in script
+- [ ] All data read dynamically from JSON files
+- [ ] Security scan completed (no secrets)
+- [ ] Script tested with all three profiles
+- [ ] XDG paths used consistently (`~/.local/bin`, `~/.config`)
+- [ ] README.md updated if functionality changed
+- [ ] Branch naming follows YYYYMMDD-HHMMSS format
+- [ ] Commit message includes co-authorship
+- [ ] File count remains minimal (≤8 files total)
 
-### Error Handling (MANDATORY)
-```python
-# Custom exception hierarchy (REQUIRED)
-class MCPManagerError(Exception):
-    """Base exception for MCP Manager."""
-
-class ServerNotFoundError(MCPManagerError):
-    """Server not found in configuration."""
-
-class ConfigurationError(MCPManagerError):
-    """Invalid configuration detected."""
-
-class ConnectivityError(MCPManagerError):
-    """Unable to connect to MCP server."""
-```
-
-### Logging (MANDATORY)
-```python
-import logging
-from rich.logging import RichHandler
-
-# Rich-based logging configuration (REQUIRED)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)]
-)
-```
-
-### Configuration Management (MANDATORY)
-```python
-from pathlib import Path
-from pydantic import BaseModel
-import json
-
-class MCPServerConfig(BaseModel):
-    """MCP server configuration model."""
-    type: Literal["http", "stdio"]
-    url: Optional[str] = None
-    command: Optional[str] = None
-    args: List[str] = []
-    headers: Dict[str, str] = {}
-    env: Dict[str, str] = {}
-
-# Global configuration location (MANDATORY)
-CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
-```
-
-## 🚨 ABSOLUTE PROHIBITIONS
+## 🚫 ABSOLUTE PROHIBITIONS
 
 ### DO NOT
+
+- Add Python, Node.js, or any complex dependencies beyond `jq`
+- Create web interfaces, APIs, or backends
+- Hardcode server lists, descriptions, or configuration data
+- Use legacy locations (`~/bin/`, `/usr/bin/` for user scripts)
 - Delete branches without explicit user permission
-- Break existing MCP server configurations
-- Store credentials in plain text without encryption
-- Skip type annotations in new code
-- Ignore test coverage requirements
-- Bypass code quality checks (black, ruff, mypy)
-- Commit without proper branch naming strategy
-- Remove or modify global MCP configurations without backup
+- Commit secrets, API keys, or credentials
+- Over-engineer a simple shell script
+- Create unnecessary files or directories
+- Break the simple, focused nature of this tool
 
 ### DO NOT BYPASS
+
+- Security scanning before commits
+- XDG Base Directory standards
+- Dynamic data reading from JSON configs
 - Branch preservation requirements
-- Code quality standards (black, ruff, mypy, pytest)
-- Type annotation requirements
-- Configuration backup before changes
-- Health check validation
-- Error handling requirements
+- Minimal file structure principle
 
-## ✅ MANDATORY ACTIONS
+## 📊 Success Metrics
 
-### Before Every Commit
-1. **Code Quality**: Run `black`, `ruff`, `mypy` checks
-2. **Testing**: Execute `pytest` with >80% coverage
-3. **Branch Creation**: Use datetime-based branch naming
-4. **Configuration Backup**: Backup configs before changes
-5. **Health Validation**: Verify MCP server connectivity
-6. **Documentation**: Update relevant docs if adding features
+This project is successful when:
 
-### Quality Gates
-- All tests pass with >80% coverage
-- Type checking passes without errors
-- Code formatting matches black standards
-- Linting passes ruff validation
-- MCP servers remain functional after changes
-- Documentation is updated for new features
+1. **Simplicity**: Single shell script, minimal dependencies
+2. **Accuracy**: Server lists always match actual configs (100%)
+3. **Standards**: Full XDG Base Directory compliance
+4. **Security**: Zero secrets leaked, all scans pass
+5. **Maintainability**: Easy to understand, modify, extend
+6. **Documentation**: Clear, accurate, helpful
 
-## 🎯 Success Criteria
+## 🎓 Philosophy
 
-### Functionality Metrics
-- **Configuration Audit**: 100% accurate detection of project vs global configs
-- **Migration Success**: >99% successful project-to-global migrations
-- **Health Monitoring**: <5 second server health check completion
-- **Error Recovery**: Automatic recovery for >90% of common issues
+**Keep It Simple**
+- This is a shell script, not an enterprise application
+- Resist the urge to add frameworks or complex architectures
+- Value clarity and simplicity over clever solutions
+- One file, one purpose, done well
 
-### Code Quality Metrics
-- **Test Coverage**: >80% line coverage maintained
-- **Type Coverage**: 100% type annotation compliance
-- **Performance**: CLI commands complete in <2 seconds
-- **Reliability**: >99.9% uptime for monitoring operations
+**Be Accurate**
+- Read data from source files, never hardcode
+- Verify reported values match actual configs
+- Single source of truth principle
 
-### User Experience Metrics
-- **Setup Time**: <5 minutes for initial global configuration
-- **Learning Curve**: Intuitive CLI requiring minimal documentation
-- **Error Messages**: Clear, actionable error descriptions
-- **Recovery Time**: <1 minute average issue resolution
-
-## 📚 Resources & Integration
-
-### Spec-Kit Integration
-This project is prepared for spec-kit workflow integration:
-- **Repository**: https://github.com/kairin/spec-kit
-- **Workflow**: Constitution → Specify → Plan → Tasks → Implement
-- **Commands**: `/constitution`, `/specify`, `/plan`, `/tasks`, `/implement`
-
-### Related Projects
-- **ghostty-config-files**: https://github.com/kairin/ghostty-config-files
-- **Claude Code**: https://claude.ai/code
-- **Context7 MCP**: https://context7.com
-
-### Documentation
-- **README.md**: Project overview and quick start
-- **API Documentation**: Python API reference (planned)
-- **CLI Reference**: Command-line interface guide (planned)
-- **Contributing Guide**: Development setup and workflow (planned)
+**Follow Standards**
+- XDG Base Directory specification
+- Modern Unix/Linux conventions
+- Shell script best practices
 
 ---
 
-**CRITICAL**: These requirements are NON-NEGOTIABLE. All AI assistants must follow these guidelines exactly. Failure to comply may result in configuration corruption, broken MCP setups, or security vulnerabilities.
-
-**Version**: 1.0-2025
-**Last Updated**: 2025-09-23
+**Version**: 1.0
+**Last Updated**: 2025-10-19
 **Status**: ACTIVE - MANDATORY COMPLIANCE
-**Target**: Python 3.11+ with modern development practices
-**Review**: Required before any major implementation changes
+**Project Type**: Simple shell utility
+**Review**: Required before major changes

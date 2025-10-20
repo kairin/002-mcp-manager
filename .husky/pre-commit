@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Pre-commit hook: Run secret detection with Gitleaks
+~/.local/bin/gitleaks protect --verbose --staged --no-banner

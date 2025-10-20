@@ -1,0 +1,858 @@
+#!/bin/bash
+
+# MCP Profile Switcher for Claude Code (Terminal CLI)
+# Part of 002-mcp-manager project
+# Usage: mcp-profile [dev|ui|full|status|list|backup]
+
+# Configuration paths
+CLAUDE_CONFIG="$HOME/.claude.json"
+PROFILES_DIR="$HOME/.config/claude-code/profiles"
+BACKUP_DIR="$HOME/.config/claude-code/backups"
+
+# Create directories if they don't exist
+mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Profile definitions (name, description, token estimate)
+declare -A PROFILES
+PROFILES[github]="GitHub only|~3K"
+PROFILES[hf]="HuggingFace only|~73K"
+PROFILES[dev]="Minimal development|~7K"
+PROFILES[ui]="UI/Design work|~12K"
+PROFILES[full]="All servers|~12K"
+
+# Function to get current project path
+# If in a git repo, use the git root; otherwise use pwd
+get_project_path() {
+    if git rev-parse --show-toplevel &>/dev/null; then
+        git rev-parse --show-toplevel
+    else
+        pwd
+    fi
+}
+
+# Function to check if jq is installed
+check_dependencies() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}Error: jq is required but not installed${NC}"
+        echo "Install with: sudo apt install jq"
+        exit 1
+    fi
+
+    if [ ! -f "$CLAUDE_CONFIG" ]; then
+        echo -e "${RED}Error: Claude Code config not found at $CLAUDE_CONFIG${NC}"
+        echo "Have you run Claude Code at least once?"
+        exit 1
+    fi
+}
+
+# Function to get servers from profile file
+get_servers_from_profile() {
+    local profile=$1
+    local profile_file="$PROFILES_DIR/$profile.json"
+
+    if [ -f "$profile_file" ]; then
+        jq -r 'keys | join(", ")' "$profile_file" 2>/dev/null || echo "unknown"
+    else
+        echo "unknown"
+    fi
+}
+
+# Function to get current active servers for project
+get_active_servers() {
+    local project_path=$(get_project_path)
+
+    if jq -e --arg path "$project_path" '.projects[$path].mcpServers' "$CLAUDE_CONFIG" &>/dev/null; then
+        jq -r --arg path "$project_path" '.projects[$path].mcpServers | keys | join(", ")' "$CLAUDE_CONFIG" 2>/dev/null || echo "none"
+    else
+        echo "none"
+    fi
+}
+
+# Function to count active servers
+count_active_servers() {
+    local project_path=$(get_project_path)
+
+    jq --arg path "$project_path" '(.projects[$path].mcpServers // {}) | length' "$CLAUDE_CONFIG" 2>/dev/null || echo "0"
+}
+
+# Function to identify active profile
+identify_active_profile() {
+    local project_path=$(get_project_path)
+
+    # Get current servers config from Claude config
+    local current_servers=$(jq --arg path "$project_path" '.projects[$path].mcpServers // {}' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    # Compare with each profile
+    for profile in github hf dev ui full; do
+        local profile_file="$PROFILES_DIR/$profile.json"
+        if [ -f "$profile_file" ]; then
+            local profile_servers=$(cat "$profile_file")
+
+            # Compare JSON objects (ignore whitespace/formatting)
+            if [ "$(echo "$current_servers" | jq -S .)" = "$(echo "$profile_servers" | jq -S .)" ]; then
+                echo "$profile"
+                return
+            fi
+        fi
+    done
+
+    echo "CUSTOM"
+}
+
+show_status() {
+    check_dependencies
+
+    local project_path=$(get_project_path)
+    local active_profile=$(identify_active_profile)
+    local server_count=$(count_active_servers)
+    local servers=$(get_active_servers)
+
+    echo -e "${BLUE}=== MCP Profile Status ===${NC}"
+    echo ""
+    echo -e "Project: ${CYAN}$project_path${NC}"
+    echo ""
+
+    if [ "$active_profile" != "CUSTOM" ]; then
+        IFS='|' read -r desc tokens <<< "${PROFILES[$active_profile]}"
+
+        # Color based on token usage
+        if [[ "$tokens" == "~3K" ]] || [[ "$tokens" == "~7K" ]]; then
+            TOKEN_COLOR=$GREEN
+        elif [[ "$tokens" == "~12K" ]]; then
+            TOKEN_COLOR=$YELLOW
+        else
+            TOKEN_COLOR=$RED
+        fi
+
+        echo -e "Active Profile: ${CYAN}${active_profile^^}${NC}"
+        echo -e "Description: $desc"
+        echo -e "Servers ($server_count): $servers"
+        echo -e "Context Usage: ${TOKEN_COLOR}$tokens tokens${NC}"
+    else
+        echo -e "Active Profile: ${YELLOW}CUSTOM${NC}"
+        echo -e "Description: Custom configuration"
+        echo -e "Servers ($server_count): $servers"
+    fi
+
+    echo ""
+    list_profiles
+}
+
+list_profiles() {
+    echo -e "${BLUE}Available Profiles:${NC}"
+    for profile in github hf dev ui full; do
+        IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
+        servers=$(get_servers_from_profile "$profile")
+        printf "  %-6s - %s - %s\n" "$profile" "$desc" "$tokens"
+        printf "           Servers: %s\n" "$servers"
+    done
+    echo ""
+    echo "Usage: mcp-profile [github|hf|dev|ui|full|status|list|test|backup]"
+}
+
+switch_profile() {
+    check_dependencies
+
+    local PROFILE=$1
+    local PROFILE_FILE="$PROFILES_DIR/$PROFILE.json"
+    local project_path=$(get_project_path)
+
+    if [ ! -f "$PROFILE_FILE" ]; then
+        echo -e "${RED}Error: Profile '$PROFILE' not found${NC}"
+        echo "Looking for: $PROFILE_FILE"
+        echo ""
+        list_profiles
+        exit 1
+    fi
+
+    # Backup current Claude config
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    cp "$CLAUDE_CONFIG" "$BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+    echo -e "${BLUE}✓ Backed up Claude config${NC}"
+    echo "  → $BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+    echo ""
+
+    # Read profile servers
+    local new_servers=$(cat "$PROFILE_FILE")
+
+    # Update Claude config with new servers for current project
+    # This creates the project entry if it doesn't exist
+    jq --arg path "$project_path" \
+       --argjson servers "$new_servers" \
+       '.projects[$path].mcpServers = $servers' \
+       "$CLAUDE_CONFIG" > "$CLAUDE_CONFIG.tmp" && mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
+
+    echo -e "${GREEN}✓ Switched to '$PROFILE' profile${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠  IMPORTANT: Restart Claude Code for changes to take effect${NC}"
+    echo ""
+
+    # Show new status
+    show_status
+}
+
+show_backups() {
+    echo -e "${BLUE}=== Recent Backups ===${NC}"
+    echo ""
+
+    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
+        echo -e "${YELLOW}No backups found${NC}"
+        return
+    fi
+
+    ls -lht "$BACKUP_DIR"/*.json 2>/dev/null | head -10 | while read -r line; do
+        echo "  $line"
+    done
+    echo ""
+    echo "Backup directory: $BACKUP_DIR"
+}
+
+# Test GitHub CLI authentication
+test_github_cli() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}GitHub CLI Authentication${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
+
+    # Check if gh CLI is installed
+    if ! command -v gh &> /dev/null; then
+        echo -e "  ${RED}✗ gh CLI not installed${NC}"
+        echo ""
+        return 1
+    fi
+
+    # Run gh auth status and capture output
+    local auth_output=$(gh auth status 2>&1)
+    local auth_exit=$?
+
+    if [ $auth_exit -eq 0 ]; then
+        echo -e "  ${GREEN}✓ Authentication successful${NC}"
+        echo ""
+        # Show actual output from gh auth status
+        echo "$auth_output" | grep -E "(Logged in|Account|Token|Token scopes)" | sed 's/^/    /'
+        echo ""
+
+        # Get rate limit info
+        local rate_info=$(gh api rate_limit --jq '.resources.core | "Limit: \(.limit)/hour | Used: \(.used) | Remaining: \(.remaining)"' 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            echo -e "    ${CYAN}Rate limit:${NC} $rate_info"
+        fi
+    else
+        echo -e "  ${RED}✗ Authentication failed${NC}"
+        echo "$auth_output" | sed 's/^/    /'
+    fi
+    echo ""
+}
+
+# Test GitHub MCP Server
+test_github_mcp_server() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}GitHub MCP Server${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
+
+    # Check if github is in active servers
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+
+    if ! echo "$active_servers" | grep -q "github"; then
+        echo -e "  ${YELLOW}⚠ github MCP server not in active profile${NC}"
+        echo ""
+        return
+    fi
+
+    # Check MCP server configuration
+    local mcp_command=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["github"].command // empty' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    if [ -z "$mcp_command" ]; then
+        echo -e "  ${RED}✗ GitHub MCP server not configured${NC}"
+        echo ""
+        return 1
+    fi
+
+    echo -e "  ${CYAN}Command:${NC} $mcp_command"
+
+    # Check if the MCP command/wrapper exists
+    if [ ! -x "$mcp_command" ]; then
+        echo -e "  ${RED}✗ MCP server command not executable${NC}"
+        echo -e "    Path: $mcp_command"
+        echo ""
+        return 1
+    fi
+
+    # Try to verify MCP server is listed and healthy
+    if command -v claude &>/dev/null; then
+        local mcp_status=$(claude mcp list 2>/dev/null | grep "github")
+
+        if echo "$mcp_status" | grep -q "✓"; then
+            echo -e "  ${GREEN}✓ Server active and connected${NC}"
+            echo -e "    ${CYAN}Status:${NC} Connected via Claude Code"
+        elif echo "$mcp_status" | grep -q "github"; then
+            echo -e "  ${YELLOW}⚠ Server configured but connection unclear${NC}"
+            echo -e "    Try: /mcp command in Claude Code to reconnect"
+        else
+            echo -e "  ${YELLOW}⚠ Cannot verify server status${NC}"
+            echo -e "    Run 'claude mcp list' to check server health"
+        fi
+    else
+        # Fallback: just verify the command exists
+        echo -e "  ${GREEN}✓ Server configured${NC}"
+        echo -e "    Command exists and is executable"
+        echo -e "    ${YELLOW}Note: claude CLI not available for full verification${NC}"
+    fi
+    echo ""
+}
+
+# Test HuggingFace MCP Server OAuth authentication
+test_huggingface_mcp_oauth() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}HuggingFace MCP Server (OAuth)${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
+
+    # Check if hf-mcp-server is in active servers
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+
+    if ! echo "$active_servers" | grep -q "hf-mcp-server"; then
+        echo -e "  ${YELLOW}⚠ hf-mcp-server not in active profile${NC}"
+        echo -e "    Switch to 'full' profile to enable HuggingFace MCP"
+        echo ""
+        return
+    fi
+
+    # Check MCP server configuration
+    local mcp_url=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["hf-mcp-server"].url // empty' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    if [ -z "$mcp_url" ]; then
+        echo -e "  ${RED}✗ HuggingFace MCP server not configured${NC}"
+        echo ""
+        return 1
+    fi
+
+    echo -e "  ${CYAN}MCP URL:${NC} $mcp_url"
+
+    # Test OAuth connection using Claude Code's built-in MCP connection
+    # Since we can't directly test the OAuth session from bash, we check if Claude can connect
+    if command -v claude &>/dev/null; then
+        # Try to verify MCP server is listed and healthy
+        local mcp_status=$(claude mcp list 2>/dev/null | grep "hf-mcp-server")
+
+        if echo "$mcp_status" | grep -q "✓ Connected"; then
+            echo -e "  ${GREEN}✓ OAuth session active${NC}"
+            echo -e "    ${CYAN}Status:${NC} Connected via Claude Code"
+        elif echo "$mcp_status" | grep -q "hf-mcp-server"; then
+            echo -e "  ${YELLOW}⚠ Server configured but connection unclear${NC}"
+            echo -e "    Try: /mcp command in Claude Code to reconnect"
+        else
+            echo -e "  ${RED}✗ Server not responding${NC}"
+            echo -e "    Run 'claude mcp list' to check server health"
+        fi
+    else
+        echo -e "  ${YELLOW}⚠ Cannot verify OAuth - claude CLI not available${NC}"
+        echo -e "    MCP server configured at: $mcp_url"
+    fi
+    echo ""
+}
+
+# Test HuggingFace CLI Token authentication
+test_huggingface_cli_token() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}HuggingFace CLI Token${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
+
+    # Check if hf CLI is installed (modern command)
+    if ! command -v hf &> /dev/null; then
+        echo -e "  ${YELLOW}⚠ HuggingFace CLI not installed${NC}"
+        echo -e "    Install with: pip install -U huggingface_hub[cli]"
+        echo ""
+        return
+    fi
+
+    # Try to get whoami info using the modern CLI command
+    local hf_whoami_output=$(hf auth whoami 2>&1)
+    local hf_exit=$?
+
+    # Filter out deprecation warnings and strip ANSI color codes
+    hf_whoami_output=$(echo "$hf_whoami_output" | grep -v "Warning:" | grep -v "deprecated" | sed 's/\x1b\[[0-9;]*m//g')
+
+    # Parse the output
+    if [ $hf_exit -eq 0 ]; then
+        # The modern output is simpler: first line is username (may have "user: " prefix), then orgs if any
+        local username=$(echo "$hf_whoami_output" | head -1 | sed 's/user: *//' | xargs)
+        local orgs_line=$(echo "$hf_whoami_output" | grep "^orgs:" | sed 's/orgs: *//')
+
+        if [ -n "$username" ] && [ "$username" != "" ]; then
+            echo -e "  ${GREEN}✓ Token valid and authenticated${NC}"
+            echo -e "    ${CYAN}Username:${NC} $username"
+
+            # Show organizations if present
+            if [ -n "$orgs_line" ]; then
+                local org_count=$(echo "$orgs_line" | tr ',' '\n' | wc -l)
+                echo -e "    ${CYAN}Organizations:${NC} $org_count ($orgs_line)"
+            fi
+
+            # Show token source if available
+            if [ -n "$HF_TOKEN" ]; then
+                echo -e "    ${CYAN}Token source:${NC} Environment variable (HF_TOKEN)"
+            else
+                echo -e "    ${CYAN}Token source:${NC} ~/.cache/huggingface/token"
+            fi
+
+            echo ""
+            echo -e "  ${GREEN}Token can be used for:${NC}"
+            echo -e "    ✓ hf CLI commands (model/dataset download, upload)"
+            echo -e "    ✓ Python transformers/datasets libraries"
+            echo -e "    ✓ Direct API access in scripts"
+        else
+            echo -e "  ${YELLOW}⚠ Unexpected output format${NC}"
+            echo "$hf_whoami_output" | sed 's/^/    /'
+        fi
+    else
+        # Authentication failed
+        if echo "$hf_whoami_output" | grep -qi "not logged in"; then
+            echo -e "  ${RED}✗ Not logged in to HuggingFace${NC}"
+            echo ""
+            echo -e "  ${CYAN}To fix - Option 1 (Recommended - Login via CLI):${NC}"
+            echo -e "    1. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "    2. Paste your token when prompted"
+            echo -e "    3. Token will be saved in ~/.cache/huggingface/token"
+            echo ""
+            echo -e "  ${CYAN}To fix - Option 2 (Environment Variable):${NC}"
+            echo -e "    1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "    2. Create a new token with read permissions"
+            echo -e "    3. Add to ~/.zshrc or ~/.profile:"
+            echo -e "       ${YELLOW}export HF_TOKEN=\"hf_your_new_token\"${NC}"
+            echo -e "    4. Run: ${YELLOW}source ~/.zshrc${NC}"
+        elif echo "$hf_whoami_output" | grep -qi "invalid.*token"; then
+            echo -e "  ${RED}✗ Invalid token${NC}"
+            echo ""
+            echo -e "  ${CYAN}To fix:${NC}"
+            echo -e "    1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "    2. Create a new token with read permissions"
+            echo -e "    3. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "    4. Or update HF_TOKEN in ~/.zshrc"
+        else
+            echo -e "  ${RED}✗ Authentication failed${NC}"
+            echo -e "    Output: $hf_whoami_output"
+        fi
+    fi
+    echo ""
+}
+
+# Test Context7 API authentication
+test_context7_api() {
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}Context7 API${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
+
+    # Check if CONTEXT7_API_KEY is set
+    if [ -z "$CONTEXT7_API_KEY" ]; then
+        echo -e "  ${RED}✗ CONTEXT7_API_KEY environment variable not set${NC}"
+        echo ""
+        return 1
+    fi
+
+    # Test connection to Context7 SSE endpoint
+    local http_code=$(curl -s -w "%{http_code}" -o /dev/null \
+        -H "Accept: text/event-stream" \
+        -H "CONTEXT7_API_KEY: $CONTEXT7_API_KEY" \
+        "https://mcp.context7.com/mcp" \
+        --max-time 5 2>/dev/null)
+
+    if [ "$http_code" = "200" ]; then
+        echo -e "  ${GREEN}✓ API key valid${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} 200 OK"
+        echo -e "    ${CYAN}Connection:${NC} Successful"
+    elif [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
+        echo -e "  ${RED}✗ Authentication failed${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} $http_code"
+    elif [ -z "$http_code" ]; then
+        echo -e "  ${YELLOW}⚠ Connection timeout or network error${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ Unexpected response${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} $http_code"
+    fi
+    echo ""
+}
+
+# Main test function - dynamically tests active servers
+test_api_keys() {
+    check_dependencies
+
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+    local server_count=$(count_active_servers)
+
+    echo -e "${CYAN}=== MCP API Key Testing ===${NC}"
+    echo ""
+    echo -e "Project: ${CYAN}$project_path${NC}"
+    echo -e "Active servers ($server_count): $active_servers"
+    echo ""
+
+    if [ "$server_count" -eq 0 ]; then
+        echo -e "${YELLOW}No MCP servers configured${NC}"
+        echo ""
+        echo "Run 'mcp-profile dev' or another profile to configure servers"
+        return
+    fi
+
+    echo -e "${BLUE}Testing CLI authentication and MCP servers...${NC}"
+    echo ""
+
+    # Track if we tested anything
+    local tested=0
+
+    # === CLI Tests First ===
+
+    # Test GitHub CLI authentication
+    if command -v gh &> /dev/null; then
+        test_github_cli
+        tested=$((tested + 1))
+    fi
+
+    # Test HuggingFace CLI token (test if CLI is available)
+    if command -v hf &> /dev/null; then
+        test_huggingface_cli_token
+        tested=$((tested + 1))
+    fi
+
+    # === MCP Server Tests ===
+
+    # Test GitHub MCP Server if active
+    if echo "$active_servers" | grep -q "github"; then
+        test_github_mcp_server
+        tested=$((tested + 1))
+    fi
+
+    # Test HuggingFace MCP OAuth if active
+    if echo "$active_servers" | grep -q "hf-mcp-server"; then
+        test_huggingface_mcp_oauth
+        tested=$((tested + 1))
+    fi
+
+    # Test Context7 API if active
+    if echo "$active_servers" | grep -q "context7"; then
+        test_context7_api
+        tested=$((tested + 1))
+    fi
+
+    # If no servers requiring API keys were found
+    if [ $tested -eq 0 ]; then
+        echo -e "${CYAN}ℹ No servers requiring external API keys in current profile${NC}"
+        echo ""
+        echo "Servers like markitdown, playwright, shadcn, shadcn-ui"
+        echo "don't require external API authentication."
+        echo ""
+    fi
+
+    echo -e "${BLUE}Test Summary:${NC}"
+    echo "  Profile servers tested: $tested"
+    echo "  Servers not requiring API keys are working automatically"
+    echo ""
+}
+
+# Check health of each server in a profile
+# Returns space-separated status for each server: "ok", "warning", or "error"
+check_profile_health() {
+    local profile=$1
+    local profile_file="$PROFILES_DIR/$profile.json"
+
+    if [ ! -f "$profile_file" ]; then
+        echo ""
+        return
+    fi
+
+    local statuses=""
+
+    # Read all servers from the profile
+    local servers=$(jq -r 'keys[]' "$profile_file" 2>/dev/null)
+
+    for server in $servers; do
+        local server_status="ok"
+        local server_type=$(jq -r --arg srv "$server" '.[$srv].type' "$profile_file" 2>/dev/null)
+
+        if [ "$server_type" == "stdio" ]; then
+            # Check if command exists
+            local command=$(jq -r --arg srv "$server" '.[$srv].command' "$profile_file" 2>/dev/null)
+
+            if [ -n "$command" ] && [ "$command" != "null" ]; then
+                # Check if command is a full path
+                if [[ "$command" == /* ]]; then
+                    if [ ! -x "$command" ]; then
+                        server_status="error"
+                    fi
+                else
+                    # Check if command exists in PATH
+                    if ! command -v "$command" &> /dev/null; then
+                        server_status="warning"
+                    fi
+                fi
+            fi
+        elif [ "$server_type" == "http" ]; then
+            # For HTTP servers, just verify URL format
+            local url=$(jq -r --arg srv "$server" '.[$srv].url' "$profile_file" 2>/dev/null)
+            if [ -z "$url" ] || [ "$url" == "null" ]; then
+                server_status="warning"
+            fi
+        fi
+
+        statuses="$statuses $server_status"
+    done
+
+    echo "$statuses" | xargs
+}
+
+# Function to get visible length of string (stripping ANSI color codes)
+get_visible_length() {
+    local str="$1"
+    # Remove ANSI escape sequences
+    local visible=$(echo -e "$str" | sed 's/\x1b\[[0-9;]*m//g')
+    echo "${#visible}"
+}
+
+# Function to center text in a box with proper padding (accounts for color codes)
+# Args: $1 = text (may contain color codes), $2 = total width (content only, no borders)
+center_text_in_box() {
+    local text="$1"
+    local width="$2"
+    local visible_len=$(get_visible_length "$text")
+    local total_padding=$((width - visible_len))
+    local left_pad=$((total_padding / 2))
+    local right_pad=$((total_padding - left_pad))
+    printf "%*s%s%*s" "$left_pad" "" "$text" "$right_pad" ""
+}
+
+show_profile_table() {
+    local active_profile=$(identify_active_profile)
+
+    echo -e "${BLUE}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE}│${NC}$(center_text_in_box "${CYAN}Available Profiles${NC}" 83)${BLUE}│${NC}"
+    echo -e "${BLUE}├──────────┬────────────────────────┬─────────┬──────────┬──────────────────────────┤${NC}"
+    echo -e "${BLUE}│${NC} Profile  ${BLUE}│${NC} Description            ${BLUE}│${NC} Servers ${BLUE}│${NC} Tokens   ${BLUE}│${NC} Status                   ${BLUE}│${NC}"
+    echo -e "${BLUE}├──────────┼────────────────────────┼─────────┼──────────┼──────────────────────────┤${NC}"
+
+    for profile in github hf dev ui full; do
+        IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
+        local server_count=$(jq 'length' "$PROFILES_DIR/$profile.json" 2>/dev/null || echo "0")
+
+        # Get per-server health status
+        local health_statuses=$(check_profile_health "$profile")
+
+        # Build status display with individual server indicators
+        local status_display=""
+
+        for status in $health_statuses; do
+            if [ "$status" == "ok" ]; then
+                status_display="${status_display}${GREEN}✓${NC}"
+            elif [ "$status" == "warning" ]; then
+                status_display="${status_display}${YELLOW}⚠${NC}"
+            else
+                status_display="${status_display}${RED}✗${NC}"
+            fi
+        done
+
+        # Add active marker if this is the active profile
+        if [ "$active_profile" == "$profile" ]; then
+            status_display="${status_display} ${CYAN}●${NC}"
+        fi
+
+        # Calculate visible length dynamically by stripping ANSI codes
+        local visible_length=$(get_visible_length "$status_display")
+
+        # Calculate padding needed for Status column content (24 chars)
+        # Status column is: space(1) + content(24) + space(1) = 26 total
+        local padding=$((24 - visible_length))
+        local padding_str=$(printf '%*s' "$padding" '')
+
+        # Determine token color - format with fixed width FIRST, then apply color
+        local token_colored
+        local token_padded=$(printf '%-8s' "$tokens")  # Pad to 8 chars
+        if [[ "$tokens" == "~3K" ]] || [[ "$tokens" == "~7K" ]]; then
+            token_colored="${GREEN}${token_padded}${NC}"
+        elif [[ "$tokens" == "~12K" ]]; then
+            token_colored="${YELLOW}${token_padded}${NC}"
+        else
+            token_colored="${RED}${token_padded}${NC}"
+        fi
+
+        # Print line with echo -e to properly render color codes
+        echo -e "${BLUE}│${NC} $(printf '%-8s' "$profile") ${BLUE}│${NC} $(printf '%-22s' "$desc") ${BLUE}│${NC}   $(printf '%-5s' "$server_count") ${BLUE}│${NC} ${token_colored} ${BLUE}│${NC} ${status_display}${padding_str} ${BLUE}│${NC}"
+    done
+
+    echo -e "${BLUE}└──────────┴────────────────────────┴─────────┴──────────┴──────────────────────────┘${NC}"
+    echo ""
+    echo -e "${CYAN}Legend:${NC} ${GREEN}✓${NC} Ready  ${YELLOW}⚠${NC} Warning  ${RED}✗${NC} Error  ${CYAN}●${NC} Active"
+    echo ""
+}
+
+interactive_menu() {
+    check_dependencies
+
+    while true; do
+        clear
+        echo -e "${CYAN}=== MCP Profile Switcher ===${NC}"
+        echo ""
+
+        # Show current status
+        local project_path=$(get_project_path)
+        local active_profile=$(identify_active_profile)
+        local server_count=$(count_active_servers)
+
+        echo -e "Project: ${CYAN}$project_path${NC}"
+
+        if [ "$active_profile" != "CUSTOM" ]; then
+            IFS='|' read -r desc tokens <<< "${PROFILES[$active_profile]}"
+            echo -e "Current profile: ${CYAN}${active_profile^^}${NC} ($desc, $tokens tokens)"
+        else
+            echo -e "Current profile: ${YELLOW}CUSTOM${NC} ($server_count servers)"
+        fi
+
+        echo ""
+        show_profile_table
+        echo "Select an action:"
+        echo ""
+
+        PS3=$'\n\033[0;34mEnter choice [1-9]: \033[0m'
+
+        options=(
+            "Switch to GITHUB profile (GitHub only, ~3K tokens)"
+            "Switch to HF profile (HuggingFace only, ~73K tokens)"
+            "Switch to DEV profile (Minimal, ~7K tokens)"
+            "Switch to UI profile (Design work, ~12K tokens)"
+            "Switch to FULL profile (All servers, ~12K tokens)"
+            "Show detailed status"
+            "Test API keys"
+            "Show recent backups"
+            "Quit"
+        )
+
+        select opt in "${options[@]}"; do
+            case $REPLY in
+                1)
+                    echo ""
+                    switch_profile "github"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                2)
+                    echo ""
+                    switch_profile "hf"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                3)
+                    echo ""
+                    switch_profile "dev"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                4)
+                    echo ""
+                    switch_profile "ui"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                5)
+                    echo ""
+                    switch_profile "full"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                6)
+                    echo ""
+                    show_status
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                7)
+                    echo ""
+                    test_api_keys
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                8)
+                    echo ""
+                    show_backups
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                9)
+                    echo ""
+                    echo -e "${GREEN}Goodbye!${NC}"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "${RED}Invalid option. Please select 1-9.${NC}"
+                    ;;
+            esac
+        done
+    done
+}
+
+# Main script logic
+case "${1:-interactive}" in
+    github|hf|dev|ui|full)
+        switch_profile "$1"
+        ;;
+    status)
+        show_status
+        ;;
+    list)
+        list_profiles
+        ;;
+    test)
+        test_api_keys
+        ;;
+    backup|backups)
+        show_backups
+        ;;
+    help|--help|-h)
+        echo -e "${CYAN}MCP Profile Switcher${NC}"
+        echo ""
+        echo "Manages MCP server profiles for Claude Code terminal CLI"
+        echo ""
+        echo "Commands:"
+        echo "  github     - Switch to GitHub only profile"
+        echo "  hf         - Switch to HuggingFace only profile"
+        echo "  dev        - Switch to minimal development profile"
+        echo "  ui         - Switch to UI work profile"
+        echo "  full       - Switch to full profile (all servers)"
+        echo "  status     - Show current active profile"
+        echo "  list       - List all available profiles"
+        echo "  test       - Test API keys for active MCP servers"
+        echo "  backup     - Show recent backups"
+        echo "  help       - Show this help message"
+        echo "  (no args)  - Interactive menu (default)"
+        echo ""
+        echo "Configuration:"
+        echo "  Claude config: $CLAUDE_CONFIG"
+        echo "  Profiles dir:  $PROFILES_DIR"
+        echo "  Backups dir:   $BACKUP_DIR"
+        echo ""
+        echo "Note: Changes apply to current project: $(get_project_path)"
+        echo "      Restart Claude Code after switching profiles"
+        ;;
+    interactive|"")
+        interactive_menu
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        echo ""
+        list_profiles
+        exit 1
+        ;;
+esac

@@ -1,0 +1,11 @@
+# Ignore artifacts:
+build
+coverage
+dist
+.astro
+
+# Ignore dependency directories:
+node_modules
+
+# Ignore git directory:
+.git

@@ -1,0 +1,29 @@
+{
+  "name": "web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "astro": "^5.14.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@testing-library/preact": "^3.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
+    "mocha": "^11.7.4",
+    "prettier": "^3.6.2"
+  },
+  "lint-staged": {
+    "*": [
+      "~/.local/bin/gitleaks protect --verbose --staged --no-banner"
+    ]
+  }
+}

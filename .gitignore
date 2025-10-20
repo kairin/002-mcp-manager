@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!scripts/**/lib/
 lib64/
 parts/
 sdist/
@@ -144,12 +145,24 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
+# Node.js
+node_modules/
+web/dist/
+web/.astro/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+
 # MCP Manager specific
 *.backup
 .mcp-manager/
 config/backups/
-logs/
+logs/*
+!logs/.gitkeep
 *.log
+!scripts/local-ci/lib/
 
 # Local development
 .env.local
@@ -169,3 +182,10 @@ temp/
 *.crt
 credentials.json
 secrets.json
+
+# MCP Configuration Files (may contain API keys)
+.claude.json
+.gemini/
+.config/gemini/settings.json
+**/claude.json
+**/gemini/settings.json
