@@ -1,0 +1,13 @@
+{
+  "currentDeployment": "$DEPLOY_ID",
+  "lastKnownGood": "$DEPLOY_ID",
+  "deployments": [
+    {
+      "id": "$DEPLOY_ID",
+      "timestamp": "$(date -u +\"%Y-%m-%dT%H:%M:%S.000Z\")",
+      "commitSHA": "$COMMIT_SHA",
+      "status": "success",
+      "url": "\https://kairin.github.io/002-mcp-manager/"
+    }
+  ]
+}
