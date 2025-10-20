@@ -1,10 +1,10 @@
-import assert from 'assert';
-import { render } from '@testing-library/preact';
-import Header from '../components/Header.astro';
+import assert from "assert";
+import { render } from "@testing-library/preact";
+import Header from "../components/Header.astro";
 
-describe('Header', () => {
-  it('renders the header', () => {
+describe("Header", () => {
+  it("renders the header", () => {
     const { container } = render(Header);
-    assert.ok(container.querySelector('header'));
+    assert.ok(container.querySelector("header"));
   });
 });

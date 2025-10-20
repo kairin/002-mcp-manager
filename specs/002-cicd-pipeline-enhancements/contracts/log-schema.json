@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Enhanced Pipeline Log Entry",
+  "description": "JSON schema for structured CI/CD pipeline log entries with source context and correlation IDs",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "level",
+    "message",
+    "run_id",
+    "source_file",
+    "line_number",
+    "function_name",
+    "step_name"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of log entry (e.g., 2025-10-20T14:30:45Z)",
+      "examples": [
+        "2025-10-20T14:30:45Z",
+        "2025-10-20T14:32:15Z"
+      ]
+    },
+    "level": {
+      "type": "string",
+      "enum": ["info", "warn", "error"],
+      "description": "Log severity level"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable log message",
+      "minLength": 1,
+      "examples": [
+        "Running unit tests",
+        "Unit tests failed: 3 test suites failed",
+        "Pipeline timeout: 305 seconds (limit: 300)"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run-\\d{8}-\\d{6}-[a-z0-9]{6}$",
+      "description": "Unique correlation ID for this pipeline run (format: run-YYYYMMDD-HHMMSS-{6char})",
+      "examples": [
+        "run-20251020-143045-k8m3q2",
+        "run-20251020-150230-a7b9c1"
+      ]
+    },
+    "source_file": {
+      "type": "string",
+      "description": "Relative path to source file generating log (from repository root)",
+      "examples": [
+        "scripts/local-ci/run.sh",
+        "scripts/local-ci/lib/logger.sh",
+        "scripts/tui/run.sh"
+      ]
+    },
+    "line_number": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Line number in source file where log was generated"
+    },
+    "function_name": {
+      "type": "string",
+      "description": "Function name generating log (bash function or script main)",
+      "examples": [
+        "run_step_test_unit",
+        "log_with_context",
+        "check_timeout",
+        "main"
+      ]
+    },
+    "step_name": {
+      "type": "string",
+      "description": "Current pipeline step (one of: init, env-check, lint, test-unit, test-integration, test-e2e, build, cleanup, complete)",
+      "enum": [
+        "init",
+        "env-check",
+        "lint",
+        "test-unit",
+        "test-integration",
+        "test-e2e",
+        "build",
+        "cleanup",
+        "complete"
+      ]
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional step duration in milliseconds (only present for step completion logs)",
+      "examples": [
+        45000,
+        90000,
+        285000
+      ]
+    }
+  },
+  "examples": [
+    {
+      "timestamp": "2025-10-20T14:30:45Z",
+      "level": "info",
+      "message": "Running unit tests",
+      "run_id": "run-20251020-143045-k8m3q2",
+      "source_file": "scripts/local-ci/run.sh",
+      "line_number": 123,
+      "function_name": "run_step_test_unit",
+      "step_name": "test-unit"
+    },
+    {
+      "timestamp": "2025-10-20T14:32:15Z",
+      "level": "error",
+      "message": "Unit tests failed: 3 test suites failed",
+      "run_id": "run-20251020-143045-k8m3q2",
+      "source_file": "scripts/local-ci/run.sh",
+      "line_number": 127,
+      "function_name": "run_step_test_unit",
+      "step_name": "test-unit",
+      "duration_ms": 90000
+    }
+  ]
+}
