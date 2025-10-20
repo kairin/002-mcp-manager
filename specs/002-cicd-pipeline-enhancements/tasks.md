@@ -131,10 +131,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T034 [P] [US6] Create correlation ID generator function using `date +%Y%m%d-%H%M%S` and `/dev/urandom` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T035 [P] [US6] Generate and export `RUN_ID` at pipeline initialization in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T036 [US6] Update logger functions to include `run_id` field in JSON output in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T037 [US6] Add run_id to initial pipeline log entry in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T034 [P] [US6] Create correlation ID generator function using `date +%Y%m%d-%H%M%S` and `/dev/urandom` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T035 [P] [US6] Generate and export `RUN_ID` at pipeline initialization in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T036 [US6] Update logger functions to include `run_id` field in JSON output in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T037 [US6] Add run_id to initial pipeline log entry in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: All log entries include unique run_id for correlation across multiple runs
 

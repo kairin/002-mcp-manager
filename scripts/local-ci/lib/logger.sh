@@ -103,28 +103,28 @@ log_json() {
         (if $error != "" then {error: ($error | fromjson)} else {} end)'
 }
 
-# log_info: Convenience function for info level (Feature 002: Updated signature)
-# Args: $1=step_name, $2=message, $3=run_id (opt), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# log_info: Convenience function for info level (Feature 002: US6 - Auto-inject RUN_ID)
+# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
 log_info() {
-    log_json "info" "$1" "$2" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
+    log_json "info" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_success: Convenience function for success level (Feature 002: Updated signature)
-# Args: $1=step_name, $2=message, $3=run_id (opt), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# log_success: Convenience function for success level (Feature 002: US6 - Auto-inject RUN_ID)
+# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
 log_success() {
-    log_json "success" "$1" "$2" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
+    log_json "success" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_warn: Convenience function for warn level (Feature 002: Updated signature)
-# Args: $1=step_name, $2=message, $3=run_id (opt), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# log_warn: Convenience function for warn level (Feature 002: US6 - Auto-inject RUN_ID)
+# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
 log_warn() {
-    log_json "warn" "$1" "$2" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
+    log_json "warn" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_error: Convenience function for error level (Feature 002: Updated signature)
-# Args: $1=step_name, $2=message, $3=run_id (opt), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# log_error: Convenience function for error level (Feature 002: US6 - Auto-inject RUN_ID)
+# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
 log_error() {
-    log_json "error" "$1" "$2" "${3:-}" "${4:-}" "${5:-}" "${6:-}"
+    log_json "error" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
 # get_duration: Calculate duration between two timestamps

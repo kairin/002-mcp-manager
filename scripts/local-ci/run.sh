@@ -33,6 +33,9 @@ PIPELINE_START=$(date +%s.%N)
 START_TIME=$SECONDS  # Bash builtin for elapsed time tracking
 TIMEOUT_SECONDS=300  # 5-minute hard limit
 
+# Feature 002: Pipeline Run Correlation (US6)
+RUN_ID=""  # Will be generated in step_init
+
 # Parse command-line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
@@ -96,9 +99,22 @@ Examples:
 EOF
 }
 
+# Feature 002 - US6: Generate unique correlation ID for this pipeline run
+# Format: run-YYYYMMDD-HHMMSS-{6char}
+# Example: run-20251021-143045-k8m3q2
+generate_correlation_id() {
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local random_suffix=$(head -c 100 /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
+    echo "run-${timestamp}-${random_suffix}"
+}
+
 # Step 1: Initialize
 step_init() {
     local step_start=$(date +%s.%N)
+
+    # Feature 002 - US6: Generate and export correlation ID
+    RUN_ID=$(generate_correlation_id)
+    export RUN_ID
 
     # Set up log file
     if [ -z "$LOG_FILE" ]; then
@@ -109,8 +125,9 @@ step_init() {
     # Create log directory
     mkdir -p "$(dirname "$LOG_FILE")"
 
-    # Log initialization
+    # Log initialization (with run_id)
     log_info "init" "Starting local CI/CD pipeline" | tee -a "$LOG_FILE"
+    log_info "init" "Run ID: $RUN_ID" | tee -a "$LOG_FILE"
     log_info "init" "Project root: $PROJECT_ROOT" | tee -a "$LOG_FILE"
     log_info "init" "Web directory: $WEB_DIR" | tee -a "$LOG_FILE"
     log_info "init" "Log file: $LOG_FILE" | tee -a "$LOG_FILE"
