@@ -402,6 +402,136 @@ If you were using the old version with `~/.config/claude-code/mcp-servers*.json`
 
 The script automatically creates profile files on first use.
 
+## Local CI/CD for Astro Site
+
+This project includes a complete local CI/CD pipeline for the Astro.build website, allowing you to run all checks locally before pushing to GitHub (reducing GitHub Actions costs).
+
+### Features
+
+- **Local CI/CD Execution**: Run linting, tests, and builds locally before pushing
+- **Interactive TUI**: Menu-driven interface - no need to remember CLI flags
+- **Modular Architecture**: TUI, CI/CD, and Website are completely independent modules
+- **Automatic Deployment**: GitHub Actions deploys to GitHub Pages on push to main
+- **Automatic Rollback**: Failed deployments automatically tracked with rollback guidance
+- **Lighthouse CI**: Automated performance validation (target: > 90 score)
+
+### Quick Start - TUI (Interactive Menu)
+
+The easiest way to use the local CI/CD pipeline:
+
+```bash
+# From project root
+./scripts/tui/run.sh
+```
+
+This launches an interactive menu with 9 options:
+1. **Run Full CI/CD Pipeline** - Complete validation (lint + tests + build)
+2. **Run CI/CD (Skip Tests)** - Fast mode for quick checks
+3. **Run CI/CD (Verbose Mode)** - Detailed output for debugging
+4. **Run CI/CD (No Auto-Fix)** - Validate without automatic fixes
+5. **View Recent Logs** - Browse pipeline execution logs
+6. **Check Environment** - Verify dependencies (bash, jq, node, npm)
+7. **Clean Old Logs** - Remove logs older than 30 days
+8. **Help & Documentation** - Reference and exit codes
+9. **Exit** - Return to shell
+
+### Command Line Usage (Without TUI)
+
+For automation or direct control:
+
+```bash
+# Full pipeline (lint + tests + build)
+./scripts/local-ci/run.sh
+
+# Skip tests (faster for quick checks)
+./scripts/local-ci/run.sh --skip-tests
+
+# Verbose output
+./scripts/local-ci/run.sh --verbose
+
+# Disable auto-fix for linting
+./scripts/local-ci/run.sh --no-fix
+
+# Custom log file location
+./scripts/local-ci/run.sh --log-file /path/to/logfile.log
+
+# Show all options
+./scripts/local-ci/run.sh --help
+```
+
+### CI/CD Pipeline Steps
+
+1. **Initialize**: Set up logging and environment
+2. **Environment Check**: Validate dependencies (bash ≥5.0, jq ≥1.6, node ≥18.0, npm ≥9.0)
+3. **Lint**: Prettier with auto-fix capability
+4. **Unit Tests**: Mocha unit tests
+5. **Integration Tests**: Component integration tests
+6. **E2E Tests**: Playwright end-to-end tests
+7. **Build**: Astro build with dist/ verification
+8. **Cleanup**: Remove old logs (30-day retention)
+9. **Complete**: Summary with total duration
+
+### Exit Codes
+
+- **0**: Success - All checks passed
+- **1**: Linting failed
+- **2**: Tests failed (unit, integration, or e2e)
+- **3**: Build failed
+- **4**: Environment validation failed
+
+### Module Independence (FR-006)
+
+Each module can be developed, tested, and modified independently:
+
+- **TUI** (`scripts/tui/`): Interactive menu interface
+- **CI/CD** (`scripts/local-ci/`): Pipeline orchestration and validation
+- **Website** (`web/`): Astro.build static site
+
+Changes to one module do not require changes to others. Integration tests verify this independence.
+
+### GitHub Pages Deployment
+
+When you push to main:
+
+1. **Automatic Deployment**: GitHub Actions builds and deploys to GitHub Pages
+2. **Deployment Tracking**: Each deployment recorded in `.github/deployment-state.json`
+3. **Rollback on Failure**: Failed deployments logged with manual rollback instructions
+4. **Lighthouse Validation**: Performance score checked (target: > 90)
+
+Manual deployment trigger:
+```bash
+# Via GitHub Actions workflow_dispatch
+# Go to Actions tab → Deploy to GitHub Pages → Run workflow
+```
+
+### Logs and Monitoring
+
+All pipeline runs are logged with:
+- **JSON structured output**: Machine-parseable for analysis
+- **Timestamped entries**: ISO 8601 format for precision
+- **Duration tracking**: Each step reports execution time
+- **Automatic retention**: Logs older than 30 days are cleaned up
+
+View logs:
+```bash
+# List recent logs
+ls -lht logs/
+
+# View specific log with formatting
+jq . logs/ci-20251020_183000.log
+
+# Or use TUI option 5
+./scripts/tui/run.sh
+# Select: 5) View Recent Logs
+```
+
+### Documentation
+
+- **TUI Guide**: `scripts/tui/README.md`
+- **CI/CD Guide**: `scripts/local-ci/README.md`
+- **Feature Spec**: `specs/001-local-cicd-astro-site/spec.md`
+- **Task Tracker**: `specs/001-local-cicd-astro-site/tasks.md`
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
