@@ -215,11 +215,14 @@ show_backups() {
 
 # Test GitHub CLI authentication
 test_github_cli() {
-    echo -e "${BLUE}Testing GitHub CLI...${NC}"
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC} ${BLUE}GitHub CLI Authentication${NC}                                  ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if gh CLI is installed
     if ! command -v gh &> /dev/null; then
-        echo -e "${RED}✗ gh CLI not installed${NC}"
+        echo -e "  ${RED}✗ gh CLI not installed${NC}"
+        echo ""
         return 1
     fi
 
@@ -228,34 +231,36 @@ test_github_cli() {
     local auth_exit=$?
 
     if [ $auth_exit -eq 0 ]; then
-        echo -e "${GREEN}✓ GitHub CLI authentication successful${NC}"
+        echo -e "  ${GREEN}✓ Authentication successful${NC}"
         echo ""
         # Show actual output from gh auth status
-        echo "$auth_output" | grep -E "(Logged in|Account|Token|Token scopes)" | sed 's/^/  /'
+        echo "$auth_output" | grep -E "(Logged in|Account|Token|Token scopes)" | sed 's/^/    /'
         echo ""
 
         # Get rate limit info
         local rate_info=$(gh api rate_limit --jq '.resources.core | "Limit: \(.limit)/hour | Used: \(.used) | Remaining: \(.remaining)"' 2>/dev/null)
         if [ $? -eq 0 ]; then
-            echo -e "  Rate limit: $rate_info"
+            echo -e "    ${CYAN}Rate limit:${NC} $rate_info"
         fi
     else
-        echo -e "${RED}✗ GitHub CLI authentication failed${NC}"
-        echo "$auth_output" | sed 's/^/  /'
+        echo -e "  ${RED}✗ Authentication failed${NC}"
+        echo "$auth_output" | sed 's/^/    /'
     fi
     echo ""
 }
 
 # Test GitHub MCP Server
 test_github_mcp_server() {
-    echo -e "${BLUE}Testing GitHub MCP Server...${NC}"
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC} ${BLUE}GitHub MCP Server${NC}                                           ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if github is in active servers
     local project_path=$(get_project_path)
     local active_servers=$(get_active_servers)
 
     if ! echo "$active_servers" | grep -q "github"; then
-        echo -e "${YELLOW}⚠ github MCP server not in active profile${NC}"
+        echo -e "  ${YELLOW}⚠ github MCP server not in active profile${NC}"
         echo ""
         return
     fi
@@ -264,17 +269,17 @@ test_github_mcp_server() {
     local mcp_command=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["github"].command // empty' "$CLAUDE_CONFIG" 2>/dev/null)
 
     if [ -z "$mcp_command" ]; then
-        echo -e "${RED}✗ GitHub MCP server not configured${NC}"
+        echo -e "  ${RED}✗ GitHub MCP server not configured${NC}"
         echo ""
         return 1
     fi
 
-    echo -e "  MCP Command: ${CYAN}$mcp_command${NC}"
+    echo -e "  ${CYAN}Command:${NC} $mcp_command"
 
     # Check if the MCP command/wrapper exists
     if [ ! -x "$mcp_command" ]; then
-        echo -e "${RED}✗ MCP server command not executable${NC}"
-        echo -e "  Path: $mcp_command"
+        echo -e "  ${RED}✗ MCP server command not executable${NC}"
+        echo -e "    Path: $mcp_command"
         echo ""
         return 1
     fi
@@ -284,36 +289,37 @@ test_github_mcp_server() {
         local mcp_status=$(claude mcp list 2>/dev/null | grep "github")
 
         if echo "$mcp_status" | grep -q "✓"; then
-            echo -e "${GREEN}✓ GitHub MCP server active${NC}"
-            echo -e "  Status: Connected via Claude Code"
-            echo -e "  ${CYAN}MCP server verified through Claude${NC}"
+            echo -e "  ${GREEN}✓ Server active and connected${NC}"
+            echo -e "    ${CYAN}Status:${NC} Connected via Claude Code"
         elif echo "$mcp_status" | grep -q "github"; then
-            echo -e "${YELLOW}⚠ GitHub MCP server configured but connection unclear${NC}"
-            echo -e "  Try: /mcp command in Claude Code to reconnect"
+            echo -e "  ${YELLOW}⚠ Server configured but connection unclear${NC}"
+            echo -e "    Try: /mcp command in Claude Code to reconnect"
         else
-            echo -e "${YELLOW}⚠ Cannot verify MCP server status${NC}"
-            echo -e "  Run 'claude mcp list' to check server health"
+            echo -e "  ${YELLOW}⚠ Cannot verify server status${NC}"
+            echo -e "    Run 'claude mcp list' to check server health"
         fi
     else
         # Fallback: just verify the command exists
-        echo -e "${GREEN}✓ GitHub MCP server configured${NC}"
-        echo -e "  Command exists and is executable"
-        echo -e "  ${CYAN}Note: claude CLI not available for full verification${NC}"
+        echo -e "  ${GREEN}✓ Server configured${NC}"
+        echo -e "    Command exists and is executable"
+        echo -e "    ${YELLOW}Note: claude CLI not available for full verification${NC}"
     fi
     echo ""
 }
 
 # Test HuggingFace MCP Server OAuth authentication
 test_huggingface_mcp_oauth() {
-    echo -e "${BLUE}Testing HuggingFace MCP Server (OAuth)...${NC}"
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC} ${BLUE}HuggingFace MCP Server (OAuth)${NC}                              ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if hf-mcp-server is in active servers
     local project_path=$(get_project_path)
     local active_servers=$(get_active_servers)
 
     if ! echo "$active_servers" | grep -q "hf-mcp-server"; then
-        echo -e "${YELLOW}⚠ hf-mcp-server not in active profile${NC}"
-        echo -e "  Switch to 'full' profile to enable HuggingFace MCP"
+        echo -e "  ${YELLOW}⚠ hf-mcp-server not in active profile${NC}"
+        echo -e "    Switch to 'full' profile to enable HuggingFace MCP"
         echo ""
         return
     fi
@@ -322,12 +328,12 @@ test_huggingface_mcp_oauth() {
     local mcp_url=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["hf-mcp-server"].url // empty' "$CLAUDE_CONFIG" 2>/dev/null)
 
     if [ -z "$mcp_url" ]; then
-        echo -e "${RED}✗ HuggingFace MCP server not configured${NC}"
+        echo -e "  ${RED}✗ HuggingFace MCP server not configured${NC}"
         echo ""
         return 1
     fi
 
-    echo -e "  MCP URL: ${CYAN}$mcp_url${NC}"
+    echo -e "  ${CYAN}MCP URL:${NC} $mcp_url"
 
     # Test OAuth connection using Claude Code's built-in MCP connection
     # Since we can't directly test the OAuth session from bash, we check if Claude can connect
@@ -336,33 +342,32 @@ test_huggingface_mcp_oauth() {
         local mcp_status=$(claude mcp list 2>/dev/null | grep "hf-mcp-server")
 
         if echo "$mcp_status" | grep -q "✓ Connected"; then
-            echo -e "${GREEN}✓ HuggingFace MCP OAuth session active${NC}"
-            echo -e "  Status: Connected via Claude Code"
-
-            # Additional info: we know from the MCP whoami that user is authenticated
-            echo -e "  ${CYAN}OAuth authentication verified through MCP${NC}"
+            echo -e "  ${GREEN}✓ OAuth session active${NC}"
+            echo -e "    ${CYAN}Status:${NC} Connected via Claude Code"
         elif echo "$mcp_status" | grep -q "hf-mcp-server"; then
-            echo -e "${YELLOW}⚠ HuggingFace MCP server configured but connection unclear${NC}"
-            echo -e "  Try: /mcp command in Claude Code to reconnect"
+            echo -e "  ${YELLOW}⚠ Server configured but connection unclear${NC}"
+            echo -e "    Try: /mcp command in Claude Code to reconnect"
         else
-            echo -e "${RED}✗ HuggingFace MCP server not responding${NC}"
-            echo -e "  Run 'claude mcp list' to check server health"
+            echo -e "  ${RED}✗ Server not responding${NC}"
+            echo -e "    Run 'claude mcp list' to check server health"
         fi
     else
-        echo -e "${YELLOW}⚠ Cannot verify OAuth - claude CLI not available${NC}"
-        echo -e "  MCP server configured at: $mcp_url"
+        echo -e "  ${YELLOW}⚠ Cannot verify OAuth - claude CLI not available${NC}"
+        echo -e "    MCP server configured at: $mcp_url"
     fi
     echo ""
 }
 
 # Test HuggingFace CLI Token authentication
 test_huggingface_cli_token() {
-    echo -e "${BLUE}Testing HuggingFace CLI Token...${NC}"
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC} ${BLUE}HuggingFace CLI Token${NC}                                       ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if hf CLI is installed (modern command)
     if ! command -v hf &> /dev/null; then
-        echo -e "${YELLOW}⚠ HuggingFace CLI not installed${NC}"
-        echo -e "  Install with: pip install -U huggingface_hub[cli]"
+        echo -e "  ${YELLOW}⚠ HuggingFace CLI not installed${NC}"
+        echo -e "    Install with: pip install -U huggingface_hub[cli]"
         echo ""
         return
     fi
@@ -381,58 +386,58 @@ test_huggingface_cli_token() {
         local orgs_line=$(echo "$hf_whoami_output" | grep "^orgs:" | sed 's/orgs: *//')
 
         if [ -n "$username" ] && [ "$username" != "" ]; then
-            echo -e "${GREEN}✓ HuggingFace CLI token valid${NC}"
-            echo -e "  Username: ${CYAN}$username${NC}"
+            echo -e "  ${GREEN}✓ Token valid and authenticated${NC}"
+            echo -e "    ${CYAN}Username:${NC} $username"
 
             # Show organizations if present
             if [ -n "$orgs_line" ]; then
                 local org_count=$(echo "$orgs_line" | tr ',' '\n' | wc -l)
-                echo -e "  Organizations: $org_count ($orgs_line)"
+                echo -e "    ${CYAN}Organizations:${NC} $org_count ($orgs_line)"
             fi
 
             # Show token source if available
             if [ -n "$HF_TOKEN" ]; then
-                echo -e "  Token source: Environment variable (HF_TOKEN)"
+                echo -e "    ${CYAN}Token source:${NC} Environment variable (HF_TOKEN)"
             else
-                echo -e "  Token source: ~/.cache/huggingface/token"
+                echo -e "    ${CYAN}Token source:${NC} ~/.cache/huggingface/token"
             fi
 
             echo ""
-            echo -e "${GREEN}Token can be used for:${NC}"
-            echo -e "  ✓ hf CLI commands (model/dataset download, upload)"
-            echo -e "  ✓ Python transformers/datasets libraries"
-            echo -e "  ✓ Direct API access in scripts"
+            echo -e "  ${GREEN}Token can be used for:${NC}"
+            echo -e "    ✓ hf CLI commands (model/dataset download, upload)"
+            echo -e "    ✓ Python transformers/datasets libraries"
+            echo -e "    ✓ Direct API access in scripts"
         else
-            echo -e "${YELLOW}⚠ Unexpected output format${NC}"
-            echo "$hf_whoami_output" | sed 's/^/  /'
+            echo -e "  ${YELLOW}⚠ Unexpected output format${NC}"
+            echo "$hf_whoami_output" | sed 's/^/    /'
         fi
     else
         # Authentication failed
         if echo "$hf_whoami_output" | grep -qi "not logged in"; then
-            echo -e "${RED}✗ Not logged in to HuggingFace${NC}"
+            echo -e "  ${RED}✗ Not logged in to HuggingFace${NC}"
             echo ""
-            echo -e "${CYAN}To fix - Option 1 (Recommended - Login via CLI):${NC}"
-            echo -e "  1. Run: ${YELLOW}hf auth login${NC}"
-            echo -e "  2. Paste your token when prompted"
-            echo -e "  3. Token will be saved in ~/.cache/huggingface/token"
+            echo -e "  ${CYAN}To fix - Option 1 (Recommended - Login via CLI):${NC}"
+            echo -e "    1. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "    2. Paste your token when prompted"
+            echo -e "    3. Token will be saved in ~/.cache/huggingface/token"
             echo ""
-            echo -e "${CYAN}To fix - Option 2 (Environment Variable):${NC}"
-            echo -e "  1. Go to: https://huggingface.co/settings/tokens"
-            echo -e "  2. Create a new token with read permissions"
-            echo -e "  3. Add to ~/.zshrc or ~/.profile:"
-            echo -e "     ${YELLOW}export HF_TOKEN=\"hf_your_new_token\"${NC}"
-            echo -e "  4. Run: ${YELLOW}source ~/.zshrc${NC}"
+            echo -e "  ${CYAN}To fix - Option 2 (Environment Variable):${NC}"
+            echo -e "    1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "    2. Create a new token with read permissions"
+            echo -e "    3. Add to ~/.zshrc or ~/.profile:"
+            echo -e "       ${YELLOW}export HF_TOKEN=\"hf_your_new_token\"${NC}"
+            echo -e "    4. Run: ${YELLOW}source ~/.zshrc${NC}"
         elif echo "$hf_whoami_output" | grep -qi "invalid.*token"; then
-            echo -e "${RED}✗ Invalid token${NC}"
+            echo -e "  ${RED}✗ Invalid token${NC}"
             echo ""
-            echo -e "${CYAN}To fix:${NC}"
-            echo -e "  1. Go to: https://huggingface.co/settings/tokens"
-            echo -e "  2. Create a new token with read permissions"
-            echo -e "  3. Run: ${YELLOW}hf auth login${NC}"
-            echo -e "  4. Or update HF_TOKEN in ~/.zshrc"
+            echo -e "  ${CYAN}To fix:${NC}"
+            echo -e "    1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "    2. Create a new token with read permissions"
+            echo -e "    3. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "    4. Or update HF_TOKEN in ~/.zshrc"
         else
-            echo -e "${RED}✗ Authentication failed${NC}"
-            echo -e "  Output: $hf_whoami_output"
+            echo -e "  ${RED}✗ Authentication failed${NC}"
+            echo -e "    Output: $hf_whoami_output"
         fi
     fi
     echo ""
@@ -440,11 +445,14 @@ test_huggingface_cli_token() {
 
 # Test Context7 API authentication
 test_context7_api() {
-    echo -e "${BLUE}Testing Context7 API...${NC}"
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC} ${BLUE}Context7 API${NC}                                                ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if CONTEXT7_API_KEY is set
     if [ -z "$CONTEXT7_API_KEY" ]; then
-        echo -e "${RED}✗ CONTEXT7_API_KEY environment variable not set${NC}"
+        echo -e "  ${RED}✗ CONTEXT7_API_KEY environment variable not set${NC}"
+        echo ""
         return 1
     fi
 
@@ -456,17 +464,17 @@ test_context7_api() {
         --max-time 5 2>/dev/null)
 
     if [ "$http_code" = "200" ]; then
-        echo -e "${GREEN}✓ Context7 API key valid${NC}"
-        echo -e "  HTTP Status: 200 OK"
-        echo -e "  Connection: Successful"
+        echo -e "  ${GREEN}✓ API key valid${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} 200 OK"
+        echo -e "    ${CYAN}Connection:${NC} Successful"
     elif [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
-        echo -e "${RED}✗ Context7 authentication failed${NC}"
-        echo -e "  HTTP Status: $http_code"
+        echo -e "  ${RED}✗ Authentication failed${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} $http_code"
     elif [ -z "$http_code" ]; then
-        echo -e "${YELLOW}⚠ Connection timeout or network error${NC}"
+        echo -e "  ${YELLOW}⚠ Connection timeout or network error${NC}"
     else
-        echo -e "${YELLOW}⚠ Unexpected response${NC}"
-        echo -e "  HTTP Status: $http_code"
+        echo -e "  ${YELLOW}⚠ Unexpected response${NC}"
+        echo -e "    ${CYAN}HTTP Status:${NC} $http_code"
     fi
     echo ""
 }
@@ -492,17 +500,27 @@ test_api_keys() {
         return
     fi
 
-    echo -e "${BLUE}Testing API keys for servers that require authentication...${NC}"
+    echo -e "${BLUE}Testing CLI authentication and MCP servers...${NC}"
     echo ""
 
     # Track if we tested anything
     local tested=0
+
+    # === CLI Tests First ===
 
     # Test GitHub CLI authentication
     if command -v gh &> /dev/null; then
         test_github_cli
         tested=$((tested + 1))
     fi
+
+    # Test HuggingFace CLI token (test if CLI is available)
+    if command -v hf &> /dev/null; then
+        test_huggingface_cli_token
+        tested=$((tested + 1))
+    fi
+
+    # === MCP Server Tests ===
 
     # Test GitHub MCP Server if active
     if echo "$active_servers" | grep -q "github"; then
@@ -516,13 +534,7 @@ test_api_keys() {
         tested=$((tested + 1))
     fi
 
-    # Test HuggingFace CLI token (test if CLI is available)
-    if command -v hf &> /dev/null; then
-        test_huggingface_cli_token
-        tested=$((tested + 1))
-    fi
-
-    # Test Context7 if active
+    # Test Context7 API if active
     if echo "$active_servers" | grep -q "context7"; then
         test_context7_api
         tested=$((tested + 1))
