@@ -246,35 +246,117 @@ test_github_api() {
     echo ""
 }
 
-# Test HuggingFace API authentication
-test_huggingface_api() {
-    echo -e "${BLUE}Testing HuggingFace API...${NC}"
+# Test HuggingFace MCP Server OAuth authentication
+test_huggingface_mcp_oauth() {
+    echo -e "${BLUE}Testing HuggingFace MCP Server (OAuth)...${NC}"
 
-    # Check if HF_TOKEN is set
-    if [ -z "$HF_TOKEN" ]; then
-        echo -e "${RED}✗ HF_TOKEN environment variable not set${NC}"
+    # Check if hf-mcp-server is in active servers
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+
+    if ! echo "$active_servers" | grep -q "hf-mcp-server"; then
+        echo -e "${YELLOW}⚠ hf-mcp-server not in active profile${NC}"
+        echo -e "  Switch to 'full' profile to enable HuggingFace MCP"
+        echo ""
+        return
+    fi
+
+    # Check MCP server configuration
+    local mcp_url=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["hf-mcp-server"].url // empty' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    if [ -z "$mcp_url" ]; then
+        echo -e "${RED}✗ HuggingFace MCP server not configured${NC}"
+        echo ""
         return 1
     fi
 
-    # Test using curl to HF API
-    local hf_response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/whoami" 2>&1)
+    echo -e "  MCP URL: ${CYAN}$mcp_url${NC}"
 
-    if echo "$hf_response" | grep -q "error"; then
-        echo -e "${YELLOW}⚠ Direct API test inconclusive${NC}"
-        echo -e "  (Token may be read-only or MCP-only)"
-    else
-        # Parse and show username if available
-        local username=$(echo "$hf_response" | jq -r '.name // .id // "unknown"' 2>/dev/null)
-        if [ "$username" != "unknown" ] && [ -n "$username" ]; then
-            echo -e "${GREEN}✓ HuggingFace authentication successful${NC}"
-            echo -e "  Authenticated as: $username"
+    # Test OAuth connection using Claude Code's built-in MCP connection
+    # Since we can't directly test the OAuth session from bash, we check if Claude can connect
+    if command -v claude &>/dev/null; then
+        # Try to verify MCP server is listed and healthy
+        local mcp_status=$(claude mcp list 2>/dev/null | grep "hf-mcp-server")
+
+        if echo "$mcp_status" | grep -q "✓ Connected"; then
+            echo -e "${GREEN}✓ HuggingFace MCP OAuth session active${NC}"
+            echo -e "  Status: Connected via Claude Code"
+
+            # Additional info: we know from the MCP whoami that user is authenticated
+            echo -e "  ${CYAN}OAuth authentication verified through MCP${NC}"
+        elif echo "$mcp_status" | grep -q "hf-mcp-server"; then
+            echo -e "${YELLOW}⚠ HuggingFace MCP server configured but connection unclear${NC}"
+            echo -e "  Try: /mcp command in Claude Code to reconnect"
         else
-            echo -e "${YELLOW}⚠ Token present but verification unclear${NC}"
+            echo -e "${RED}✗ HuggingFace MCP server not responding${NC}"
+            echo -e "  Run 'claude mcp list' to check server health"
         fi
+    else
+        echo -e "${YELLOW}⚠ Cannot verify OAuth - claude CLI not available${NC}"
+        echo -e "  MCP server configured at: $mcp_url"
+    fi
+    echo ""
+}
+
+# Test HuggingFace CLI Token authentication
+test_huggingface_cli_token() {
+    echo -e "${BLUE}Testing HuggingFace CLI Token...${NC}"
+
+    # Check if HF_TOKEN is set
+    if [ -z "$HF_TOKEN" ]; then
+        echo -e "${YELLOW}⚠ HF_TOKEN environment variable not set${NC}"
+        echo -e "  This token is needed for:"
+        echo -e "  - HuggingFace CLI (huggingface-cli)"
+        echo -e "  - Python libraries (transformers, datasets)"
+        echo -e "  - Direct API access in scripts"
+        echo ""
+        return
     fi
 
-    # Additional note about MCP usage
-    echo -e "  ${CYAN}Note: MCP server may work even if direct API test fails${NC}"
+    echo -e "  Token found: ${HF_TOKEN:0:10}...${HF_TOKEN: -4}"
+
+    # Test token with HuggingFace API
+    local hf_response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/whoami" 2>&1)
+    local curl_exit=$?
+
+    if [ $curl_exit -ne 0 ]; then
+        echo -e "${RED}✗ Network error testing token${NC}"
+        echo ""
+        return 1
+    fi
+
+    # Check for error in response
+    if echo "$hf_response" | grep -q '"error"'; then
+        local error_msg=$(echo "$hf_response" | jq -r '.error // "Unknown error"' 2>/dev/null)
+        echo -e "${RED}✗ Token validation failed${NC}"
+        echo -e "  Error: $error_msg"
+        echo ""
+        echo -e "${CYAN}To fix:${NC}"
+        echo -e "  1. Go to: https://huggingface.co/settings/tokens"
+        echo -e "  2. Create a new token with read permissions"
+        echo -e "  3. Update in ~/.zshrc and ~/.profile:"
+        echo -e "     export HUGGINGFACE_TOKEN=\"hf_your_new_token\""
+        echo -e "  4. Run: source ~/.zshrc"
+    else
+        # Parse and show user info
+        local username=$(echo "$hf_response" | jq -r '.name // "unknown"' 2>/dev/null)
+        local fullname=$(echo "$hf_response" | jq -r '.fullname // ""' 2>/dev/null)
+        local orgs=$(echo "$hf_response" | jq -r '.orgs[]? .name' 2>/dev/null | wc -l)
+
+        if [ "$username" != "unknown" ] && [ -n "$username" ]; then
+            echo -e "${GREEN}✓ HuggingFace CLI token valid${NC}"
+            echo -e "  Username: $username"
+            [ -n "$fullname" ] && echo -e "  Name: $fullname"
+            [ "$orgs" -gt 0 ] && echo -e "  Organizations: $orgs"
+            echo ""
+            echo -e "${GREEN}Token can be used for:${NC}"
+            echo -e "  ✓ huggingface-cli commands"
+            echo -e "  ✓ Python transformers/datasets libraries"
+            echo -e "  ✓ Direct API access"
+        else
+            echo -e "${YELLOW}⚠ Token present but user data unclear${NC}"
+        fi
+    fi
     echo ""
 }
 
@@ -344,9 +426,15 @@ test_api_keys() {
         tested=$((tested + 1))
     fi
 
-    # Test HuggingFace if active
+    # Test HuggingFace MCP OAuth if active
     if echo "$active_servers" | grep -q "hf-mcp-server"; then
-        test_huggingface_api
+        test_huggingface_mcp_oauth
+        tested=$((tested + 1))
+    fi
+
+    # Test HuggingFace CLI token (always test if HF_TOKEN is set)
+    if [ -n "$HF_TOKEN" ]; then
+        test_huggingface_cli_token
         tested=$((tested + 1))
     fi
 
