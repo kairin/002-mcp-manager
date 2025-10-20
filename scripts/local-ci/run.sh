@@ -340,6 +340,102 @@ check_timeout() {
     fi
 }
 
+# Feature 002: Parallel test execution (US3 - FR-005, FR-006)
+run_tests_parallel() {
+    if [ "$SKIP_TESTS" = true ]; then
+        log_info "test-parallel" "Skipping all tests (--skip-tests flag)" | tee -a "$LOG_FILE"
+        return 0
+    fi
+
+    log_info "test-parallel" "Running tests in parallel (unit, integration, e2e)" | tee -a "$LOG_FILE"
+
+    local test_types=("unit" "integration" "e2e")
+    local pids=()
+    local exit_codes=()
+    local temp_logs=()
+
+    # Launch all tests in background with separate log files
+    for test_type in "${test_types[@]}"; do
+        local temp_log="/tmp/ci-test-${test_type}-$$.log"
+        temp_logs+=("$temp_log")
+
+        (
+            cd "$WEB_DIR"
+            case "$test_type" in
+                "unit")
+                    npx mocha tests/unit/**/*.test.js >> "$temp_log" 2>&1
+                    ;;
+                "integration")
+                    npx mocha tests/integration/**/*.test.js >> "$temp_log" 2>&1
+                    ;;
+                "e2e")
+                    npx playwright test >> "$temp_log" 2>&1
+                    ;;
+            esac
+        ) &
+        pids+=($!)
+    done
+
+    # Wait for all jobs and collect exit codes
+    for i in "${!pids[@]}"; do
+        wait "${pids[$i]}"
+        exit_codes+=($?)
+    done
+
+    # Aggregate logs into main log file
+    for i in "${!test_types[@]}"; do
+        cat "${temp_logs[$i]}" >> "$LOG_FILE"
+        rm -f "${temp_logs[$i]}"
+    done
+
+    # Check for resource contention indicators
+    local contention_detected=false
+    for temp_log in "${temp_logs[@]}"; do
+        if [ -f "$temp_log" ]; then
+            if grep -Eq "(EADDRINUSE|port already in use|lock file exists|database is locked)" "$temp_log" 2>/dev/null; then
+                contention_detected=true
+                break
+            fi
+        fi
+    done
+
+    # Check for failures
+    local failed_tests=()
+    for i in "${!test_types[@]}"; do
+        if [[ ${exit_codes[$i]} -ne 0 ]]; then
+            failed_tests+=("${test_types[$i]}")
+        fi
+    done
+
+    # If resource contention detected and tests failed, fall back to serial
+    if [ "$contention_detected" = true ] && [ ${#failed_tests[@]} -gt 0 ]; then
+        log_warn "test-parallel" "Resource contention detected, falling back to serial execution" | tee -a "$LOG_FILE"
+        return 1  # Signal to run serial fallback
+    fi
+
+    # Report results
+    if [ ${#failed_tests[@]} -eq 0 ]; then
+        log_success "test-parallel" "All parallel tests passed (unit, integration, e2e)" | tee -a "$LOG_FILE"
+        return 0
+    else
+        log_error "test-parallel" "Tests failed: ${failed_tests[*]}" | tee -a "$LOG_FILE"
+        return $EXIT_TEST_FAILED
+    fi
+}
+
+# Feature 002: Serial test fallback (US3 - FR-017)
+run_tests_serial() {
+    log_info "test-serial" "Running tests in serial mode" | tee -a "$LOG_FILE"
+
+    # Run tests sequentially
+    step_test_unit || return $?
+    step_test_integration || return $?
+    step_test_e2e || return $?
+
+    log_success "test-serial" "All serial tests passed" | tee -a "$LOG_FILE"
+    return 0
+}
+
 # Step 9: Complete
 step_complete() {
     local pipeline_end=$(date +%s.%N)
@@ -386,13 +482,16 @@ main() {
     step_lint || exit $?
     check_timeout
 
-    step_test_unit || exit $?
-    check_timeout
-
-    step_test_integration || exit $?
-    check_timeout
-
-    step_test_e2e || exit $?
+    # Feature 002: Parallel test execution with serial fallback (US3)
+    if ! run_tests_parallel; then
+        # If return code is 1, try serial fallback (resource contention)
+        # If return code is EXIT_TEST_FAILED (2), tests genuinely failed
+        if [ $? -eq 1 ]; then
+            run_tests_serial || exit $?
+        else
+            exit $EXIT_TEST_FAILED
+        fi
+    fi
     check_timeout
 
     step_build || exit $?

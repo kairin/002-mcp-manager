@@ -88,13 +88,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Refactor test execution into functions `run_test_unit()`, `run_test_integration()`, `run_test_e2e()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T022 [US3] Implement parallel test execution using background jobs (`&`) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T023 [US3] Add `wait` builtin to collect parallel job exit codes in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T024 [US3] Implement failure aggregation logic: collect all test failures before reporting in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T025 [US3] Update test logging to indicate parallel execution status in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T026 [US3] Add resource contention detection (port conflicts, file lock timeouts) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T027 [US3] Implement serial fallback on resource contention with logging in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T021 [US3] Refactor test execution into functions `run_test_unit()`, `run_test_integration()`, `run_test_e2e()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T022 [US3] Implement parallel test execution using background jobs (`&`) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T023 [US3] Add `wait` builtin to collect parallel job exit codes in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T024 [US3] Implement failure aggregation logic: collect all test failures before reporting in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T025 [US3] Update test logging to indicate parallel execution status in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T026 [US3] Add resource contention detection (port conflicts, file lock timeouts) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T027 [US3] Implement serial fallback on resource contention with logging in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Tests run in parallel, 40-60% faster, with serial fallback on resource contention
 
