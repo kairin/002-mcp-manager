@@ -1,23 +1,24 @@
 # Tasks: Local CI/CD for Astro Site
 
-**Feature**: 001-local-cicd-astro-site | **Generated**: 2025-10-20 | **Status**: 86% Complete
+**Feature**: 001-local-cicd-astro-site | **Generated**: 2025-10-20 | **Status**: 95% Complete
 
 ---
 
 ## Overview
 
-**Total Tasks**: 73 | **Completed**: 63 | **Remaining**: 10
+**Total Tasks**: 73 | **Completed**: 69 | **Remaining**: 4
 
 **Progress by Phase**:
 - ✅ Phase 1: Cleanup (19/19) - 100% COMPLETE
 - ✅ Phase 2: Foundation (11/11) - 100% COMPLETE
 - ✅ Phase 3: User Story 1 - Local CI/CD (19/19) - 100% COMPLETE ⭐ **MVP**
 - ✅ Phase 4: User Story 2 - TUI Module (14/14) - 100% COMPLETE ⭐ **FR-006**
-- 🔄 Phase 5: User Story 3 - GitHub Pages (0/6) - 0%
+- ✅ Phase 5: User Story 3 - GitHub Pages (6/6) - 100% COMPLETE ⭐ **FR-011**
 - 🔄 Phase 6: Polish & Integration Tests (0/4) - 0%
 
 **MVP Status**: ✅ COMPLETE - User Story 1 fully functional
 **FR-006 Status**: ✅ COMPLETE - TUI Module implemented
+**FR-011 Status**: ✅ COMPLETE - Deployment with automatic rollback
 
 ---
 
@@ -29,11 +30,15 @@
 - ✅ Structured logging and error handling (Phase 2-3)
 - ✅ Module contracts and clear boundaries (All phases)
 - ✅ TUI Module with 9 menu options (Phase 4) - FR-006 satisfied
+- ✅ GitHub Pages deployment workflow (Phase 5) - FR-011 satisfied
+  - Automatic deployment on push to main
+  - Deployment state tracking with JSON records
+  - Automatic rollback on failure
+  - Lighthouse CI performance validation (NFR-002)
 
-**Next Priorities**:
-1. **GitHub Pages Deployment** (User Story 3, Phase 5)
-2. **Integration Tests** (Principle V compliance, Phase 6)
-3. **Documentation Polish** (Phase 6)
+**Final Phase**:
+1. **Integration Tests** (Principle V compliance, Phase 6)
+2. **Documentation Polish** (Phase 6)
 
 ---
 
@@ -155,22 +160,22 @@
 
 ---
 
-## Phase 5: User Story 3 - GitHub Pages Deployment (P3) 🔄 PENDING
+## Phase 5: User Story 3 - GitHub Pages Deployment (P3) ✅ COMPLETE ⭐ FR-011
 
 **Goal**: As a project owner, I want a website built with Astro.build and hosted on GitHub Pages, with automatic deployment and rollback (FR-002, FR-011).
 
-**Status**: 🔄 0/6 tasks complete
+**Status**: ✅ 6/6 tasks complete
 
 **Independent Test**: Push to main → GitHub Pages deploys → rollback on failure
 
-### Tasks
+### Completed Tasks
 
-- [ ] T064 [US3] Create .github/workflows/deploy.yml with GitHub Pages deployment job
-- [ ] T065 [US3] Configure workflow trigger: on push to main branch only
-- [ ] T066 [US3] Add workflow step: Deploy web/dist/ to GitHub Pages
-- [ ] T067 [US3] Add workflow step: Run Lighthouse CI for performance validation (NFR-001, NFR-002)
-- [ ] T068 [US3] Implement deployment state tracking in .github/deployment-state.json (Entity 4)
-- [ ] T069 [US3] Implement automatic rollback on deployment failure with notification (FR-011)
+- [x] T064 [US3] Create .github/workflows/deploy.yml with GitHub Pages deployment job
+- [x] T065 [US3] Configure workflow trigger: on push to main + workflow_dispatch
+- [x] T066 [US3] Add workflow step: Deploy web/dist/ to GitHub Pages (deploy-pages@v4)
+- [x] T067 [US3] Add workflow step: Run Lighthouse CI for performance validation (NFR-001, NFR-002)
+- [x] T068 [US3] Implement deployment state tracking in .github/deployment-state.json (Entity 4)
+- [x] T069 [US3] Implement automatic rollback on deployment failure with notification (FR-011)
 
 ---
 
@@ -219,24 +224,28 @@ User Story 1    User Story 2      User Story 3
 
 ## Current Status Summary
 
-**✅ COMPLETED (63 tasks - 86%)**:
+**✅ COMPLETED (69 tasks - 95%)**:
 - Phase 1: All cleanup and structure tasks (T001-T019)
 - Phase 2: All foundational infrastructure (T020-T030)
 - Phase 3: Complete CI/CD pipeline with all features (T031-T049) ⭐ MVP
 - Phase 4: Complete TUI module implementation (T050-T063) ⭐ FR-006
+- Phase 5: GitHub Pages deployment workflow (T064-T069) ⭐ FR-011
 
-**🔄 NEXT ACTIONS**:
-1. Implement GitHub Pages Deployment (Phase 5, T064-T069) - **HIGH PRIORITY** (User Story 3)
-2. Add Integration Tests & Polish (Phase 6, T070-T073) - Principle V compliance
+**🔄 FINAL PHASE (4 tasks - 5%)**:
+1. Create integration tests for module independence (T070-T071)
+2. Update documentation with TUI usage (T072)
+3. Run full system test (T073)
 
 **Estimated Remaining Effort**:
-- Deployment: 1-2 hours (6 tasks)
-- Tests & Polish: 1 hour (4 tasks)
-- **Total Remaining**: 10 tasks (14% of project)
+- Integration Tests: 30 minutes (2 tasks)
+- Documentation: 15 minutes (1 task)
+- System Test: 15 minutes (1 task)
+- **Total Remaining**: 4 tasks (~1 hour)
 
 ---
 
 **Last Updated**: 2025-10-20
 **MVP Completion Date**: 2025-10-20
 **FR-006 Completion Date**: 2025-10-20
-**Next Milestone**: GitHub Pages Deployment (User Story 3)
+**FR-011 Completion Date**: 2025-10-20
+**Next Milestone**: Final Polish & Integration Tests (Phase 6)

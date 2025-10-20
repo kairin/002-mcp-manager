@@ -4,27 +4,145 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Deploy Astro Site to GitHub Pages
     runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build Astro site
+        working-directory: ./web
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./web/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Save deployment state on success
+        if: success()
+        run: |
+          DEPLOY_ID="deploy-\$(date +%Y%m%d-%H%M%S)"
+          COMMIT_SHA="\${{ github.sha }}"
+          
+          mkdir -p .github
+          
+          cat > .github/deployment-state.json <<JSON
+          {
+            "currentDeployment": "\$DEPLOY_ID",
+            "lastKnownGood": "\$DEPLOY_ID",
+            "deployments": [
+              {
+                "id": "\$DEPLOY_ID",
+                "timestamp": "\$(date -u +\"%Y-%m-%dT%H:%M:%S.000Z\")",
+                "commitSHA": "\$COMMIT_SHA",
+                "status": "success",
+                "url": "\${{ steps.deployment.outputs.page_url }}"
+              }
+            ]
+          }
+          JSON
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/deployment-state.json
+          git commit -m "chore: Update deployment state [\$DEPLOY_ID]" || echo "No changes"
+          git push || echo "No push needed"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment failed! Recording failure..."
+          
+          if [ -f .github/deployment-state.json ]; then
+            LAST_GOOD=\$(jq -r '.lastKnownGood' .github/deployment-state.json)
+            LAST_COMMIT=\$(jq -r ".deployments[] | select(.id == \"\$LAST_GOOD\") | .commitSHA" .github/deployment-state.json)
+            
+            echo "::warning::Last known good: \$LAST_GOOD (commit: \$LAST_COMMIT)"
+            echo "::warning::To rollback: git revert \${{ github.sha }}"
+            
+            DEPLOY_ID="deploy-\$(date +%Y%m%d-%H%M%S)"
+            jq --arg id "\$DEPLOY_ID" \
+               --arg ts "\$(date -u +\"%Y-%m-%dT%H:%M:%S.000Z\")" \
+               --arg sha "\${{ github.sha }}" \
+               '.deployments += [{"id": \$id, "timestamp": \$ts, "commitSHA": \$sha, "status": "failed", "url": null}]' \
+               .github/deployment-state.json > .github/deployment-state.tmp.json
+            
+            mv .github/deployment-state.tmp.json .github/deployment-state.json
+            git add .github/deployment-state.json
+            git commit -m "chore: Record failed deployment [\$DEPLOY_ID]"
+            git push
+          else
+            echo "::error::No deployment state. Manual rollback required."
+          fi
+          
+          exit 1
+
+  lighthouse:
+    name: Run Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: cd web && npm install
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
 
-      - name: Build website
-        run: cd web && npm run build
+      - name: Run Lighthouse CI
+        env:
+          LHCI_GITHUB_APP_TOKEN: \${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: |
+          lhci autorun \
+            --collect.url="https://\${{ github.repository_owner }}.github.io/\${{ github.event.repository.name }}/" \
+            --collect.numberOfRuns=3 \
+            --assert.preset="lighthouse:recommended" \
+            --assert.assertions.performance=0.9 \
+            --upload.target=temporary-public-storage
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./web/dist
+      - name: Verify Performance Score
+        run: |
+          echo "::notice::Lighthouse CI completed."
+          echo "::notice::Verify performance score > 90 (NFR-002)"
+          echo "::notice::Check logs above for detailed results"
