@@ -175,6 +175,15 @@ step_env_check() {
         failed=1
     fi
 
+    # Feature 002 - US8: Constitution file check (T052-T056) - Non-blocking
+    local constitution_status=$(validate_constitution_file "$PROJECT_ROOT")
+    if [[ "$constitution_status" == "found" ]]; then
+        log_info "env-check" "Constitution file: found ✓" | tee -a "$LOG_FILE"
+    else
+        log_warn "env-check" "Constitution file missing (optional for SpecKit projects)" | tee -a "$LOG_FILE"
+        log_info "env-check" "Hint: Run /speckit.constitution to create" | tee -a "$LOG_FILE"
+    fi
+
     local duration=$(get_duration "$step_start")
     local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
 
@@ -284,6 +293,43 @@ step_test_integration() {
     fi
 }
 
+# Feature 002 - US7: E2E test retry wrapper (T045-T050)
+# Retries E2E tests once if first attempt fails (only on test failure, not timeout)
+run_e2e_tests_with_retry() {
+    local step_start="$1"
+    local max_attempts=2
+
+    cd "$WEB_DIR"
+
+    for attempt in $(seq 1 $max_attempts); do
+        log_info "test-e2e" "E2E tests attempt $attempt/$max_attempts" | tee -a "$LOG_FILE"
+
+        # Run Playwright tests
+        if npx playwright test >> "$LOG_FILE" 2>&1; then
+            local duration=$(get_duration "$step_start")
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "test-e2e" "E2E tests passed on attempt $attempt" "" "$duration_ms" | tee -a "$LOG_FILE"
+            return 0
+        fi
+
+        local exit_code=$?
+
+        # Only retry on test failures (exit code 1), not timeouts or other errors
+        if (( exit_code == 1 && attempt < max_attempts )); then
+            log_warn "test-e2e" "E2E tests failed (exit $exit_code), retrying once..." | tee -a "$LOG_FILE"
+            sleep 2  # Brief delay before retry
+        else
+            local duration=$(get_duration "$step_start")
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_error "test-e2e" "E2E tests failed after $attempt attempt(s)" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
+            return $EXIT_TEST_FAILED
+        fi
+    done
+
+    # Should never reach here, but safeguard
+    return $EXIT_TEST_FAILED
+}
+
 # Step 6: E2E tests
 step_test_e2e() {
     local step_start=$(date +%s.%N)
@@ -295,20 +341,12 @@ step_test_e2e() {
 
     log_info "test-e2e" "Running E2E tests with Playwright" | tee -a "$LOG_FILE"
 
-    cd "$WEB_DIR"
-
-    if npx playwright test >> "$LOG_FILE" 2>&1; then
-        local duration=$(get_duration "$step_start")
-        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
-        log_success "test-e2e" "E2E tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
-        return 0
-    else
-        local exit_code=$?
-        local duration=$(get_duration "$step_start")
-        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
-        log_error "test-e2e" "E2E tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
+    # Feature 002 - US7: Use retry wrapper
+    if ! run_e2e_tests_with_retry "$step_start"; then
         return $EXIT_TEST_FAILED
     fi
+
+    return 0
 }
 
 # Step 7: Build

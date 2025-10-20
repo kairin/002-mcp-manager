@@ -211,6 +211,24 @@ validate_no_secrets() {
     return $secrets_found
 }
 
+# Feature 002 - US8: Validate constitution file exists (T051)
+# Check if .specify/memory/constitution.md exists (optional check for SpecKit projects)
+# Args:
+#   $1 - project root path
+# Returns: 0 always (non-blocking check), prints status to stdout
+validate_constitution_file() {
+    local project_root="$1"
+    local constitution_file="$project_root/.specify/memory/constitution.md"
+
+    if [[ -f "$constitution_file" ]]; then
+        echo "found"
+    else
+        echo "missing"
+    fi
+
+    return 0
+}
+
 # Export functions for use in other scripts
 export -f validate_dependency
 export -f version_compare
@@ -222,3 +240,4 @@ export -f detect_api_key
 export -f detect_aws_key
 export -f detect_private_key
 export -f validate_no_secrets
+export -f validate_constitution_file

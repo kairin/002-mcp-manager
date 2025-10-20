@@ -170,12 +170,12 @@
 
 ### Implementation for User Story 7
 
-- [ ] T045 [US7] Create E2E test retry wrapper function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T046 [US7] Add attempt counter (1-2) to E2E test execution in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T047 [US7] Implement retry logic: detect exit code 1, re-run once in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T048 [US7] Add retry logging "E2E tests failed (attempt 1/2), retrying..." in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T049 [US7] Add success logging "E2E tests passed (attempt 2/2)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T050 [US7] Add failure logging "E2E tests failed after 2 attempts" and exit code 2 in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T045 [US7] Create E2E test retry wrapper function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T046 [US7] Add attempt counter (1-2) to E2E test execution in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T047 [US7] Implement retry logic: detect exit code 1, re-run once in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T048 [US7] Add retry logging "E2E tests failed (attempt 1/2), retrying..." in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T049 [US7] Add success logging "E2E tests passed (attempt 2/2)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T050 [US7] Add failure logging "E2E tests failed after 2 attempts" and exit code 2 in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: E2E tests automatically retry once, reducing false failures from timing issues
 
@@ -189,12 +189,12 @@
 
 ### Implementation for User Story 8
 
-- [ ] T051 [US8] Add constitution file check function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T052 [US8] Integrate check into `validate_environment()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T053 [US8] Add success logging "Constitution file: found ✓" when file exists in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T054 [US8] Add warning logging "Constitution file missing (optional for SpecKit projects)" when file absent in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T055 [US8] Add hint message "Run /speckit.constitution to create" to warning in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T056 [US8] Ensure check is non-blocking (warning only, pipeline continues) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
+- [X] T051 [US8] Add constitution file check function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
+- [X] T052 [US8] Integrate check into `validate_environment()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T053 [US8] Add success logging "Constitution file: found ✓" when file exists in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T054 [US8] Add warning logging "Constitution file missing (optional for SpecKit projects)" when file absent in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T055 [US8] Add hint message "Run /speckit.constitution to create" to warning in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T056 [US8] Ensure check is non-blocking (warning only, pipeline continues) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: SpecKit users get early warning if constitution file is missing
 
