@@ -22,9 +22,11 @@ NC='\033[0m' # No Color
 
 # Profile definitions (name, description, token estimate)
 declare -A PROFILES
+PROFILES[github]="GitHub only|~3K"
+PROFILES[hf]="HuggingFace only|~73K"
 PROFILES[dev]="Minimal development|~7K"
 PROFILES[ui]="UI/Design work|~12K"
-PROFILES[full]="All servers|~85K"
+PROFILES[full]="All servers|~12K"
 
 # Function to get current project path
 # If in a git repo, use the git root; otherwise use pwd
@@ -89,7 +91,7 @@ identify_active_profile() {
     local current_servers=$(jq --arg path "$project_path" '.projects[$path].mcpServers // {}' "$CLAUDE_CONFIG" 2>/dev/null)
 
     # Compare with each profile
-    for profile in dev ui full; do
+    for profile in github hf dev ui full; do
         local profile_file="$PROFILES_DIR/$profile.json"
         if [ -f "$profile_file" ]; then
             local profile_servers=$(cat "$profile_file")
@@ -122,9 +124,9 @@ show_status() {
         IFS='|' read -r desc tokens <<< "${PROFILES[$active_profile]}"
 
         # Color based on token usage
-        if [[ "$tokens" == *"7K"* ]]; then
+        if [[ "$tokens" == "~3K" ]] || [[ "$tokens" == "~7K" ]]; then
             TOKEN_COLOR=$GREEN
-        elif [[ "$tokens" == *"12K"* ]]; then
+        elif [[ "$tokens" == "~12K" ]]; then
             TOKEN_COLOR=$YELLOW
         else
             TOKEN_COLOR=$RED
@@ -146,14 +148,14 @@ show_status() {
 
 list_profiles() {
     echo -e "${BLUE}Available Profiles:${NC}"
-    for profile in dev ui full; do
+    for profile in github hf dev ui full; do
         IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
         servers=$(get_servers_from_profile "$profile")
         printf "  %-6s - %s - %s\n" "$profile" "$desc" "$tokens"
         printf "           Servers: %s\n" "$servers"
     done
     echo ""
-    echo "Usage: mcp-profile [dev|ui|full|status|list|test|backup]"
+    echo "Usage: mcp-profile [github|hf|dev|ui|full|status|list|test|backup]"
 }
 
 switch_profile() {
@@ -215,9 +217,9 @@ show_backups() {
 
 # Test GitHub CLI authentication
 test_github_cli() {
-    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│${NC} ${BLUE}GitHub CLI Authentication${NC}                                  ${CYAN}│${NC}"
-    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}GitHub CLI Authentication${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if gh CLI is installed
     if ! command -v gh &> /dev/null; then
@@ -251,9 +253,9 @@ test_github_cli() {
 
 # Test GitHub MCP Server
 test_github_mcp_server() {
-    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│${NC} ${BLUE}GitHub MCP Server${NC}                                           ${CYAN}│${NC}"
-    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}GitHub MCP Server${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if github is in active servers
     local project_path=$(get_project_path)
@@ -309,9 +311,9 @@ test_github_mcp_server() {
 
 # Test HuggingFace MCP Server OAuth authentication
 test_huggingface_mcp_oauth() {
-    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│${NC} ${BLUE}HuggingFace MCP Server (OAuth)${NC}                              ${CYAN}│${NC}"
-    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}HuggingFace MCP Server (OAuth)${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if hf-mcp-server is in active servers
     local project_path=$(get_project_path)
@@ -360,9 +362,9 @@ test_huggingface_mcp_oauth() {
 
 # Test HuggingFace CLI Token authentication
 test_huggingface_cli_token() {
-    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│${NC} ${BLUE}HuggingFace CLI Token${NC}                                       ${CYAN}│${NC}"
-    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}HuggingFace CLI Token${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if hf CLI is installed (modern command)
     if ! command -v hf &> /dev/null; then
@@ -445,9 +447,9 @@ test_huggingface_cli_token() {
 
 # Test Context7 API authentication
 test_context7_api() {
-    echo -e "${CYAN}┌─────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│${NC} ${BLUE}Context7 API${NC}                                                ${CYAN}│${NC}"
-    echo -e "${CYAN}└─────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "${CYAN}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}$(center_text_in_box "${BLUE}Context7 API${NC}" 83)${CYAN}│${NC}"
+    echo -e "${CYAN}└───────────────────────────────────────────────────────────────────────────────────┘${NC}"
 
     # Check if CONTEXT7_API_KEY is set
     if [ -z "$CONTEXT7_API_KEY" ]; then
@@ -555,6 +557,140 @@ test_api_keys() {
     echo ""
 }
 
+# Check health of each server in a profile
+# Returns space-separated status for each server: "ok", "warning", or "error"
+check_profile_health() {
+    local profile=$1
+    local profile_file="$PROFILES_DIR/$profile.json"
+
+    if [ ! -f "$profile_file" ]; then
+        echo ""
+        return
+    fi
+
+    local statuses=""
+
+    # Read all servers from the profile
+    local servers=$(jq -r 'keys[]' "$profile_file" 2>/dev/null)
+
+    for server in $servers; do
+        local server_status="ok"
+        local server_type=$(jq -r --arg srv "$server" '.[$srv].type' "$profile_file" 2>/dev/null)
+
+        if [ "$server_type" == "stdio" ]; then
+            # Check if command exists
+            local command=$(jq -r --arg srv "$server" '.[$srv].command' "$profile_file" 2>/dev/null)
+
+            if [ -n "$command" ] && [ "$command" != "null" ]; then
+                # Check if command is a full path
+                if [[ "$command" == /* ]]; then
+                    if [ ! -x "$command" ]; then
+                        server_status="error"
+                    fi
+                else
+                    # Check if command exists in PATH
+                    if ! command -v "$command" &> /dev/null; then
+                        server_status="warning"
+                    fi
+                fi
+            fi
+        elif [ "$server_type" == "http" ]; then
+            # For HTTP servers, just verify URL format
+            local url=$(jq -r --arg srv "$server" '.[$srv].url' "$profile_file" 2>/dev/null)
+            if [ -z "$url" ] || [ "$url" == "null" ]; then
+                server_status="warning"
+            fi
+        fi
+
+        statuses="$statuses $server_status"
+    done
+
+    echo "$statuses" | xargs
+}
+
+# Function to get visible length of string (stripping ANSI color codes)
+get_visible_length() {
+    local str="$1"
+    # Remove ANSI escape sequences
+    local visible=$(echo -e "$str" | sed 's/\x1b\[[0-9;]*m//g')
+    echo "${#visible}"
+}
+
+# Function to center text in a box with proper padding (accounts for color codes)
+# Args: $1 = text (may contain color codes), $2 = total width (content only, no borders)
+center_text_in_box() {
+    local text="$1"
+    local width="$2"
+    local visible_len=$(get_visible_length "$text")
+    local total_padding=$((width - visible_len))
+    local left_pad=$((total_padding / 2))
+    local right_pad=$((total_padding - left_pad))
+    printf "%*s%s%*s" "$left_pad" "" "$text" "$right_pad" ""
+}
+
+show_profile_table() {
+    local active_profile=$(identify_active_profile)
+
+    echo -e "${BLUE}┌───────────────────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE}│${NC}$(center_text_in_box "${CYAN}Available Profiles${NC}" 83)${BLUE}│${NC}"
+    echo -e "${BLUE}├──────────┬────────────────────────┬─────────┬──────────┬──────────────────────────┤${NC}"
+    echo -e "${BLUE}│${NC} Profile  ${BLUE}│${NC} Description            ${BLUE}│${NC} Servers ${BLUE}│${NC} Tokens   ${BLUE}│${NC} Status                   ${BLUE}│${NC}"
+    echo -e "${BLUE}├──────────┼────────────────────────┼─────────┼──────────┼──────────────────────────┤${NC}"
+
+    for profile in github hf dev ui full; do
+        IFS='|' read -r desc tokens <<< "${PROFILES[$profile]}"
+        local server_count=$(jq 'length' "$PROFILES_DIR/$profile.json" 2>/dev/null || echo "0")
+
+        # Get per-server health status
+        local health_statuses=$(check_profile_health "$profile")
+
+        # Build status display with individual server indicators
+        local status_display=""
+
+        for status in $health_statuses; do
+            if [ "$status" == "ok" ]; then
+                status_display="${status_display}${GREEN}✓${NC}"
+            elif [ "$status" == "warning" ]; then
+                status_display="${status_display}${YELLOW}⚠${NC}"
+            else
+                status_display="${status_display}${RED}✗${NC}"
+            fi
+        done
+
+        # Add active marker if this is the active profile
+        if [ "$active_profile" == "$profile" ]; then
+            status_display="${status_display} ${CYAN}●${NC}"
+        fi
+
+        # Calculate visible length dynamically by stripping ANSI codes
+        local visible_length=$(get_visible_length "$status_display")
+
+        # Calculate padding needed for Status column content (24 chars)
+        # Status column is: space(1) + content(24) + space(1) = 26 total
+        local padding=$((24 - visible_length))
+        local padding_str=$(printf '%*s' "$padding" '')
+
+        # Determine token color - format with fixed width FIRST, then apply color
+        local token_colored
+        local token_padded=$(printf '%-8s' "$tokens")  # Pad to 8 chars
+        if [[ "$tokens" == "~3K" ]] || [[ "$tokens" == "~7K" ]]; then
+            token_colored="${GREEN}${token_padded}${NC}"
+        elif [[ "$tokens" == "~12K" ]]; then
+            token_colored="${YELLOW}${token_padded}${NC}"
+        else
+            token_colored="${RED}${token_padded}${NC}"
+        fi
+
+        # Print line with echo -e to properly render color codes
+        echo -e "${BLUE}│${NC} $(printf '%-8s' "$profile") ${BLUE}│${NC} $(printf '%-22s' "$desc") ${BLUE}│${NC}   $(printf '%-5s' "$server_count") ${BLUE}│${NC} ${token_colored} ${BLUE}│${NC} ${status_display}${padding_str} ${BLUE}│${NC}"
+    done
+
+    echo -e "${BLUE}└──────────┴────────────────────────┴─────────┴──────────┴──────────────────────────┘${NC}"
+    echo ""
+    echo -e "${CYAN}Legend:${NC} ${GREEN}✓${NC} Ready  ${YELLOW}⚠${NC} Warning  ${RED}✗${NC} Error  ${CYAN}●${NC} Active"
+    echo ""
+}
+
 interactive_menu() {
     check_dependencies
 
@@ -578,15 +714,18 @@ interactive_menu() {
         fi
 
         echo ""
+        show_profile_table
         echo "Select an action:"
         echo ""
 
-        PS3=$'\n\033[0;34mEnter choice [1-7]: \033[0m'
+        PS3=$'\n\033[0;34mEnter choice [1-9]: \033[0m'
 
         options=(
+            "Switch to GITHUB profile (GitHub only, ~3K tokens)"
+            "Switch to HF profile (HuggingFace only, ~73K tokens)"
             "Switch to DEV profile (Minimal, ~7K tokens)"
             "Switch to UI profile (Design work, ~12K tokens)"
-            "Switch to FULL profile (All servers, ~85K tokens)"
+            "Switch to FULL profile (All servers, ~12K tokens)"
             "Show detailed status"
             "Test API keys"
             "Show recent backups"
@@ -597,53 +736,67 @@ interactive_menu() {
             case $REPLY in
                 1)
                     echo ""
-                    switch_profile "dev"
+                    switch_profile "github"
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 2)
                     echo ""
-                    switch_profile "ui"
+                    switch_profile "hf"
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 3)
                     echo ""
-                    switch_profile "full"
+                    switch_profile "dev"
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 4)
                     echo ""
-                    show_status
+                    switch_profile "ui"
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 5)
                     echo ""
-                    test_api_keys
+                    switch_profile "full"
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 6)
                     echo ""
-                    show_backups
+                    show_status
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 7)
                     echo ""
+                    test_api_keys
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                8)
+                    echo ""
+                    show_backups
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                9)
+                    echo ""
                     echo -e "${GREEN}Goodbye!${NC}"
                     exit 0
                     ;;
                 *)
-                    echo -e "${RED}Invalid option. Please select 1-7.${NC}"
+                    echo -e "${RED}Invalid option. Please select 1-9.${NC}"
                     ;;
             esac
         done
@@ -652,7 +805,7 @@ interactive_menu() {
 
 # Main script logic
 case "${1:-interactive}" in
-    dev|ui|full)
+    github|hf|dev|ui|full)
         switch_profile "$1"
         ;;
     status)
@@ -673,6 +826,8 @@ case "${1:-interactive}" in
         echo "Manages MCP server profiles for Claude Code terminal CLI"
         echo ""
         echo "Commands:"
+        echo "  github     - Switch to GitHub only profile"
+        echo "  hf         - Switch to HuggingFace only profile"
         echo "  dev        - Switch to minimal development profile"
         echo "  ui         - Switch to UI work profile"
         echo "  full       - Switch to full profile (all servers)"
