@@ -48,6 +48,12 @@ mcp-profile test
 mcp-profile backup
 ```
 
+**Display Features:**
+- **Unified Table Width**: All output tables (profile selection, API tests) use consistent 85-character width
+- **ANSI-Aware Centering**: Smart text alignment that properly handles color codes without breaking borders
+- **Color-Coded Health**: Visual server status indicators (✓ Ready, ⚠ Warning, ✗ Error, ● Active)
+- **Perfect Alignment**: No broken table borders or misaligned columns, even with colored text
+
 **Important Notes:**
 - You **must restart Claude Code** after switching profiles for changes to take effect
 - Claude Code reads the config at startup from `~/.claude.json`
