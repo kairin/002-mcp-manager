@@ -110,12 +110,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T028 [P] [US4] Add source context extraction helper using `${BASH_SOURCE[@]}`, `$LINENO`, `${FUNCNAME[@]}` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T029 [P] [US4] Update `log_info()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T030 [P] [US4] Update `log_warn()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T031 [P] [US4] Update `log_error()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T032 [US4] Update all logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` to pass source context (calling location)
-- [ ] T033 [US4] Update logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh` to pass source context
+- [X] T028 [P] [US4] Add source context extraction helper using `${BASH_SOURCE[@]}`, `$LINENO`, `${FUNCNAME[@]}` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T029 [P] [US4] Update `log_info()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T030 [P] [US4] Update `log_warn()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T031 [P] [US4] Update `log_error()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T032 [US4] Update all logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` to pass source context (calling location)
+- [X] T033 [US4] Update logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh` to pass source context
 
 **Checkpoint**: All logs include accurate source_file, line_number, function_name for debugging
 

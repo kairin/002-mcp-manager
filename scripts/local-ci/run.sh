@@ -116,7 +116,8 @@ step_init() {
     log_info "init" "Log file: $LOG_FILE" | tee -a "$LOG_FILE"
 
     local duration=$(get_duration "$step_start")
-    log_success "init" "Initialization complete" "$duration" | tee -a "$LOG_FILE"
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+    log_success "init" "Initialization complete" "" "$duration_ms" | tee -a "$LOG_FILE"
 }
 
 # Step 2: Environment validation
@@ -158,12 +159,13 @@ step_env_check() {
     fi
 
     local duration=$(get_duration "$step_start")
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
 
     if [ $failed -eq 0 ]; then
-        log_success "env-check" "Environment validation passed" "$duration" | tee -a "$LOG_FILE"
+        log_success "env-check" "Environment validation passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
-        log_error "env-check" "Environment validation failed" "$duration" "$EXIT_ENV_FAILED" | tee -a "$LOG_FILE"
+        log_error "env-check" "Environment validation failed" "" "$duration_ms" "$EXIT_ENV_FAILED" | tee -a "$LOG_FILE"
         return $EXIT_ENV_FAILED
     fi
 }
@@ -179,14 +181,16 @@ step_lint() {
     # First check
     if npx prettier --check . >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "lint" "Linting passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "lint" "Linting passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     fi
 
     # If check failed and auto-fix is disabled
     if [ "$NO_FIX" = true ]; then
         local duration=$(get_duration "$step_start")
-        log_error "lint" "Linting failed (auto-fix disabled)" "$duration" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "lint" "Linting failed (auto-fix disabled)" "" "$duration_ms" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
         return $EXIT_LINT_FAILED
     fi
 
@@ -196,14 +200,16 @@ step_lint() {
         # Re-check after fix
         if npx prettier --check . >> "$LOG_FILE" 2>&1; then
             local duration=$(get_duration "$step_start")
-            log_success "lint" "Linting passed after auto-fix" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "lint" "Linting passed after auto-fix" "" "$duration_ms" | tee -a "$LOG_FILE"
             return 0
         fi
     fi
 
     # Failed even after auto-fix
     local duration=$(get_duration "$step_start")
-    log_error "lint" "Linting failed after auto-fix" "$duration" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+    log_error "lint" "Linting failed after auto-fix" "" "$duration_ms" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
     return $EXIT_LINT_FAILED
 }
 
@@ -222,12 +228,14 @@ step_test_unit() {
 
     if npx mocha tests/unit/**/*.test.js >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "test-unit" "Unit tests passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "test-unit" "Unit tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "test-unit" "Unit tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "test-unit" "Unit tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_TEST_FAILED
     fi
 }
@@ -247,12 +255,14 @@ step_test_integration() {
 
     if npx mocha tests/integration/**/*.test.js >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "test-integration" "Integration tests passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "test-integration" "Integration tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "test-integration" "Integration tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "test-integration" "Integration tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_TEST_FAILED
     fi
 }
@@ -272,12 +282,14 @@ step_test_e2e() {
 
     if npx playwright test >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "test-e2e" "E2E tests passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "test-e2e" "E2E tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "test-e2e" "E2E tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "test-e2e" "E2E tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_TEST_FAILED
     fi
 }
@@ -295,17 +307,20 @@ step_build() {
         # Verify dist/ was created
         if [ -d "$WEB_DIR/dist" ]; then
             local duration=$(get_duration "$step_start")
-            log_success "build" "Build completed successfully" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "build" "Build completed successfully" "" "$duration_ms" | tee -a "$LOG_FILE"
             return 0
         else
             local duration=$(get_duration "$step_start")
-            log_error "build" "Build succeeded but dist/ directory not found" "$duration" "$EXIT_BUILD_FAILED" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_error "build" "Build succeeded but dist/ directory not found" "" "$duration_ms" "$EXIT_BUILD_FAILED" | tee -a "$LOG_FILE"
             return $EXIT_BUILD_FAILED
         fi
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "build" "Build failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "build" "Build failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_BUILD_FAILED
     fi
 }
@@ -320,10 +335,12 @@ step_cleanup() {
     if [ -f "$SCRIPT_DIR/lib/cleanup-logs.sh" ]; then
         if bash "$SCRIPT_DIR/lib/cleanup-logs.sh" >> "$LOG_FILE" 2>&1; then
             local duration=$(get_duration "$step_start")
-            log_success "cleanup" "Cleanup completed" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "cleanup" "Cleanup completed" "" "$duration_ms" | tee -a "$LOG_FILE"
         else
             local duration=$(get_duration "$step_start")
-            log_warn "cleanup" "Cleanup script failed (non-critical)" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_warn "cleanup" "Cleanup script failed (non-critical)" "" "$duration_ms" | tee -a "$LOG_FILE"
         fi
     else
         log_info "cleanup" "No cleanup script found, skipping" | tee -a "$LOG_FILE"
@@ -335,7 +352,8 @@ check_timeout() {
     local elapsed=$((SECONDS - START_TIME))
     if (( elapsed >= TIMEOUT_SECONDS )); then
         local error_msg="Pipeline failed: duration exceeded NFR-003 limit (${elapsed}s > ${TIMEOUT_SECONDS}s)"
-        log_error "timeout" "$error_msg" "$elapsed" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        local elapsed_ms=$((elapsed * 1000))
+        log_error "timeout" "$error_msg" "" "$elapsed_ms" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
         exit $EXIT_TIMEOUT
     fi
 }
@@ -442,11 +460,12 @@ step_complete() {
     local total_duration=$(get_duration "$PIPELINE_START" "$pipeline_end")
 
     # Feature 002: Hard check for timeout violation (this shouldn't be reached if check_timeout works)
+    local total_duration_ms=$(echo "$total_duration * 1000" | bc | awk '{printf "%.0f", $0}')
     if (( $(echo "$total_duration > 300" | bc -l) )); then
-        log_error "complete" "Pipeline failed: duration exceeded NFR-003 limit" "$total_duration" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        log_error "complete" "Pipeline failed: duration exceeded NFR-003 limit" "" "$total_duration_ms" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
         exit $EXIT_TIMEOUT
     else
-        log_success "complete" "Pipeline completed successfully" "$total_duration" | tee -a "$LOG_FILE"
+        log_success "complete" "Pipeline completed successfully" "" "$total_duration_ms" | tee -a "$LOG_FILE"
     fi
 
     # Output final summary
