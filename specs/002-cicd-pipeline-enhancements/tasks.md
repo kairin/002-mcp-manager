@@ -208,10 +208,10 @@
 
 ### Implementation for User Story 9
 
-- [ ] T057 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/Header.integration.test.js` to use `.toMatch(/regex/)`
-- [ ] T058 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/modules.integration.test.js` to use `.toMatch(/regex/)`
-- [ ] T059 [US9] Run integration tests to verify refactored assertions pass: `cd web && npm run test:integration`
-- [ ] T060 [US9] Verify tests now correctly reject malformed output (add test case if needed) in integration test files
+- [X] T057 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/Header.integration.test.js` to use `.toMatch(/regex/)`
+- [X] T058 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/modules.integration.test.js` to use `.toMatch(/regex/)`
+- [X] T059 [US9] Run integration tests to verify refactored assertions pass: `cd web && npm run test:integration`
+- [X] T060 [US9] Verify tests now correctly reject malformed output (add test case if needed) in integration test files
 
 **Checkpoint**: Integration tests use robust regex patterns instead of brittle substring matching
 
@@ -221,19 +221,19 @@
 
 **Purpose**: Cross-cutting improvements and documentation updates
 
-- [ ] T061 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/README.md` with new features (timeout, parallel, correlation IDs, retry)
-- [ ] T062 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/tui/README.md` with real-time progress feature
-- [ ] T063 [P] Create quickstart guide in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/quickstart.md`
-- [ ] T064 Verify all exit codes documented in help message of `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T065 Run full pipeline end-to-end test with all profiles (dev/ui/full)
-- [ ] T066 Test timeout enforcement with artificial delay (verify exit code 5)
-- [ ] T067 Test parallel test execution (verify 40-60% speedup)
-- [ ] T068 Test TUI real-time progress (verify updates every 1-2 seconds)
-- [ ] T069 Test E2E retry logic (verify 2 attempts on failure)
-- [ ] T070 Validate JSON log schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
-- [ ] T071 Validate deployment state schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
-- [ ] T072 Code cleanup: remove debug logging, finalize comments
-- [ ] T073 Run quickstart.md validation (if created)
+- [X] T061 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/README.md` with new features (timeout, parallel, correlation IDs, retry)
+- [X] T062 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/tui/README.md` with real-time progress feature
+- [X] T063 [P] Create quickstart guide in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/quickstart.md`
+- [X] T064 Verify all exit codes documented in help message of `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T065 Run full pipeline end-to-end test with all profiles (dev/ui/full)
+- [X] T066 Test timeout enforcement with artificial delay (verify exit code 5)
+- [X] T067 Test parallel test execution (verify 40-60% speedup)
+- [X] T068 Test TUI real-time progress (verify updates every 1-2 seconds)
+- [X] T069 Test E2E retry logic (verify 2 attempts on failure)
+- [X] T070 Validate JSON log schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
+- [X] T071 Validate deployment state schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
+- [X] T072 Code cleanup: remove debug logging, finalize comments
+- [X] T073 Run quickstart.md validation (if created)
 
 ---
 
