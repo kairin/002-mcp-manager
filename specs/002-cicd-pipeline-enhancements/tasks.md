@@ -18,10 +18,10 @@
 
 **Purpose**: Initialize branch and verify prerequisites
 
-- [ ] T001 Create feature branch `002-cicd-pipeline-enhancements` from main
-- [ ] T002 Verify bash version ≥ 4.4 (`bash --version`)
-- [ ] T003 Verify `jq` is installed and accessible (`which jq`)
-- [ ] T004 Create contracts directory `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/`
+- [X] T001 Create feature branch `002-cicd-pipeline-enhancements` from main
+- [X] T002 Verify bash version ≥ 4.4 (`bash --version`)
+- [X] T003 Verify `jq` is installed and accessible (`which jq`)
+- [X] T004 Create contracts directory `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/`
 
 ---
 
@@ -31,11 +31,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create exit code contract in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/exit-codes.md` with codes 0-5
-- [ ] T006 [P] Create enhanced JSON log schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
-- [ ] T007 [P] Create deployment state schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
-- [ ] T008 Add exit code constant `EXIT_TIMEOUT=5` to `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T009 Add `SECONDS` variable initialization at pipeline start in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T005 Create exit code contract in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/exit-codes.md` with codes 0-5
+- [X] T006 [P] Create enhanced JSON log schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
+- [X] T007 [P] Create deployment state schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
+- [X] T008 Add exit code constant `EXIT_TIMEOUT=5` to `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T009 Add `SECONDS` variable initialization at pipeline start in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -49,11 +49,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create timeout check function `check_timeout()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` using `$SECONDS` variable
-- [ ] T011 [US1] Add timeout check call after each pipeline step in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T012 [US1] Implement timeout failure logic: exit with code 5 and log "Pipeline failed: duration exceeded NFR-003 limit (Xs)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T013 [US1] Add exit code precedence logic: test failure (2) overrides timeout (5) when both occur in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T014 [US1] Update help message to include exit code 5 documentation in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T010 [US1] Create timeout check function `check_timeout()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` using `$SECONDS` variable
+- [X] T011 [US1] Add timeout check call after each pipeline step in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T012 [US1] Implement timeout failure logic: exit with code 5 and log "Pipeline failed: duration exceeded NFR-003 limit (Xs)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T013 [US1] Add exit code precedence logic: test failure (2) overrides timeout (5) when both occur in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T014 [US1] Update help message to include exit code 5 documentation in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Pipeline now enforces 300-second hard limit and exits with code 5
 
@@ -67,12 +67,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add deployment state tracking step to `.github/workflows/deploy.yml` after successful deployment
-- [ ] T016 [US2] Create deployment state commit function with retry loop (3 attempts max) in `.github/workflows/deploy.yml`
-- [ ] T017 [US2] Implement exponential backoff (2^attempt seconds) between retry attempts in `.github/workflows/deploy.yml`
-- [ ] T018 [US2] Add failure logging "Failed to persist deployment state after 3 attempts" on retry exhaustion in `.github/workflows/deploy.yml`
-- [ ] T019 [US2] Add success logging "Deployment state persisted (attempt X/3)" in `.github/workflows/deploy.yml`
-- [ ] T020 [US2] Update deployment state JSON structure in `.github/deployment-state.json` (auto-created by workflow)
+- [X] T015 [US2] Add deployment state tracking step to `.github/workflows/deploy.yml` after successful deployment
+- [X] T016 [US2] Create deployment state commit function with retry loop (3 attempts max) in `.github/workflows/deploy.yml`
+- [X] T017 [US2] Implement exponential backoff (2^attempt seconds) between retry attempts in `.github/workflows/deploy.yml`
+- [X] T018 [US2] Add failure logging "Failed to persist deployment state after 3 attempts" on retry exhaustion in `.github/workflows/deploy.yml`
+- [X] T019 [US2] Add success logging "Deployment state persisted (attempt X/3)" in `.github/workflows/deploy.yml`
+- [X] T020 [US2] Update deployment state JSON structure in `.github/deployment-state.json` (auto-created by workflow)
 
 **Checkpoint**: Deployment state tracking never fails silently, always retries or fails loudly
 

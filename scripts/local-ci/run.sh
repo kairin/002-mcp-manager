@@ -20,6 +20,7 @@ readonly EXIT_LINT_FAILED=1
 readonly EXIT_TEST_FAILED=2
 readonly EXIT_BUILD_FAILED=3
 readonly EXIT_ENV_FAILED=4
+readonly EXIT_TIMEOUT=5  # Feature 002: NFR-003 timeout enforcement
 
 # Default options
 NO_FIX=false
@@ -27,6 +28,10 @@ VERBOSE=false
 SKIP_TESTS=false
 LOG_FILE=""
 PIPELINE_START=$(date +%s.%N)
+
+# Feature 002: Timeout enforcement (NFR-003)
+START_TIME=$SECONDS  # Bash builtin for elapsed time tracking
+TIMEOUT_SECONDS=300  # 5-minute hard limit
 
 # Parse command-line arguments
 parse_args() {
@@ -81,6 +86,7 @@ Exit codes:
   2 - Tests failed
   3 - Build failed
   4 - Environment validation failed
+  5 - Timeout violation (pipeline exceeded 5 minutes)
 
 Examples:
   $0                      # Run full pipeline
@@ -324,14 +330,25 @@ step_cleanup() {
     fi
 }
 
+# Feature 002: Timeout check function (US1 - FR-001, FR-002)
+check_timeout() {
+    local elapsed=$((SECONDS - START_TIME))
+    if (( elapsed >= TIMEOUT_SECONDS )); then
+        local error_msg="Pipeline failed: duration exceeded NFR-003 limit (${elapsed}s > ${TIMEOUT_SECONDS}s)"
+        log_error "timeout" "$error_msg" "$elapsed" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        exit $EXIT_TIMEOUT
+    fi
+}
+
 # Step 9: Complete
 step_complete() {
     local pipeline_end=$(date +%s.%N)
     local total_duration=$(get_duration "$PIPELINE_START" "$pipeline_end")
 
-    # Check if duration exceeds 5 minutes (300 seconds)
+    # Feature 002: Hard check for timeout violation (this shouldn't be reached if check_timeout works)
     if (( $(echo "$total_duration > 300" | bc -l) )); then
-        log_warn "complete" "Pipeline completed but took longer than 5 minutes" "$total_duration" | tee -a "$LOG_FILE"
+        log_error "complete" "Pipeline failed: duration exceeded NFR-003 limit" "$total_duration" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        exit $EXIT_TIMEOUT
     else
         log_success "complete" "Pipeline completed successfully" "$total_duration" | tee -a "$LOG_FILE"
     fi
@@ -359,16 +376,33 @@ step_complete() {
 main() {
     parse_args "$@"
 
-    # Run pipeline steps
+    # Feature 002: Run pipeline steps with timeout checks (US1)
     step_init || exit $?
+    check_timeout
+
     step_env_check || exit $?
+    check_timeout
+
     step_lint || exit $?
+    check_timeout
+
     step_test_unit || exit $?
+    check_timeout
+
     step_test_integration || exit $?
+    check_timeout
+
     step_test_e2e || exit $?
+    check_timeout
+
     step_build || exit $?
+    check_timeout
+
     step_cleanup
+    check_timeout
+
     step_complete
+    # Final check happens in step_complete
 
     exit $EXIT_SUCCESS
 }
