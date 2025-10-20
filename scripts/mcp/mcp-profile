@@ -213,9 +213,9 @@ show_backups() {
     echo "Backup directory: $BACKUP_DIR"
 }
 
-# Test GitHub API authentication
-test_github_api() {
-    echo -e "${BLUE}Testing GitHub API...${NC}"
+# Test GitHub CLI authentication
+test_github_cli() {
+    echo -e "${BLUE}Testing GitHub CLI...${NC}"
 
     # Check if gh CLI is installed
     if ! command -v gh &> /dev/null; then
@@ -228,7 +228,7 @@ test_github_api() {
     local auth_exit=$?
 
     if [ $auth_exit -eq 0 ]; then
-        echo -e "${GREEN}✓ GitHub authentication successful${NC}"
+        echo -e "${GREEN}✓ GitHub CLI authentication successful${NC}"
         echo ""
         # Show actual output from gh auth status
         echo "$auth_output" | grep -E "(Logged in|Account|Token|Token scopes)" | sed 's/^/  /'
@@ -240,8 +240,65 @@ test_github_api() {
             echo -e "  Rate limit: $rate_info"
         fi
     else
-        echo -e "${RED}✗ GitHub authentication failed${NC}"
+        echo -e "${RED}✗ GitHub CLI authentication failed${NC}"
         echo "$auth_output" | sed 's/^/  /'
+    fi
+    echo ""
+}
+
+# Test GitHub MCP Server
+test_github_mcp_server() {
+    echo -e "${BLUE}Testing GitHub MCP Server...${NC}"
+
+    # Check if github is in active servers
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+
+    if ! echo "$active_servers" | grep -q "github"; then
+        echo -e "${YELLOW}⚠ github MCP server not in active profile${NC}"
+        echo ""
+        return
+    fi
+
+    # Check MCP server configuration
+    local mcp_command=$(jq -r --arg path "$project_path" '.projects[$path].mcpServers["github"].command // empty' "$CLAUDE_CONFIG" 2>/dev/null)
+
+    if [ -z "$mcp_command" ]; then
+        echo -e "${RED}✗ GitHub MCP server not configured${NC}"
+        echo ""
+        return 1
+    fi
+
+    echo -e "  MCP Command: ${CYAN}$mcp_command${NC}"
+
+    # Check if the MCP command/wrapper exists
+    if [ ! -x "$mcp_command" ]; then
+        echo -e "${RED}✗ MCP server command not executable${NC}"
+        echo -e "  Path: $mcp_command"
+        echo ""
+        return 1
+    fi
+
+    # Try to verify MCP server is listed and healthy
+    if command -v claude &>/dev/null; then
+        local mcp_status=$(claude mcp list 2>/dev/null | grep "github")
+
+        if echo "$mcp_status" | grep -q "✓"; then
+            echo -e "${GREEN}✓ GitHub MCP server active${NC}"
+            echo -e "  Status: Connected via Claude Code"
+            echo -e "  ${CYAN}MCP server verified through Claude${NC}"
+        elif echo "$mcp_status" | grep -q "github"; then
+            echo -e "${YELLOW}⚠ GitHub MCP server configured but connection unclear${NC}"
+            echo -e "  Try: /mcp command in Claude Code to reconnect"
+        else
+            echo -e "${YELLOW}⚠ Cannot verify MCP server status${NC}"
+            echo -e "  Run 'claude mcp list' to check server health"
+        fi
+    else
+        # Fallback: just verify the command exists
+        echo -e "${GREEN}✓ GitHub MCP server configured${NC}"
+        echo -e "  Command exists and is executable"
+        echo -e "  ${CYAN}Note: claude CLI not available for full verification${NC}"
     fi
     echo ""
 }
@@ -441,9 +498,15 @@ test_api_keys() {
     # Track if we tested anything
     local tested=0
 
-    # Test GitHub if active
+    # Test GitHub CLI authentication
+    if command -v gh &> /dev/null; then
+        test_github_cli
+        tested=$((tested + 1))
+    fi
+
+    # Test GitHub MCP Server if active
     if echo "$active_servers" | grep -q "github"; then
-        test_github_api
+        test_github_mcp_server
         tested=$((tested + 1))
     fi
 
