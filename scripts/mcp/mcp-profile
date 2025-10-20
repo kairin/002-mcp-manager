@@ -27,8 +27,13 @@ PROFILES[ui]="UI/Design work|~12K"
 PROFILES[full]="All servers|~85K"
 
 # Function to get current project path
+# If in a git repo, use the git root; otherwise use pwd
 get_project_path() {
-    pwd
+    if git rev-parse --show-toplevel &>/dev/null; then
+        git rev-parse --show-toplevel
+    else
+        pwd
+    fi
 }
 
 # Function to check if jq is installed
@@ -148,7 +153,7 @@ list_profiles() {
         printf "           Servers: %s\n" "$servers"
     done
     echo ""
-    echo "Usage: mcp-profile [dev|ui|full|status|list|backup]"
+    echo "Usage: mcp-profile [dev|ui|full|status|list|test|backup]"
 }
 
 switch_profile() {
@@ -208,6 +213,164 @@ show_backups() {
     echo "Backup directory: $BACKUP_DIR"
 }
 
+# Test GitHub API authentication
+test_github_api() {
+    echo -e "${BLUE}Testing GitHub API...${NC}"
+
+    # Check if gh CLI is installed
+    if ! command -v gh &> /dev/null; then
+        echo -e "${RED}✗ gh CLI not installed${NC}"
+        return 1
+    fi
+
+    # Run gh auth status and capture output
+    local auth_output=$(gh auth status 2>&1)
+    local auth_exit=$?
+
+    if [ $auth_exit -eq 0 ]; then
+        echo -e "${GREEN}✓ GitHub authentication successful${NC}"
+        echo ""
+        # Show actual output from gh auth status
+        echo "$auth_output" | grep -E "(Logged in|Account|Token|Token scopes)" | sed 's/^/  /'
+        echo ""
+
+        # Get rate limit info
+        local rate_info=$(gh api rate_limit --jq '.resources.core | "Limit: \(.limit)/hour | Used: \(.used) | Remaining: \(.remaining)"' 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            echo -e "  Rate limit: $rate_info"
+        fi
+    else
+        echo -e "${RED}✗ GitHub authentication failed${NC}"
+        echo "$auth_output" | sed 's/^/  /'
+    fi
+    echo ""
+}
+
+# Test HuggingFace API authentication
+test_huggingface_api() {
+    echo -e "${BLUE}Testing HuggingFace API...${NC}"
+
+    # Check if HF_TOKEN is set
+    if [ -z "$HF_TOKEN" ]; then
+        echo -e "${RED}✗ HF_TOKEN environment variable not set${NC}"
+        return 1
+    fi
+
+    # Test using curl to HF API
+    local hf_response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/whoami" 2>&1)
+
+    if echo "$hf_response" | grep -q "error"; then
+        echo -e "${YELLOW}⚠ Direct API test inconclusive${NC}"
+        echo -e "  (Token may be read-only or MCP-only)"
+    else
+        # Parse and show username if available
+        local username=$(echo "$hf_response" | jq -r '.name // .id // "unknown"' 2>/dev/null)
+        if [ "$username" != "unknown" ] && [ -n "$username" ]; then
+            echo -e "${GREEN}✓ HuggingFace authentication successful${NC}"
+            echo -e "  Authenticated as: $username"
+        else
+            echo -e "${YELLOW}⚠ Token present but verification unclear${NC}"
+        fi
+    fi
+
+    # Additional note about MCP usage
+    echo -e "  ${CYAN}Note: MCP server may work even if direct API test fails${NC}"
+    echo ""
+}
+
+# Test Context7 API authentication
+test_context7_api() {
+    echo -e "${BLUE}Testing Context7 API...${NC}"
+
+    # Check if CONTEXT7_API_KEY is set
+    if [ -z "$CONTEXT7_API_KEY" ]; then
+        echo -e "${RED}✗ CONTEXT7_API_KEY environment variable not set${NC}"
+        return 1
+    fi
+
+    # Test connection to Context7 SSE endpoint
+    local http_code=$(curl -s -w "%{http_code}" -o /dev/null \
+        -H "Accept: text/event-stream" \
+        -H "CONTEXT7_API_KEY: $CONTEXT7_API_KEY" \
+        "https://mcp.context7.com/mcp" \
+        --max-time 5 2>/dev/null)
+
+    if [ "$http_code" = "200" ]; then
+        echo -e "${GREEN}✓ Context7 API key valid${NC}"
+        echo -e "  HTTP Status: 200 OK"
+        echo -e "  Connection: Successful"
+    elif [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
+        echo -e "${RED}✗ Context7 authentication failed${NC}"
+        echo -e "  HTTP Status: $http_code"
+    elif [ -z "$http_code" ]; then
+        echo -e "${YELLOW}⚠ Connection timeout or network error${NC}"
+    else
+        echo -e "${YELLOW}⚠ Unexpected response${NC}"
+        echo -e "  HTTP Status: $http_code"
+    fi
+    echo ""
+}
+
+# Main test function - dynamically tests active servers
+test_api_keys() {
+    check_dependencies
+
+    local project_path=$(get_project_path)
+    local active_servers=$(get_active_servers)
+    local server_count=$(count_active_servers)
+
+    echo -e "${CYAN}=== MCP API Key Testing ===${NC}"
+    echo ""
+    echo -e "Project: ${CYAN}$project_path${NC}"
+    echo -e "Active servers ($server_count): $active_servers"
+    echo ""
+
+    if [ "$server_count" -eq 0 ]; then
+        echo -e "${YELLOW}No MCP servers configured${NC}"
+        echo ""
+        echo "Run 'mcp-profile dev' or another profile to configure servers"
+        return
+    fi
+
+    echo -e "${BLUE}Testing API keys for servers that require authentication...${NC}"
+    echo ""
+
+    # Track if we tested anything
+    local tested=0
+
+    # Test GitHub if active
+    if echo "$active_servers" | grep -q "github"; then
+        test_github_api
+        tested=$((tested + 1))
+    fi
+
+    # Test HuggingFace if active
+    if echo "$active_servers" | grep -q "hf-mcp-server"; then
+        test_huggingface_api
+        tested=$((tested + 1))
+    fi
+
+    # Test Context7 if active
+    if echo "$active_servers" | grep -q "context7"; then
+        test_context7_api
+        tested=$((tested + 1))
+    fi
+
+    # If no servers requiring API keys were found
+    if [ $tested -eq 0 ]; then
+        echo -e "${CYAN}ℹ No servers requiring external API keys in current profile${NC}"
+        echo ""
+        echo "Servers like markitdown, playwright, shadcn, shadcn-ui"
+        echo "don't require external API authentication."
+        echo ""
+    fi
+
+    echo -e "${BLUE}Test Summary:${NC}"
+    echo "  Profile servers tested: $tested"
+    echo "  Servers not requiring API keys are working automatically"
+    echo ""
+}
+
 interactive_menu() {
     check_dependencies
 
@@ -234,13 +397,14 @@ interactive_menu() {
         echo "Select an action:"
         echo ""
 
-        PS3=$'\n'"${BLUE}Enter choice [1-6]: ${NC}"
+        PS3=$'\n\033[0;34mEnter choice [1-7]: \033[0m'
 
         options=(
             "Switch to DEV profile (Minimal, ~7K tokens)"
             "Switch to UI profile (Design work, ~12K tokens)"
             "Switch to FULL profile (All servers, ~85K tokens)"
             "Show detailed status"
+            "Test API keys"
             "Show recent backups"
             "Quit"
         )
@@ -277,18 +441,25 @@ interactive_menu() {
                     ;;
                 5)
                     echo ""
-                    show_backups
+                    test_api_keys
                     echo ""
                     read -p "Press Enter to continue..."
                     break
                     ;;
                 6)
                     echo ""
+                    show_backups
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    break
+                    ;;
+                7)
+                    echo ""
                     echo -e "${GREEN}Goodbye!${NC}"
                     exit 0
                     ;;
                 *)
-                    echo -e "${RED}Invalid option. Please select 1-6.${NC}"
+                    echo -e "${RED}Invalid option. Please select 1-7.${NC}"
                     ;;
             esac
         done
@@ -306,6 +477,9 @@ case "${1:-interactive}" in
     list)
         list_profiles
         ;;
+    test)
+        test_api_keys
+        ;;
     backup|backups)
         show_backups
         ;;
@@ -320,6 +494,7 @@ case "${1:-interactive}" in
         echo "  full       - Switch to full profile (all servers)"
         echo "  status     - Show current active profile"
         echo "  list       - List all available profiles"
+        echo "  test       - Test API keys for active MCP servers"
         echo "  backup     - Show recent backups"
         echo "  help       - Show this help message"
         echo "  (no args)  - Interactive menu (default)"

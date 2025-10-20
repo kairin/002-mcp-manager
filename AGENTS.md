@@ -74,12 +74,13 @@ Follow modern Linux/Unix standards:
 ~/.local/bin/github-mcp-server    # NOT ~/bin/
 ```
 
-**✅ User Configurations**: `~/.config/claude-code/`
+**✅ User Configurations**:
 ```bash
-~/.config/claude-code/mcp-servers.json
-~/.config/claude-code/mcp-servers-dev.json
-~/.config/claude-code/mcp-servers-ui.json
-~/.config/claude-code/mcp-servers-full.json
+~/.claude.json                             # Main Claude Code config (project-scoped)
+~/.config/claude-code/profiles/dev.json    # Dev profile definition
+~/.config/claude-code/profiles/ui.json     # UI profile definition
+~/.config/claude-code/profiles/full.json   # Full profile definition
+~/.config/claude-code/backups/             # Automatic backups
 ```
 
 **✅ Project Scripts**: `~/Apps/002-mcp-manager/scripts/mcp/`
@@ -167,9 +168,20 @@ grep -r "API_KEY.*=" . --include="*.sh" --include="*.json"
 
 The script manages three profiles:
 
-1. **dev** (~7K tokens) - Minimal servers for basic coding
-2. **ui** (~12K tokens) - UI/design work with component libraries
-3. **full** (~85K tokens) - All available MCP servers
+1. **dev** (~7K tokens) - Minimal servers (github, markitdown)
+2. **ui** (~12K tokens) - UI/design work (github, markitdown, playwright, shadcn, shadcn-ui)
+3. **full** (~85K tokens) - All 6 servers (adds hf-mcp-server)
+
+### Active MCP Servers (6 Working)
+
+- **github** - GitHub API integration (stdio)
+- **markitdown** - Document to markdown conversion (stdio)
+- **playwright** - Browser automation (stdio)
+- **shadcn** - shadcn/ui CLI (stdio)
+- **shadcn-ui** - shadcn/ui components server (stdio)
+- **hf-mcp-server** - HuggingFace Hub integration (http)
+
+**Note**: context7 was removed due to persistent SSE connection issues.
 
 ### Key Operations
 
@@ -191,11 +203,12 @@ mcp-profile help      # Show help message
 
 ### How It Works
 
-1. **Profile Detection**: Compares `mcp-servers.json` with profile files using `cmp`
-2. **Server Reading**: Uses `jq` to dynamically read server lists from JSON
-3. **Backup Creation**: Automatic timestamped backups before switching
-4. **Profile Switching**: Copies selected profile to active config
-5. **Status Display**: Shows current profile with color-coded token usage
+1. **Project Detection**: Uses git root to find project path (works from any subdirectory)
+2. **Profile Detection**: Compares project's MCP config with profile files using JSON comparison
+3. **Server Reading**: Uses `jq` to dynamically read server lists from profile JSON files
+4. **Backup Creation**: Automatic timestamped backups of `~/.claude.json` before switching
+5. **Profile Switching**: Updates project-specific MCP servers in `~/.claude.json`
+6. **Status Display**: Shows current profile with color-coded token usage
 
 ## 🎯 Code Quality Standards
 
@@ -229,7 +242,11 @@ mcp-profile full
 mcp-profile status    # Verify shows FULL
 
 # Verify server lists match configs
-jq -r '.mcpServers | keys | join(", ")' ~/.config/claude-code/mcp-servers.json
+jq '.projects["/home/kkk/Apps/002-mcp-manager"].mcpServers | keys' ~/.claude.json
+
+# Test from different directories
+cd ~
+mcp-profile status    # Should still detect correct project via git root
 
 # Test error conditions
 mcp-profile invalid   # Should show error message
@@ -241,10 +258,10 @@ mcp-profile invalid   # Should show error message
 
 To add a new profile (e.g., "lite"):
 
-1. Create config: `~/.config/claude-code/mcp-servers-lite.json`
-2. Add to PROFILES array: `PROFILES[lite]="Description|XK"`
-3. Add to profile loops: `for profile in dev ui full lite`
-4. Update README.md documentation
+1. Create profile config: `~/.config/claude-code/profiles/lite.json`
+2. Add to PROFILES array in script: `PROFILES[lite]="Description|XK"`
+3. Add to profile comparison loop: `for profile in dev ui full lite`
+4. Update AGENTS.md and README.md documentation
 5. Test thoroughly
 
 ### Modifying Server Lists
@@ -252,14 +269,17 @@ To add a new profile (e.g., "lite"):
 **NEVER** modify hardcoded values. Server lists are read dynamically:
 
 ```bash
-# This function reads from actual configs
-get_servers() {
+# Profile files are read from ~/.config/claude-code/profiles/
+get_servers_from_profile() {
     local profile=$1
-    jq -r '.mcpServers | keys | join(", ")' "$CONFIG_DIR/mcp-servers-$profile.json"
+    jq -r 'keys | join(", ")' "$PROFILES_DIR/$profile.json"
 }
 ```
 
-To change servers, edit the JSON config files in `~/.config/claude-code/`
+To change servers:
+1. Edit profile files in `~/.config/claude-code/profiles/`
+2. Or use `claude mcp add/remove` commands to modify `~/.claude.json`
+3. Then run `mcp-profile <profile>` to sync
 
 ## 📚 Documentation Requirements
 
