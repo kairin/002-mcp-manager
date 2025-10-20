@@ -302,59 +302,80 @@ test_huggingface_mcp_oauth() {
 test_huggingface_cli_token() {
     echo -e "${BLUE}Testing HuggingFace CLI Token...${NC}"
 
-    # Check if HF_TOKEN is set
-    if [ -z "$HF_TOKEN" ]; then
-        echo -e "${YELLOW}⚠ HF_TOKEN environment variable not set${NC}"
-        echo -e "  This token is needed for:"
-        echo -e "  - HuggingFace CLI (huggingface-cli)"
-        echo -e "  - Python libraries (transformers, datasets)"
-        echo -e "  - Direct API access in scripts"
+    # Check if hf CLI is installed (modern command)
+    if ! command -v hf &> /dev/null; then
+        echo -e "${YELLOW}⚠ HuggingFace CLI not installed${NC}"
+        echo -e "  Install with: pip install -U huggingface_hub[cli]"
         echo ""
         return
     fi
 
-    echo -e "  Token found: ${HF_TOKEN:0:10}...${HF_TOKEN: -4}"
+    # Try to get whoami info using the modern CLI command
+    local hf_whoami_output=$(hf auth whoami 2>&1)
+    local hf_exit=$?
 
-    # Test token with HuggingFace API
-    local hf_response=$(curl -s -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/whoami" 2>&1)
-    local curl_exit=$?
+    # Filter out deprecation warnings and strip ANSI color codes
+    hf_whoami_output=$(echo "$hf_whoami_output" | grep -v "Warning:" | grep -v "deprecated" | sed 's/\x1b\[[0-9;]*m//g')
 
-    if [ $curl_exit -ne 0 ]; then
-        echo -e "${RED}✗ Network error testing token${NC}"
-        echo ""
-        return 1
-    fi
+    # Parse the output
+    if [ $hf_exit -eq 0 ]; then
+        # The modern output is simpler: first line is username (may have "user: " prefix), then orgs if any
+        local username=$(echo "$hf_whoami_output" | head -1 | sed 's/user: *//' | xargs)
+        local orgs_line=$(echo "$hf_whoami_output" | grep "^orgs:" | sed 's/orgs: *//')
 
-    # Check for error in response
-    if echo "$hf_response" | grep -q '"error"'; then
-        local error_msg=$(echo "$hf_response" | jq -r '.error // "Unknown error"' 2>/dev/null)
-        echo -e "${RED}✗ Token validation failed${NC}"
-        echo -e "  Error: $error_msg"
-        echo ""
-        echo -e "${CYAN}To fix:${NC}"
-        echo -e "  1. Go to: https://huggingface.co/settings/tokens"
-        echo -e "  2. Create a new token with read permissions"
-        echo -e "  3. Update in ~/.zshrc and ~/.profile:"
-        echo -e "     export HUGGINGFACE_TOKEN=\"hf_your_new_token\""
-        echo -e "  4. Run: source ~/.zshrc"
-    else
-        # Parse and show user info
-        local username=$(echo "$hf_response" | jq -r '.name // "unknown"' 2>/dev/null)
-        local fullname=$(echo "$hf_response" | jq -r '.fullname // ""' 2>/dev/null)
-        local orgs=$(echo "$hf_response" | jq -r '.orgs[]? .name' 2>/dev/null | wc -l)
-
-        if [ "$username" != "unknown" ] && [ -n "$username" ]; then
+        if [ -n "$username" ] && [ "$username" != "" ]; then
             echo -e "${GREEN}✓ HuggingFace CLI token valid${NC}"
-            echo -e "  Username: $username"
-            [ -n "$fullname" ] && echo -e "  Name: $fullname"
-            [ "$orgs" -gt 0 ] && echo -e "  Organizations: $orgs"
+            echo -e "  Username: ${CYAN}$username${NC}"
+
+            # Show organizations if present
+            if [ -n "$orgs_line" ]; then
+                local org_count=$(echo "$orgs_line" | tr ',' '\n' | wc -l)
+                echo -e "  Organizations: $org_count ($orgs_line)"
+            fi
+
+            # Show token source if available
+            if [ -n "$HF_TOKEN" ]; then
+                echo -e "  Token source: Environment variable (HF_TOKEN)"
+            else
+                echo -e "  Token source: ~/.cache/huggingface/token"
+            fi
+
             echo ""
             echo -e "${GREEN}Token can be used for:${NC}"
-            echo -e "  ✓ huggingface-cli commands"
+            echo -e "  ✓ hf CLI commands (model/dataset download, upload)"
             echo -e "  ✓ Python transformers/datasets libraries"
-            echo -e "  ✓ Direct API access"
+            echo -e "  ✓ Direct API access in scripts"
         else
-            echo -e "${YELLOW}⚠ Token present but user data unclear${NC}"
+            echo -e "${YELLOW}⚠ Unexpected output format${NC}"
+            echo "$hf_whoami_output" | sed 's/^/  /'
+        fi
+    else
+        # Authentication failed
+        if echo "$hf_whoami_output" | grep -qi "not logged in"; then
+            echo -e "${RED}✗ Not logged in to HuggingFace${NC}"
+            echo ""
+            echo -e "${CYAN}To fix - Option 1 (Recommended - Login via CLI):${NC}"
+            echo -e "  1. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "  2. Paste your token when prompted"
+            echo -e "  3. Token will be saved in ~/.cache/huggingface/token"
+            echo ""
+            echo -e "${CYAN}To fix - Option 2 (Environment Variable):${NC}"
+            echo -e "  1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "  2. Create a new token with read permissions"
+            echo -e "  3. Add to ~/.zshrc or ~/.profile:"
+            echo -e "     ${YELLOW}export HF_TOKEN=\"hf_your_new_token\"${NC}"
+            echo -e "  4. Run: ${YELLOW}source ~/.zshrc${NC}"
+        elif echo "$hf_whoami_output" | grep -qi "invalid.*token"; then
+            echo -e "${RED}✗ Invalid token${NC}"
+            echo ""
+            echo -e "${CYAN}To fix:${NC}"
+            echo -e "  1. Go to: https://huggingface.co/settings/tokens"
+            echo -e "  2. Create a new token with read permissions"
+            echo -e "  3. Run: ${YELLOW}hf auth login${NC}"
+            echo -e "  4. Or update HF_TOKEN in ~/.zshrc"
+        else
+            echo -e "${RED}✗ Authentication failed${NC}"
+            echo -e "  Output: $hf_whoami_output"
         fi
     fi
     echo ""
@@ -432,8 +453,8 @@ test_api_keys() {
         tested=$((tested + 1))
     fi
 
-    # Test HuggingFace CLI token (always test if HF_TOKEN is set)
-    if [ -n "$HF_TOKEN" ]; then
+    # Test HuggingFace CLI token (test if CLI is available)
+    if command -v hf &> /dev/null; then
         test_huggingface_cli_token
         tested=$((tested + 1))
     fi
