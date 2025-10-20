@@ -66,8 +66,9 @@ This displays a numbered menu where you can:
 2. Switch to UI profile (Design work, ~12K tokens)
 3. Switch to FULL profile (All servers, ~85K tokens)
 4. Show detailed status
-5. Show recent backups
-6. Quit
+5. Test API keys
+6. Show recent backups
+7. Quit
 
 ### Command Line Mode
 
@@ -88,6 +89,9 @@ mcp-profile status
 
 # List all available profiles with server details
 mcp-profile list
+
+# Test API keys for active MCP servers
+mcp-profile test
 
 # Show recent backups
 mcp-profile backup
@@ -144,10 +148,8 @@ Use `mcp-profile status` to see the actual servers in each profile for your inst
 │   ├── dev.json                        # Minimal profile
 │   ├── ui.json                         # UI profile
 │   └── full.json                       # Full profile
-├── backups/                            # Automatic backups
-│   └── claude-backup-YYYYMMDD_HHMMSS.json
-└── old-configs/                        # Archived old configs
-    └── mcp-servers*.json (deprecated)
+└── backups/                            # Automatic backups
+    └── claude-backup-YYYYMMDD_HHMMSS.json
 ```
 
 ## Customizing Profiles
@@ -188,6 +190,98 @@ After editing, switch to the profile to apply changes:
 ```bash
 mcp-profile dev
 ```
+
+## Security: API Keys and Secrets
+
+**CRITICAL:** Never commit API keys or secrets to your repository!
+
+### Environment Variables for Sensitive Data
+
+Some MCP servers (like `context7`) require API keys. These should NEVER be hardcoded in configuration files. Instead, use environment variables:
+
+**Example: Context7 API Key**
+
+1. Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
+   ```bash
+   export CONTEXT7_API_KEY='your-api-key-here'
+   ```
+
+2. Use environment variable syntax in profile files:
+   ```json
+   {
+     "context7": {
+       "type": "http",
+       "url": "https://mcp.context7.com/mcp",
+       "headers": {
+         "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+       }
+     }
+   }
+   ```
+
+3. Reload your shell:
+   ```bash
+   source ~/.zshrc  # or source ~/.bashrc
+   ```
+
+**Why This Matters:**
+- ✅ Profile files can be safely committed to git
+- ✅ API keys remain private and secure
+- ✅ Claude Code automatically expands `${VAR_NAME}` at runtime
+- ✅ Easy to rotate keys without touching config files
+
+**Other Examples:**
+- `shadcn-ui` already uses this pattern: `$(gh auth token)`
+- Any MCP server with authentication should follow this approach
+
+See `docs/context7-mcp-setup.md` for detailed Context7 setup instructions.
+
+### Testing API Keys
+
+To verify that your API keys are properly configured and working, use the `test` command:
+
+```bash
+mcp-profile test
+```
+
+This command will:
+- Automatically detect which MCP servers in your active profile require API keys
+- Test each credential with the actual service (GitHub, HuggingFace, Context7)
+- Show real API responses and authentication status
+- Display rate limits and account information where available
+
+**Example Output:**
+```
+=== MCP API Key Testing ===
+
+Project: /home/user/Apps/my-project
+Active servers (6): github, markitdown, playwright, shadcn, shadcn-ui, context7
+
+Testing API keys for servers that require authentication...
+
+Testing GitHub API...
+✓ GitHub authentication successful
+  ✓ Logged in to github.com account myuser
+  - Token scopes: 'repo', 'workflow', 'write:packages'
+  Rate limit: Limit: 5000/hour | Used: 10 | Remaining: 4990
+
+Testing Context7 API...
+✓ Context7 API key valid
+  HTTP Status: 200 OK
+  Connection: Successful
+
+Test Summary:
+  Profile servers tested: 2
+  Servers not requiring API keys are working automatically
+```
+
+**When to use:**
+- After setting up new API keys in your `.profile` or `.bashrc`
+- To verify credentials before starting work
+- To troubleshoot MCP server connection issues
+- To check rate limits on GitHub API
+
+**Note:** The test command shows real API responses, not hardcoded messages. Servers like `markitdown`, `playwright`, and `shadcn` don't require external API keys and work automatically.
 
 ## Requirements
 
@@ -244,11 +338,11 @@ cp ~/.config/claude-code/backups/claude-backup-YYYYMMDD_HHMMSS.json ~/.claude.js
 
 ## Migration from Old Version
 
-If you were using the old version with `~/.config/claude-code/mcp-servers*.json`, those files have been archived to `~/.config/claude-code/old-configs/`. The new version uses:
+If you were using the old version with `~/.config/claude-code/mcp-servers*.json`, those files are no longer needed. The new version uses:
 - `~/.claude.json` for active configuration
 - `~/.config/claude-code/profiles/` for profile storage
 
-No manual migration needed - the script handles this automatically.
+The script automatically creates profile files on first use.
 
 ## License
 
