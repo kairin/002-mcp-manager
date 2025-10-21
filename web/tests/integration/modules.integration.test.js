@@ -43,52 +43,52 @@ describe('Module Independence Tests (FR-006)', () => {
   describe('TUI Module Independence', () => {
     it('TUI should not import or require CI/CD implementation details', () => {
       const tuiScript = fs.readFileSync(path.join(TUI_DIR, 'run.sh'), 'utf8');
-      
+
       // TUI should call CI/CD script as black box, not source it
-      expect(tuiScript).not.toContain('source.*local-ci.*run.sh');
-      expect(tuiScript).not.toContain('. .*local-ci.*run.sh');
-      
+      expect(tuiScript).not.toMatch(/source.*local-ci.*run\.sh/);
+      expect(tuiScript).not.toMatch(/\. .*local-ci.*run\.sh/);
+
       // TUI should execute CI/CD script, not embed its logic
-      expect(tuiScript).toContain('$CI_SCRIPT');
+      expect(tuiScript).toMatch(/\$CI_SCRIPT/);
     });
 
     it('TUI should not directly manipulate website files', () => {
       const tuiScript = fs.readFileSync(path.join(TUI_DIR, 'run.sh'), 'utf8');
-      
+
       // TUI should not touch web/ directory
-      expect(tuiScript).not.toContain('cd.*web');
-      expect(tuiScript).not.toContain('npm run');
-      expect(tuiScript).not.toContain('astro');
+      expect(tuiScript).not.toMatch(/cd.*web/);
+      expect(tuiScript).not.toMatch(/npm run/);
+      expect(tuiScript).not.toMatch(/astro/);
     });
 
     it('TUI documentation should exist independently', () => {
       const tuiReadme = path.join(TUI_DIR, 'README.md');
       expect(fs.existsSync(tuiReadme)).toBe(true);
-      
+
       const content = fs.readFileSync(tuiReadme, 'utf8');
-      expect(content).toContain('TUI');
-      expect(content).toContain('Menu');
+      expect(content).toMatch(/TUI/);
+      expect(content).toMatch(/Menu/);
     });
   });
 
   describe('CI/CD Module Independence', () => {
     it('CI/CD should not know about TUI implementation', () => {
       const ciScript = fs.readFileSync(path.join(CI_DIR, 'run.sh'), 'utf8');
-      
+
       // CI/CD should not reference TUI
-      expect(ciScript).not.toContain('tui');
-      expect(ciScript).not.toContain('menu');
-      expect(ciScript).not.toContain('interactive');
+      expect(ciScript).not.toMatch(/tui/);
+      expect(ciScript).not.toMatch(/menu/);
+      expect(ciScript).not.toMatch(/interactive/);
     });
 
     it('CI/CD should work standalone via CLI flags', () => {
       const ciScript = fs.readFileSync(path.join(CI_DIR, 'run.sh'), 'utf8');
-      
+
       // CI/CD should accept CLI arguments
-      expect(ciScript).toContain('--help');
-      expect(ciScript).toContain('--verbose');
-      expect(ciScript).toContain('--skip-tests');
-      expect(ciScript).toContain('--no-fix');
+      expect(ciScript).toMatch(/--help/);
+      expect(ciScript).toMatch(/--verbose/);
+      expect(ciScript).toMatch(/--skip-tests/);
+      expect(ciScript).toMatch(/--no-fix/);
     });
 
     it('CI/CD libraries should be modular and reusable', () => {
@@ -108,11 +108,11 @@ describe('Module Independence Tests (FR-006)', () => {
       const packageJson = JSON.parse(
         fs.readFileSync(path.join(WEB_DIR, 'package.json'), 'utf8')
       );
-      
+
       // Website scripts should not call TUI or CI/CD
       const scripts = JSON.stringify(packageJson.scripts || {});
-      expect(scripts).not.toContain('../scripts/tui');
-      expect(scripts).not.toContain('../scripts/local-ci');
+      expect(scripts).not.toMatch(/\.\.\/scripts\/tui/);
+      expect(scripts).not.toMatch(/\.\.\/scripts\/local-ci/);
     });
 
     it('Website should be buildable independently', () => {
@@ -127,10 +127,10 @@ describe('Module Independence Tests (FR-006)', () => {
 
     it('Website tests should not depend on CI/CD internals', () => {
       const testFiles = fs.readdirSync(path.join(WEB_DIR, 'tests/unit'));
-      
+
       // Unit tests should exist
       expect(testFiles.length).toBeGreaterThan(0);
-      
+
       // Tests should not import CI/CD modules
       testFiles.forEach(file => {
         if (file.endsWith('.test.js')) {
@@ -138,8 +138,8 @@ describe('Module Independence Tests (FR-006)', () => {
             path.join(WEB_DIR, 'tests/unit', file),
             'utf8'
           );
-          expect(content).not.toContain('../../scripts/local-ci');
-          expect(content).not.toContain('../../scripts/tui');
+          expect(content).not.toMatch(/\.\.\/\.\.\/scripts\/local-ci/);
+          expect(content).not.toMatch(/\.\.\/\.\.\/scripts\/tui/);
         }
       });
     });
@@ -156,23 +156,23 @@ describe('Module Independence Tests (FR-006)', () => {
       // TUI calls CI/CD via command-line interface
       const tuiScript = fs.readFileSync(path.join(TUI_DIR, 'run.sh'), 'utf8');
       expect(tuiScript).toMatch(/\$CI_SCRIPT\s+--/); // CLI flags
-      
+
       // CI/CD outputs structured logs (JSON)
       const ciScript = fs.readFileSync(path.join(CI_DIR, 'run.sh'), 'utf8');
-      expect(ciScript).toContain('log_json');
-      expect(ciScript).toContain('jq');
+      expect(ciScript).toMatch(/log_json/);
+      expect(ciScript).toMatch(/jq/);
     });
 
     it('no circular dependencies between modules', () => {
       const tuiScript = fs.readFileSync(path.join(TUI_DIR, 'run.sh'), 'utf8');
       const ciScript = fs.readFileSync(path.join(CI_DIR, 'run.sh'), 'utf8');
-      
+
       // TUI can call CI/CD
-      expect(tuiScript).toContain('CI_SCRIPT');
-      
+      expect(tuiScript).toMatch(/CI_SCRIPT/);
+
       // But CI/CD should NOT call TUI back
-      expect(ciScript).not.toContain('tui/run.sh');
-      expect(ciScript).not.toContain('../tui');
+      expect(ciScript).not.toMatch(/tui\/run\.sh/);
+      expect(ciScript).not.toMatch(/\.\.\/tui/);
     });
   });
 
@@ -180,20 +180,20 @@ describe('Module Independence Tests (FR-006)', () => {
     it('TUI should be testable without running CI/CD', () => {
       // TUI functions should be defined and callable
       const tuiScript = fs.readFileSync(path.join(TUI_DIR, 'run.sh'), 'utf8');
-      
-      expect(tuiScript).toContain('main_menu()');
-      expect(tuiScript).toContain('show_help()');
-      expect(tuiScript).toContain('check_environment()');
+
+      expect(tuiScript).toMatch(/main_menu\(\)/);
+      expect(tuiScript).toMatch(/show_help\(\)/);
+      expect(tuiScript).toMatch(/check_environment\(\)/);
     });
 
     it('CI/CD should be testable without TUI or website', () => {
       // CI/CD should have standalone test capability
       const libTestScript = path.join(CI_DIR, 'lib/logger.test.sh');
-      
+
       // Logger has its own tests
       if (fs.existsSync(libTestScript)) {
         const content = fs.readFileSync(libTestScript, 'utf8');
-        expect(content).toContain('test');
+        expect(content).toMatch(/test/);
       }
     });
 

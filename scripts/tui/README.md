@@ -82,6 +82,7 @@ The TUI interprets CI/CD exit codes and displays color-coded feedback:
 - **2 (Red)**: Tests failed
 - **3 (Red)**: Build failed
 - **4 (Red)**: Environment validation failed
+- **5 (Red)**: Timeout - pipeline exceeded 300 seconds (Feature 002)
 
 ## Features
 
