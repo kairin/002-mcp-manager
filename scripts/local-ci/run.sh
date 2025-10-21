@@ -20,6 +20,7 @@ readonly EXIT_LINT_FAILED=1
 readonly EXIT_TEST_FAILED=2
 readonly EXIT_BUILD_FAILED=3
 readonly EXIT_ENV_FAILED=4
+readonly EXIT_TIMEOUT=5  # Feature 002: NFR-003 timeout enforcement
 
 # Default options
 NO_FIX=false
@@ -27,6 +28,13 @@ VERBOSE=false
 SKIP_TESTS=false
 LOG_FILE=""
 PIPELINE_START=$(date +%s.%N)
+
+# Feature 002: Timeout enforcement (NFR-003)
+START_TIME=$SECONDS  # Bash builtin for elapsed time tracking
+TIMEOUT_SECONDS=300  # 5-minute hard limit
+
+# Feature 002: Pipeline Run Correlation (US6)
+RUN_ID=""  # Will be generated in step_init
 
 # Parse command-line arguments
 parse_args() {
@@ -81,6 +89,7 @@ Exit codes:
   2 - Tests failed
   3 - Build failed
   4 - Environment validation failed
+  5 - Timeout violation (pipeline exceeded 5 minutes)
 
 Examples:
   $0                      # Run full pipeline
@@ -90,9 +99,22 @@ Examples:
 EOF
 }
 
+# Feature 002 - US6: Generate unique correlation ID for this pipeline run
+# Format: run-YYYYMMDD-HHMMSS-{6char}
+# Example: run-20251021-143045-k8m3q2
+generate_correlation_id() {
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local random_suffix=$(head -c 100 /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
+    echo "run-${timestamp}-${random_suffix}"
+}
+
 # Step 1: Initialize
 step_init() {
     local step_start=$(date +%s.%N)
+
+    # Feature 002 - US6: Generate and export correlation ID
+    RUN_ID=$(generate_correlation_id)
+    export RUN_ID
 
     # Set up log file
     if [ -z "$LOG_FILE" ]; then
@@ -103,14 +125,16 @@ step_init() {
     # Create log directory
     mkdir -p "$(dirname "$LOG_FILE")"
 
-    # Log initialization
+    # Log initialization (with run_id)
     log_info "init" "Starting local CI/CD pipeline" | tee -a "$LOG_FILE"
+    log_info "init" "Run ID: $RUN_ID" | tee -a "$LOG_FILE"
     log_info "init" "Project root: $PROJECT_ROOT" | tee -a "$LOG_FILE"
     log_info "init" "Web directory: $WEB_DIR" | tee -a "$LOG_FILE"
     log_info "init" "Log file: $LOG_FILE" | tee -a "$LOG_FILE"
 
     local duration=$(get_duration "$step_start")
-    log_success "init" "Initialization complete" "$duration" | tee -a "$LOG_FILE"
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+    log_success "init" "Initialization complete" "" "$duration_ms" | tee -a "$LOG_FILE"
 }
 
 # Step 2: Environment validation
@@ -151,13 +175,23 @@ step_env_check() {
         failed=1
     fi
 
+    # Feature 002 - US8: Constitution file check (T052-T056) - Non-blocking
+    local constitution_status=$(validate_constitution_file "$PROJECT_ROOT")
+    if [[ "$constitution_status" == "found" ]]; then
+        log_info "env-check" "Constitution file: found ✓" | tee -a "$LOG_FILE"
+    else
+        log_warn "env-check" "Constitution file missing (optional for SpecKit projects)" | tee -a "$LOG_FILE"
+        log_info "env-check" "Hint: Run /speckit.constitution to create" | tee -a "$LOG_FILE"
+    fi
+
     local duration=$(get_duration "$step_start")
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
 
     if [ $failed -eq 0 ]; then
-        log_success "env-check" "Environment validation passed" "$duration" | tee -a "$LOG_FILE"
+        log_success "env-check" "Environment validation passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
-        log_error "env-check" "Environment validation failed" "$duration" "$EXIT_ENV_FAILED" | tee -a "$LOG_FILE"
+        log_error "env-check" "Environment validation failed" "" "$duration_ms" "$EXIT_ENV_FAILED" | tee -a "$LOG_FILE"
         return $EXIT_ENV_FAILED
     fi
 }
@@ -173,14 +207,16 @@ step_lint() {
     # First check
     if npx prettier --check . >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "lint" "Linting passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "lint" "Linting passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     fi
 
     # If check failed and auto-fix is disabled
     if [ "$NO_FIX" = true ]; then
         local duration=$(get_duration "$step_start")
-        log_error "lint" "Linting failed (auto-fix disabled)" "$duration" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "lint" "Linting failed (auto-fix disabled)" "" "$duration_ms" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
         return $EXIT_LINT_FAILED
     fi
 
@@ -190,14 +226,16 @@ step_lint() {
         # Re-check after fix
         if npx prettier --check . >> "$LOG_FILE" 2>&1; then
             local duration=$(get_duration "$step_start")
-            log_success "lint" "Linting passed after auto-fix" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "lint" "Linting passed after auto-fix" "" "$duration_ms" | tee -a "$LOG_FILE"
             return 0
         fi
     fi
 
     # Failed even after auto-fix
     local duration=$(get_duration "$step_start")
-    log_error "lint" "Linting failed after auto-fix" "$duration" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
+    local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+    log_error "lint" "Linting failed after auto-fix" "" "$duration_ms" "$EXIT_LINT_FAILED" | tee -a "$LOG_FILE"
     return $EXIT_LINT_FAILED
 }
 
@@ -216,12 +254,14 @@ step_test_unit() {
 
     if npx mocha tests/unit/**/*.test.js >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "test-unit" "Unit tests passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "test-unit" "Unit tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "test-unit" "Unit tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "test-unit" "Unit tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_TEST_FAILED
     fi
 }
@@ -241,14 +281,53 @@ step_test_integration() {
 
     if npx mocha tests/integration/**/*.test.js >> "$LOG_FILE" 2>&1; then
         local duration=$(get_duration "$step_start")
-        log_success "test-integration" "Integration tests passed" "$duration" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_success "test-integration" "Integration tests passed" "" "$duration_ms" | tee -a "$LOG_FILE"
         return 0
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "test-integration" "Integration tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "test-integration" "Integration tests failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_TEST_FAILED
     fi
+}
+
+# Feature 002 - US7: E2E test retry wrapper (T045-T050)
+# Retries E2E tests once if first attempt fails (only on test failure, not timeout)
+run_e2e_tests_with_retry() {
+    local step_start="$1"
+    local max_attempts=2
+
+    cd "$WEB_DIR"
+
+    for attempt in $(seq 1 $max_attempts); do
+        log_info "test-e2e" "E2E tests attempt $attempt/$max_attempts" | tee -a "$LOG_FILE"
+
+        # Run Playwright tests
+        if npx playwright test >> "$LOG_FILE" 2>&1; then
+            local duration=$(get_duration "$step_start")
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "test-e2e" "E2E tests passed on attempt $attempt" "" "$duration_ms" | tee -a "$LOG_FILE"
+            return 0
+        fi
+
+        local exit_code=$?
+
+        # Only retry on test failures (exit code 1), not timeouts or other errors
+        if (( exit_code == 1 && attempt < max_attempts )); then
+            log_warn "test-e2e" "E2E tests failed (exit $exit_code), retrying once..." | tee -a "$LOG_FILE"
+            sleep 2  # Brief delay before retry
+        else
+            local duration=$(get_duration "$step_start")
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_error "test-e2e" "E2E tests failed after $attempt attempt(s)" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
+            return $EXIT_TEST_FAILED
+        fi
+    done
+
+    # Should never reach here, but safeguard
+    return $EXIT_TEST_FAILED
 }
 
 # Step 6: E2E tests
@@ -262,18 +341,12 @@ step_test_e2e() {
 
     log_info "test-e2e" "Running E2E tests with Playwright" | tee -a "$LOG_FILE"
 
-    cd "$WEB_DIR"
-
-    if npx playwright test >> "$LOG_FILE" 2>&1; then
-        local duration=$(get_duration "$step_start")
-        log_success "test-e2e" "E2E tests passed" "$duration" | tee -a "$LOG_FILE"
-        return 0
-    else
-        local exit_code=$?
-        local duration=$(get_duration "$step_start")
-        log_error "test-e2e" "E2E tests failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+    # Feature 002 - US7: Use retry wrapper
+    if ! run_e2e_tests_with_retry "$step_start"; then
         return $EXIT_TEST_FAILED
     fi
+
+    return 0
 }
 
 # Step 7: Build
@@ -289,17 +362,20 @@ step_build() {
         # Verify dist/ was created
         if [ -d "$WEB_DIR/dist" ]; then
             local duration=$(get_duration "$step_start")
-            log_success "build" "Build completed successfully" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "build" "Build completed successfully" "" "$duration_ms" | tee -a "$LOG_FILE"
             return 0
         else
             local duration=$(get_duration "$step_start")
-            log_error "build" "Build succeeded but dist/ directory not found" "$duration" "$EXIT_BUILD_FAILED" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_error "build" "Build succeeded but dist/ directory not found" "" "$duration_ms" "$EXIT_BUILD_FAILED" | tee -a "$LOG_FILE"
             return $EXIT_BUILD_FAILED
         fi
     else
         local exit_code=$?
         local duration=$(get_duration "$step_start")
-        log_error "build" "Build failed" "$duration" "$exit_code" | tee -a "$LOG_FILE"
+        local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+        log_error "build" "Build failed" "" "$duration_ms" "$exit_code" | tee -a "$LOG_FILE"
         return $EXIT_BUILD_FAILED
     fi
 }
@@ -314,14 +390,123 @@ step_cleanup() {
     if [ -f "$SCRIPT_DIR/lib/cleanup-logs.sh" ]; then
         if bash "$SCRIPT_DIR/lib/cleanup-logs.sh" >> "$LOG_FILE" 2>&1; then
             local duration=$(get_duration "$step_start")
-            log_success "cleanup" "Cleanup completed" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_success "cleanup" "Cleanup completed" "" "$duration_ms" | tee -a "$LOG_FILE"
         else
             local duration=$(get_duration "$step_start")
-            log_warn "cleanup" "Cleanup script failed (non-critical)" "$duration" | tee -a "$LOG_FILE"
+            local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
+            log_warn "cleanup" "Cleanup script failed (non-critical)" "" "$duration_ms" | tee -a "$LOG_FILE"
         fi
     else
         log_info "cleanup" "No cleanup script found, skipping" | tee -a "$LOG_FILE"
     fi
+}
+
+# Feature 002: Timeout check function (US1 - FR-001, FR-002)
+check_timeout() {
+    local elapsed=$((SECONDS - START_TIME))
+    if (( elapsed >= TIMEOUT_SECONDS )); then
+        local error_msg="Pipeline failed: duration exceeded NFR-003 limit (${elapsed}s > ${TIMEOUT_SECONDS}s)"
+        local elapsed_ms=$((elapsed * 1000))
+        log_error "timeout" "$error_msg" "" "$elapsed_ms" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        exit $EXIT_TIMEOUT
+    fi
+}
+
+# Feature 002: Parallel test execution (US3 - FR-005, FR-006)
+run_tests_parallel() {
+    if [ "$SKIP_TESTS" = true ]; then
+        log_info "test-parallel" "Skipping all tests (--skip-tests flag)" | tee -a "$LOG_FILE"
+        return 0
+    fi
+
+    log_info "test-parallel" "Running tests in parallel (unit, integration, e2e)" | tee -a "$LOG_FILE"
+
+    local test_types=("unit" "integration" "e2e")
+    local pids=()
+    local exit_codes=()
+    local temp_logs=()
+
+    # Launch all tests in background with separate log files
+    for test_type in "${test_types[@]}"; do
+        local temp_log="/tmp/ci-test-${test_type}-$$.log"
+        temp_logs+=("$temp_log")
+
+        (
+            cd "$WEB_DIR"
+            case "$test_type" in
+                "unit")
+                    npx mocha tests/unit/**/*.test.js >> "$temp_log" 2>&1
+                    ;;
+                "integration")
+                    npx mocha tests/integration/**/*.test.js >> "$temp_log" 2>&1
+                    ;;
+                "e2e")
+                    npx playwright test >> "$temp_log" 2>&1
+                    ;;
+            esac
+        ) &
+        pids+=($!)
+    done
+
+    # Wait for all jobs and collect exit codes
+    for i in "${!pids[@]}"; do
+        wait "${pids[$i]}"
+        exit_codes+=($?)
+    done
+
+    # Aggregate logs into main log file
+    for i in "${!test_types[@]}"; do
+        cat "${temp_logs[$i]}" >> "$LOG_FILE"
+        rm -f "${temp_logs[$i]}"
+    done
+
+    # Check for resource contention indicators
+    local contention_detected=false
+    for temp_log in "${temp_logs[@]}"; do
+        if [ -f "$temp_log" ]; then
+            if grep -Eq "(EADDRINUSE|port already in use|lock file exists|database is locked)" "$temp_log" 2>/dev/null; then
+                contention_detected=true
+                break
+            fi
+        fi
+    done
+
+    # Check for failures
+    local failed_tests=()
+    for i in "${!test_types[@]}"; do
+        if [[ ${exit_codes[$i]} -ne 0 ]]; then
+            failed_tests+=("${test_types[$i]}")
+        fi
+    done
+
+    # If resource contention detected and tests failed, fall back to serial
+    if [ "$contention_detected" = true ] && [ ${#failed_tests[@]} -gt 0 ]; then
+        log_warn "test-parallel" "Resource contention detected, falling back to serial execution" | tee -a "$LOG_FILE"
+        return 1  # Signal to run serial fallback
+    fi
+
+    # Report results
+    if [ ${#failed_tests[@]} -eq 0 ]; then
+        log_success "test-parallel" "All parallel tests passed (unit, integration, e2e)" | tee -a "$LOG_FILE"
+        return 0
+    else
+        log_error "test-parallel" "Tests failed: ${failed_tests[*]}" | tee -a "$LOG_FILE"
+        return $EXIT_TEST_FAILED
+    fi
+}
+
+# Feature 002: Serial test fallback (US3 - FR-017)
+run_tests_serial() {
+    log_info "test-serial" "Running tests in serial mode" | tee -a "$LOG_FILE"
+
+    # Run tests sequentially
+    step_test_unit || return $?
+    step_test_integration || return $?
+    step_test_e2e || return $?
+
+    log_success "test-serial" "All serial tests passed" | tee -a "$LOG_FILE"
+    return 0
 }
 
 # Step 9: Complete
@@ -329,11 +514,13 @@ step_complete() {
     local pipeline_end=$(date +%s.%N)
     local total_duration=$(get_duration "$PIPELINE_START" "$pipeline_end")
 
-    # Check if duration exceeds 5 minutes (300 seconds)
+    # Feature 002: Hard check for timeout violation (this shouldn't be reached if check_timeout works)
+    local total_duration_ms=$(echo "$total_duration * 1000" | bc | awk '{printf "%.0f", $0}')
     if (( $(echo "$total_duration > 300" | bc -l) )); then
-        log_warn "complete" "Pipeline completed but took longer than 5 minutes" "$total_duration" | tee -a "$LOG_FILE"
+        log_error "complete" "Pipeline failed: duration exceeded NFR-003 limit" "" "$total_duration_ms" "$EXIT_TIMEOUT" | tee -a "$LOG_FILE"
+        exit $EXIT_TIMEOUT
     else
-        log_success "complete" "Pipeline completed successfully" "$total_duration" | tee -a "$LOG_FILE"
+        log_success "complete" "Pipeline completed successfully" "" "$total_duration_ms" | tee -a "$LOG_FILE"
     fi
 
     # Output final summary
@@ -359,16 +546,36 @@ step_complete() {
 main() {
     parse_args "$@"
 
-    # Run pipeline steps
+    # Feature 002: Run pipeline steps with timeout checks (US1)
     step_init || exit $?
+    check_timeout
+
     step_env_check || exit $?
+    check_timeout
+
     step_lint || exit $?
-    step_test_unit || exit $?
-    step_test_integration || exit $?
-    step_test_e2e || exit $?
+    check_timeout
+
+    # Feature 002: Parallel test execution with serial fallback (US3)
+    if ! run_tests_parallel; then
+        # If return code is 1, try serial fallback (resource contention)
+        # If return code is EXIT_TEST_FAILED (2), tests genuinely failed
+        if [ $? -eq 1 ]; then
+            run_tests_serial || exit $?
+        else
+            exit $EXIT_TEST_FAILED
+        fi
+    fi
+    check_timeout
+
     step_build || exit $?
+    check_timeout
+
     step_cleanup
+    check_timeout
+
     step_complete
+    # Final check happens in step_complete
 
     exit $EXIT_SUCCESS
 }

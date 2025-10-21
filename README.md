@@ -70,6 +70,12 @@ This displays a numbered menu where you can:
 6. Show recent backups
 7. Quit
 
+**UI Features:**
+- **Unified Table Display**: All tables use consistent 85-character width for perfect alignment
+- **Color-Coded Status**: Visual indicators for server health (✓ Ready, ⚠ Warning, ✗ Error, ● Active)
+- **ANSI-Aware Formatting**: Smart text centering that properly handles color codes
+- **Visual Profile Selection**: Clean tabular display showing profile details, server count, token usage, and health status
+
 ### Command Line Mode
 
 You can also use direct commands:

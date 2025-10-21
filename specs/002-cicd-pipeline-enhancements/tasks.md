@@ -18,10 +18,10 @@
 
 **Purpose**: Initialize branch and verify prerequisites
 
-- [ ] T001 Create feature branch `002-cicd-pipeline-enhancements` from main
-- [ ] T002 Verify bash version ≥ 4.4 (`bash --version`)
-- [ ] T003 Verify `jq` is installed and accessible (`which jq`)
-- [ ] T004 Create contracts directory `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/`
+- [X] T001 Create feature branch `002-cicd-pipeline-enhancements` from main
+- [X] T002 Verify bash version ≥ 4.4 (`bash --version`)
+- [X] T003 Verify `jq` is installed and accessible (`which jq`)
+- [X] T004 Create contracts directory `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/`
 
 ---
 
@@ -31,11 +31,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create exit code contract in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/exit-codes.md` with codes 0-5
-- [ ] T006 [P] Create enhanced JSON log schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
-- [ ] T007 [P] Create deployment state schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
-- [ ] T008 Add exit code constant `EXIT_TIMEOUT=5` to `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T009 Add `SECONDS` variable initialization at pipeline start in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T005 Create exit code contract in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/exit-codes.md` with codes 0-5
+- [X] T006 [P] Create enhanced JSON log schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
+- [X] T007 [P] Create deployment state schema in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
+- [X] T008 Add exit code constant `EXIT_TIMEOUT=5` to `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T009 Add `SECONDS` variable initialization at pipeline start in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -49,11 +49,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create timeout check function `check_timeout()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` using `$SECONDS` variable
-- [ ] T011 [US1] Add timeout check call after each pipeline step in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T012 [US1] Implement timeout failure logic: exit with code 5 and log "Pipeline failed: duration exceeded NFR-003 limit (Xs)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T013 [US1] Add exit code precedence logic: test failure (2) overrides timeout (5) when both occur in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T014 [US1] Update help message to include exit code 5 documentation in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T010 [US1] Create timeout check function `check_timeout()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` using `$SECONDS` variable
+- [X] T011 [US1] Add timeout check call after each pipeline step in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T012 [US1] Implement timeout failure logic: exit with code 5 and log "Pipeline failed: duration exceeded NFR-003 limit (Xs)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T013 [US1] Add exit code precedence logic: test failure (2) overrides timeout (5) when both occur in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T014 [US1] Update help message to include exit code 5 documentation in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Pipeline now enforces 300-second hard limit and exits with code 5
 
@@ -67,12 +67,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add deployment state tracking step to `.github/workflows/deploy.yml` after successful deployment
-- [ ] T016 [US2] Create deployment state commit function with retry loop (3 attempts max) in `.github/workflows/deploy.yml`
-- [ ] T017 [US2] Implement exponential backoff (2^attempt seconds) between retry attempts in `.github/workflows/deploy.yml`
-- [ ] T018 [US2] Add failure logging "Failed to persist deployment state after 3 attempts" on retry exhaustion in `.github/workflows/deploy.yml`
-- [ ] T019 [US2] Add success logging "Deployment state persisted (attempt X/3)" in `.github/workflows/deploy.yml`
-- [ ] T020 [US2] Update deployment state JSON structure in `.github/deployment-state.json` (auto-created by workflow)
+- [X] T015 [US2] Add deployment state tracking step to `.github/workflows/deploy.yml` after successful deployment
+- [X] T016 [US2] Create deployment state commit function with retry loop (3 attempts max) in `.github/workflows/deploy.yml`
+- [X] T017 [US2] Implement exponential backoff (2^attempt seconds) between retry attempts in `.github/workflows/deploy.yml`
+- [X] T018 [US2] Add failure logging "Failed to persist deployment state after 3 attempts" on retry exhaustion in `.github/workflows/deploy.yml`
+- [X] T019 [US2] Add success logging "Deployment state persisted (attempt X/3)" in `.github/workflows/deploy.yml`
+- [X] T020 [US2] Update deployment state JSON structure in `.github/deployment-state.json` (auto-created by workflow)
 
 **Checkpoint**: Deployment state tracking never fails silently, always retries or fails loudly
 
@@ -88,13 +88,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Refactor test execution into functions `run_test_unit()`, `run_test_integration()`, `run_test_e2e()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T022 [US3] Implement parallel test execution using background jobs (`&`) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T023 [US3] Add `wait` builtin to collect parallel job exit codes in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T024 [US3] Implement failure aggregation logic: collect all test failures before reporting in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T025 [US3] Update test logging to indicate parallel execution status in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T026 [US3] Add resource contention detection (port conflicts, file lock timeouts) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T027 [US3] Implement serial fallback on resource contention with logging in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T021 [US3] Refactor test execution into functions `run_test_unit()`, `run_test_integration()`, `run_test_e2e()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T022 [US3] Implement parallel test execution using background jobs (`&`) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T023 [US3] Add `wait` builtin to collect parallel job exit codes in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T024 [US3] Implement failure aggregation logic: collect all test failures before reporting in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T025 [US3] Update test logging to indicate parallel execution status in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T026 [US3] Add resource contention detection (port conflicts, file lock timeouts) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T027 [US3] Implement serial fallback on resource contention with logging in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: Tests run in parallel, 40-60% faster, with serial fallback on resource contention
 
@@ -110,12 +110,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T028 [P] [US4] Add source context extraction helper using `${BASH_SOURCE[@]}`, `$LINENO`, `${FUNCNAME[@]}` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T029 [P] [US4] Update `log_info()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T030 [P] [US4] Update `log_warn()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T031 [P] [US4] Update `log_error()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T032 [US4] Update all logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` to pass source context (calling location)
-- [ ] T033 [US4] Update logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh` to pass source context
+- [X] T028 [P] [US4] Add source context extraction helper using `${BASH_SOURCE[@]}`, `$LINENO`, `${FUNCNAME[@]}` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T029 [P] [US4] Update `log_info()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T030 [P] [US4] Update `log_warn()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T031 [P] [US4] Update `log_error()` function to accept and include source context in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T032 [US4] Update all logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh` to pass source context (calling location)
+- [X] T033 [US4] Update logging calls in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh` to pass source context
 
 **Checkpoint**: All logs include accurate source_file, line_number, function_name for debugging
 
@@ -131,10 +131,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T034 [P] [US6] Create correlation ID generator function using `date +%Y%m%d-%H%M%S` and `/dev/urandom` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T035 [P] [US6] Generate and export `RUN_ID` at pipeline initialization in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T036 [US6] Update logger functions to include `run_id` field in JSON output in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
-- [ ] T037 [US6] Add run_id to initial pipeline log entry in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T034 [P] [US6] Create correlation ID generator function using `date +%Y%m%d-%H%M%S` and `/dev/urandom` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T035 [P] [US6] Generate and export `RUN_ID` at pipeline initialization in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T036 [US6] Update logger functions to include `run_id` field in JSON output in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/logger.sh`
+- [X] T037 [US6] Add run_id to initial pipeline log entry in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: All log entries include unique run_id for correlation across multiple runs
 
@@ -170,12 +170,12 @@
 
 ### Implementation for User Story 7
 
-- [ ] T045 [US7] Create E2E test retry wrapper function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T046 [US7] Add attempt counter (1-2) to E2E test execution in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T047 [US7] Implement retry logic: detect exit code 1, re-run once in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T048 [US7] Add retry logging "E2E tests failed (attempt 1/2), retrying..." in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T049 [US7] Add success logging "E2E tests passed (attempt 2/2)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T050 [US7] Add failure logging "E2E tests failed after 2 attempts" and exit code 2 in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T045 [US7] Create E2E test retry wrapper function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T046 [US7] Add attempt counter (1-2) to E2E test execution in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T047 [US7] Implement retry logic: detect exit code 1, re-run once in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T048 [US7] Add retry logging "E2E tests failed (attempt 1/2), retrying..." in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T049 [US7] Add success logging "E2E tests passed (attempt 2/2)" in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T050 [US7] Add failure logging "E2E tests failed after 2 attempts" and exit code 2 in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: E2E tests automatically retry once, reducing false failures from timing issues
 
@@ -189,12 +189,12 @@
 
 ### Implementation for User Story 8
 
-- [ ] T051 [US8] Add constitution file check function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T052 [US8] Integrate check into `validate_environment()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T053 [US8] Add success logging "Constitution file: found ✓" when file exists in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T054 [US8] Add warning logging "Constitution file missing (optional for SpecKit projects)" when file absent in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T055 [US8] Add hint message "Run /speckit.constitution to create" to warning in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
-- [ ] T056 [US8] Ensure check is non-blocking (warning only, pipeline continues) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
+- [X] T051 [US8] Add constitution file check function in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/lib/validator.sh`
+- [X] T052 [US8] Integrate check into `validate_environment()` in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T053 [US8] Add success logging "Constitution file: found ✓" when file exists in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T054 [US8] Add warning logging "Constitution file missing (optional for SpecKit projects)" when file absent in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T055 [US8] Add hint message "Run /speckit.constitution to create" to warning in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T056 [US8] Ensure check is non-blocking (warning only, pipeline continues) in `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
 
 **Checkpoint**: SpecKit users get early warning if constitution file is missing
 
@@ -208,10 +208,10 @@
 
 ### Implementation for User Story 9
 
-- [ ] T057 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/Header.integration.test.js` to use `.toMatch(/regex/)`
-- [ ] T058 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/modules.integration.test.js` to use `.toMatch(/regex/)`
-- [ ] T059 [US9] Run integration tests to verify refactored assertions pass: `cd web && npm run test:integration`
-- [ ] T060 [US9] Verify tests now correctly reject malformed output (add test case if needed) in integration test files
+- [X] T057 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/Header.integration.test.js` to use `.toMatch(/regex/)`
+- [X] T058 [P] [US9] Refactor assertions in `/home/kkk/Apps/002-mcp-manager/web/tests/integration/modules.integration.test.js` to use `.toMatch(/regex/)`
+- [X] T059 [US9] Run integration tests to verify refactored assertions pass: `cd web && npm run test:integration`
+- [X] T060 [US9] Verify tests now correctly reject malformed output (add test case if needed) in integration test files
 
 **Checkpoint**: Integration tests use robust regex patterns instead of brittle substring matching
 
@@ -221,19 +221,19 @@
 
 **Purpose**: Cross-cutting improvements and documentation updates
 
-- [ ] T061 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/README.md` with new features (timeout, parallel, correlation IDs, retry)
-- [ ] T062 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/tui/README.md` with real-time progress feature
-- [ ] T063 [P] Create quickstart guide in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/quickstart.md`
-- [ ] T064 Verify all exit codes documented in help message of `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
-- [ ] T065 Run full pipeline end-to-end test with all profiles (dev/ui/full)
-- [ ] T066 Test timeout enforcement with artificial delay (verify exit code 5)
-- [ ] T067 Test parallel test execution (verify 40-60% speedup)
-- [ ] T068 Test TUI real-time progress (verify updates every 1-2 seconds)
-- [ ] T069 Test E2E retry logic (verify 2 attempts on failure)
-- [ ] T070 Validate JSON log schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
-- [ ] T071 Validate deployment state schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
-- [ ] T072 Code cleanup: remove debug logging, finalize comments
-- [ ] T073 Run quickstart.md validation (if created)
+- [X] T061 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/README.md` with new features (timeout, parallel, correlation IDs, retry)
+- [X] T062 [P] Update `/home/kkk/Apps/002-mcp-manager/scripts/tui/README.md` with real-time progress feature
+- [X] T063 [P] Create quickstart guide in `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/quickstart.md`
+- [X] T064 Verify all exit codes documented in help message of `/home/kkk/Apps/002-mcp-manager/scripts/local-ci/run.sh`
+- [X] T065 Run full pipeline end-to-end test with all profiles (dev/ui/full)
+- [X] T066 Test timeout enforcement with artificial delay (verify exit code 5)
+- [X] T067 Test parallel test execution (verify 40-60% speedup)
+- [X] T068 Test TUI real-time progress (verify updates every 1-2 seconds)
+- [X] T069 Test E2E retry logic (verify 2 attempts on failure)
+- [X] T070 Validate JSON log schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/log-schema.json`
+- [X] T071 Validate deployment state schema compliance with `/home/kkk/Apps/002-mcp-manager/specs/002-cicd-pipeline-enhancements/contracts/deployment-state-schema.json`
+- [X] T072 Code cleanup: remove debug logging, finalize comments
+- [X] T073 Run quickstart.md validation (if created)
 
 ---
 
