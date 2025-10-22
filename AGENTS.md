@@ -6,42 +6,66 @@
 
 ## 🎯 Project Overview
 
-**MCP Profile Switcher** is a simple shell script utility for managing Claude Code's MCP (Model Context Protocol) server configurations. It allows users to quickly switch between different server profiles to optimize context token usage based on their current workflow needs.
+**MCP Profile Switcher** is a unified deployment tool for managing MCP (Model Context Protocol) server configurations across multiple AI CLI tools (Claude Code, Gemini CLI, and GitHub Copilot CLI where supported). It enables rapid, consistent setup of AI development environments across multiple office computers with shared authentication and configurations.
 
 **Repository**: https://github.com/kairin/002-mcp-manager
-**Type**: Shell utility script
+**Type**: Multi-tool deployment automation
 **Language**: Bash
 **Primary File**: `scripts/mcp/mcp-profile`
+**Supported Tools**: Claude Code, Gemini CLI, GitHub Copilot CLI
 
 ## ⚡ NON-NEGOTIABLE REQUIREMENTS
 
 ### 🚨 CRITICAL: Project Scope & Philosophy
 
-**THIS IS A SIMPLE SHELL SCRIPT PROJECT**
-- Keep it simple - resist over-engineering
-- One shell script, one purpose: switch MCP profiles
-- No Python backends, no web frameworks, no complex dependencies
-- Dynamic data reading from JSON configs (no hardcoded values)
+**SIMPLE DEPLOYMENT ACROSS MULTIPLE COMPUTERS**
+
+The philosophy is **not** about minimalism - it's about **easy deployment and verification**:
+
+**Core Purpose:**
+- Install mcp-manager on any office computer
+- One script ensures all dependencies are available
+- All 3 AI tools (Claude Code, Gemini CLI, Copilot CLI) configured consistently
+- Same MCP servers installed with shared API keys and OAuth
+- Same gh CLI authentication across all computers
+- TUI for easy verification that installations are correct
+
+**Key Principles:**
+- Simple to deploy, not necessarily minimal
+- Shared authentication (gh CLI, API keys, OAuth)
+- Same MCP server configurations across all tools
+- Automated dependency checking and installation
+- Visual TUI for health verification
+- No hardcoded values - dynamic JSON reading
 - Modern best practices (XDG standards)
 
-### 🚨 CRITICAL: File Structure (MANDATORY)
+### 🚨 CRITICAL: File Structure
 
 ```
 002-mcp-manager/
-├── .git/                    # Version control
-├── .gitignore              # Git ignore patterns
-├── LICENSE                 # MIT license
-├── README.md               # User documentation
-├── AGENTS.md               # AI agent instructions (this file)
-├── CLAUDE.md               # Symlink → AGENTS.md
-├── GEMINI.md               # Symlink → AGENTS.md
-└── scripts/
-    └── mcp/
-        ├── mcp-profile     # Main shell script
-        └── README.md       # Script documentation
+├── .git/                         # Version control
+├── .gitignore                   # Git ignore patterns
+├── LICENSE                      # MIT license
+├── README.md                    # User documentation
+├── AGENTS.md                    # AI agent instructions (this file)
+├── CLAUDE.md                    # Symlink → AGENTS.md
+├── GEMINI.md                    # Symlink → AGENTS.md
+├── scripts/
+│   ├── mcp/
+│   │   ├── mcp-profile         # Main multi-tool profile switcher
+│   │   └── README.md           # Script documentation
+│   ├── install/                # Installation and dependency scripts
+│   ├── tui/                    # Terminal UI for verification
+│   └── local-ci/               # Local CI/CD pipeline scripts
+├── checklists/                  # Deployment and verification checklists
+└── specs/                       # Feature specifications
 ```
 
-**TOTAL FILES**: 5 essential files + 3 documentation/config files
+**Structure Philosophy:**
+- Core script: `scripts/mcp/mcp-profile` (multi-tool profile management)
+- Supporting tools: Installation, TUI, CI/CD for deployment automation
+- Documentation: Checklists and specs for features and deployment
+- All scripts are deployment-focused, not over-engineered applications
 
 ### 🚨 CRITICAL: No Hardcoded Values
 
@@ -164,13 +188,25 @@ grep -r "API_KEY.*=" . --include="*.sh" --include="*.json"
 
 ## 📋 Core Functionality
 
+### Multi-Tool Support
+
+The `mcp-profile` script manages MCP configurations for:
+
+1. **Claude Code** - Project-specific MCP server configurations
+2. **Gemini CLI** - Global MCP server configurations
+3. **GitHub Copilot CLI** - Documentation and awareness (limited MCP support)
+
 ### Profile Management
 
-The script manages three profiles:
+The script manages five configurable profiles:
 
-1. **dev** (~7K tokens) - Minimal servers (github, markitdown)
-2. **ui** (~12K tokens) - UI/design work (github, markitdown, playwright, shadcn, shadcn-ui)
-3. **full** (~85K tokens) - All 6 servers (adds hf-mcp-server)
+1. **github** (~3K tokens) - GitHub only
+2. **hf** (~73K tokens) - HuggingFace only
+3. **dev** (~7K tokens) - Minimal development servers
+4. **ui** (~12K tokens) - UI/design work servers
+5. **full** (~12K tokens) - All available servers
+
+Profiles are **tool-agnostic** - the same profile JSON files work across all supported tools.
 
 ### Active MCP Servers (6 Working)
 
@@ -180,8 +216,9 @@ The script manages three profiles:
 - **shadcn** - shadcn/ui CLI (stdio)
 - **shadcn-ui** - shadcn/ui components server (stdio)
 - **hf-mcp-server** - HuggingFace Hub integration (http)
+- **context7** - Up-to-date library documentation (http/SSE)
 
-**Note**: context7 was removed due to persistent SSE connection issues.
+**Note**: Server availability may vary by tool capabilities.
 
 ### Key Operations
 
@@ -190,25 +227,35 @@ The script manages three profiles:
 mcp-profile           # Launch interactive menu with numbered selections
 ```
 
-**Command Line Mode**:
+**Command Line Mode - Multi-Tool**:
 ```bash
-mcp-profile status    # Show current profile
-mcp-profile dev       # Switch to dev profile
-mcp-profile ui        # Switch to ui profile
-mcp-profile full      # Switch to full profile
+# Manage both Claude Code and Gemini CLI (default)
+mcp-profile dev                    # Switch both tools to dev profile
+mcp-profile status                 # Show status for both tools
+mcp-profile backup                 # Show backups for both tools
+
+# Manage specific tools
+mcp-profile full --tool=claude     # Switch only Claude Code to full profile
+mcp-profile status --tool=gemini   # Show only Gemini CLI status
+MCP_TOOL=gemini mcp-profile dev    # Use environment variable
+
+# Other commands
 mcp-profile list      # List available profiles
-mcp-profile backup    # Show recent backups
+mcp-profile test      # Test API keys and MCP servers
 mcp-profile help      # Show help message
 ```
 
 ### How It Works
 
-1. **Project Detection**: Uses git root to find project path (works from any subdirectory)
-2. **Profile Detection**: Compares project's MCP config with profile files using JSON comparison
-3. **Server Reading**: Uses `jq` to dynamically read server lists from profile JSON files
-4. **Backup Creation**: Automatic timestamped backups of `~/.claude.json` before switching
-5. **Profile Switching**: Updates project-specific MCP servers in `~/.claude.json`
-6. **Status Display**: Shows current profile with color-coded token usage
+1. **Tool Detection**: Checks which AI tools are installed (Claude Code, Gemini CLI)
+2. **Project Detection**: Uses git root for Claude Code (project-specific configs)
+3. **Profile Reading**: Dynamically reads server lists from shared JSON profile files
+4. **Backup Creation**: Automatic timestamped backups before any changes
+5. **Multi-Tool Switching**:
+   - Claude Code: Updates project-specific MCP servers in `~/.claude.json`
+   - Gemini CLI: Updates global MCP servers in `~/.config/gemini/settings.json`
+6. **Health Verification**: TUI displays connection status and server health
+7. **Shared Authentication**: Uses same gh CLI auth, API keys, OAuth across tools
 
 ## 🎯 Code Quality Standards
 
@@ -312,26 +359,24 @@ Before committing any changes:
 - [ ] No hardcoded server lists in script
 - [ ] All data read dynamically from JSON files
 - [ ] Security scan completed (no secrets)
-- [ ] Script tested with all three profiles
+- [ ] Script tested with all supported tools (Claude, Gemini)
 - [ ] XDG paths used consistently (`~/.local/bin`, `~/.config`)
 - [ ] README.md updated if functionality changed
 - [ ] Branch naming follows YYYYMMDD-HHMMSS format
 - [ ] Commit message includes co-authorship
-- [ ] File count remains minimal (≤8 files total)
+- [ ] Symlinks (CLAUDE.md, GEMINI.md) point to AGENTS.md
 
 ## 🚫 ABSOLUTE PROHIBITIONS
 
 ### DO NOT
 
-- Add Python, Node.js, or any complex dependencies beyond `jq`
-- Create web interfaces, APIs, or backends
 - Hardcode server lists, descriptions, or configuration data
 - Use legacy locations (`~/bin/`, `/usr/bin/` for user scripts)
 - Delete branches without explicit user permission
 - Commit secrets, API keys, or credentials
-- Over-engineer a simple shell script
-- Create unnecessary files or directories
-- Break the simple, focused nature of this tool
+- Create unnecessary web interfaces or complex GUIs
+- Break multi-tool compatibility
+- Remove deployment automation features (TUI, CI/CD, install scripts)
 
 ### DO NOT BYPASS
 
@@ -339,26 +384,34 @@ Before committing any changes:
 - XDG Base Directory standards
 - Dynamic data reading from JSON configs
 - Branch preservation requirements
-- Minimal file structure principle
+- Multi-tool support (Claude Code + Gemini CLI)
+- Shared authentication principle
 
 ## 📊 Success Metrics
 
 This project is successful when:
 
-1. **Simplicity**: Single shell script, minimal dependencies
-2. **Accuracy**: Server lists always match actual configs (100%)
-3. **Standards**: Full XDG Base Directory compliance
-4. **Security**: Zero secrets leaked, all scans pass
-5. **Maintainability**: Easy to understand, modify, extend
-6. **Documentation**: Clear, accurate, helpful
+1. **Easy Deployment**: Can set up new office computer in < 30 minutes
+2. **Multi-Tool Support**: Same configs work across Claude Code, Gemini CLI
+3. **Accuracy**: Server lists always match actual configs (100%)
+4. **Standards**: Full XDG Base Directory compliance
+5. **Security**: Zero secrets leaked, shared auth works, all scans pass
+6. **Verification**: TUI shows health status clearly
+7. **Documentation**: Clear deployment checklists and specs
 
 ## 🎓 Philosophy
 
-**Keep It Simple**
-- This is a shell script, not an enterprise application
-- Resist the urge to add frameworks or complex architectures
-- Value clarity and simplicity over clever solutions
-- One file, one purpose, done well
+**Simple Deployment, Not Minimal Features**
+- The goal is **easy setup** across multiple computers
+- Supporting features (TUI, CI/CD, install scripts) are **essential**
+- Automation reduces human error in deployment
+- One-command setup is the ideal
+
+**Multi-Tool Consistency**
+- Same MCP servers across all AI tools
+- Shared authentication (gh CLI, API keys, OAuth)
+- Tool-agnostic profile configurations
+- Consistent behavior regardless of tool
 
 **Be Accurate**
 - Read data from source files, never hardcode

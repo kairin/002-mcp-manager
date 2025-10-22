@@ -1,16 +1,40 @@
 #!/bin/bash
 
-# MCP Profile Switcher for Claude Code (Terminal CLI)
+# MCP Profile Switcher for Claude Code & Gemini CLI
 # Part of 002-mcp-manager project
-# Usage: mcp-profile [dev|ui|full|status|list|backup]
+# Usage: mcp-profile [dev|ui|full|status|list|backup] [--tool=claude|gemini|all]
 
-# Configuration paths
+# Configuration paths for Claude Code
 CLAUDE_CONFIG="$HOME/.claude.json"
-PROFILES_DIR="$HOME/.config/claude-code/profiles"
-BACKUP_DIR="$HOME/.config/claude-code/backups"
+CLAUDE_PROFILES_DIR="$HOME/.config/claude-code/profiles"
+CLAUDE_BACKUP_DIR="$HOME/.config/claude-code/backups"
+
+# Configuration paths for Gemini CLI
+# Prefer XDG-compliant location, fallback to legacy
+if [ -f "$HOME/.config/gemini/settings.json" ]; then
+    GEMINI_CONFIG="$HOME/.config/gemini/settings.json"
+elif [ -f "$HOME/.gemini/settings.json" ]; then
+    GEMINI_CONFIG="$HOME/.gemini/settings.json"
+else
+    # Default to XDG location (will be created)
+    GEMINI_CONFIG="$HOME/.config/gemini/settings.json"
+fi
+GEMINI_BACKUP_DIR="$HOME/.config/gemini/backups"
+
+# Shared profiles directory (tool-agnostic)
+PROFILES_DIR="$HOME/.config/mcp-profiles"
+
+# Backward compatibility: if old Claude-specific profiles exist, use them
+if [ -d "$CLAUDE_PROFILES_DIR" ] && [ ! -d "$PROFILES_DIR" ]; then
+    PROFILES_DIR="$CLAUDE_PROFILES_DIR"
+fi
+
+# Default tool to manage (can be: claude, gemini, all)
+TOOL_TARGET="${MCP_TOOL:-all}"
 
 # Create directories if they don't exist
-mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
+mkdir -p "$PROFILES_DIR" "$CLAUDE_BACKUP_DIR" "$GEMINI_BACKUP_DIR"
+mkdir -p "$(dirname "$GEMINI_CONFIG")"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -38,6 +62,23 @@ get_project_path() {
     fi
 }
 
+# Parse command line arguments for tool selection
+parse_tool_arg() {
+    for arg in "$@"; do
+        case "$arg" in
+            --tool=claude)
+                TOOL_TARGET="claude"
+                ;;
+            --tool=gemini)
+                TOOL_TARGET="gemini"
+                ;;
+            --tool=all)
+                TOOL_TARGET="all"
+                ;;
+        esac
+    done
+}
+
 # Function to check if jq is installed
 check_dependencies() {
     if ! command -v jq &> /dev/null; then
@@ -46,10 +87,40 @@ check_dependencies() {
         exit 1
     fi
 
-    if [ ! -f "$CLAUDE_CONFIG" ]; then
-        echo -e "${RED}Error: Claude Code config not found at $CLAUDE_CONFIG${NC}"
-        echo "Have you run Claude Code at least once?"
-        exit 1
+    # Check for Claude Code
+    if [ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if [ ! -f "$CLAUDE_CONFIG" ]; then
+            if [ "$TOOL_TARGET" = "claude" ]; then
+                echo -e "${RED}Error: Claude Code config not found at $CLAUDE_CONFIG${NC}"
+                echo "Have you run Claude Code at least once?"
+                exit 1
+            else
+                echo -e "${YELLOW}Warning: Claude Code config not found at $CLAUDE_CONFIG${NC}"
+                echo "Skipping Claude Code configuration..."
+                TOOL_TARGET="gemini"  # Fallback to gemini only
+            fi
+        fi
+    fi
+
+    # Check for Gemini CLI
+    if [ "$TOOL_TARGET" = "gemini" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if ! command -v gemini &> /dev/null; then
+            if [ "$TOOL_TARGET" = "gemini" ]; then
+                echo -e "${RED}Error: Gemini CLI not found${NC}"
+                echo "Install Gemini CLI first"
+                exit 1
+            else
+                echo -e "${YELLOW}Warning: Gemini CLI not installed${NC}"
+                echo "Skipping Gemini CLI configuration..."
+                TOOL_TARGET="claude"  # Fallback to claude only
+            fi
+        fi
+
+        # Initialize Gemini config if it doesn't exist
+        if [ ! -f "$GEMINI_CONFIG" ]; then
+            echo '{"mcpServers":{}}' > "$GEMINI_CONFIG"
+            echo -e "${GREEN}✓ Created Gemini config at $GEMINI_CONFIG${NC}"
+        fi
     fi
 }
 
@@ -65,14 +136,32 @@ get_servers_from_profile() {
     fi
 }
 
-# Function to get current active servers for project
-get_active_servers() {
+# Function to get current active servers for project (Claude Code)
+get_active_servers_claude() {
     local project_path=$(get_project_path)
 
     if jq -e --arg path "$project_path" '.projects[$path].mcpServers' "$CLAUDE_CONFIG" &>/dev/null; then
         jq -r --arg path "$project_path" '.projects[$path].mcpServers | keys | join(", ")' "$CLAUDE_CONFIG" 2>/dev/null || echo "none"
     else
         echo "none"
+    fi
+}
+
+# Function to get current active servers for Gemini CLI
+get_active_servers_gemini() {
+    if [ -f "$GEMINI_CONFIG" ]; then
+        jq -r '.mcpServers | keys | join(", ")' "$GEMINI_CONFIG" 2>/dev/null || echo "none"
+    else
+        echo "none"
+    fi
+}
+
+# Unified function to get active servers
+get_active_servers() {
+    if [ "$TOOL_TARGET" = "gemini" ]; then
+        get_active_servers_gemini
+    else
+        get_active_servers_claude
     fi
 }
 
@@ -164,6 +253,7 @@ switch_profile() {
     local PROFILE=$1
     local PROFILE_FILE="$PROFILES_DIR/$PROFILE.json"
     local project_path=$(get_project_path)
+    local TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
     if [ ! -f "$PROFILE_FILE" ]; then
         echo -e "${RED}Error: Profile '$PROFILE' not found${NC}"
@@ -173,26 +263,48 @@ switch_profile() {
         exit 1
     fi
 
-    # Backup current Claude config
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    cp "$CLAUDE_CONFIG" "$BACKUP_DIR/claude-backup-$TIMESTAMP.json"
-    echo -e "${BLUE}✓ Backed up Claude config${NC}"
-    echo "  → $BACKUP_DIR/claude-backup-$TIMESTAMP.json"
-    echo ""
-
     # Read profile servers
     local new_servers=$(cat "$PROFILE_FILE")
 
-    # Update Claude config with new servers for current project
-    # This creates the project entry if it doesn't exist
-    jq --arg path "$project_path" \
-       --argjson servers "$new_servers" \
-       '.projects[$path].mcpServers = $servers' \
-       "$CLAUDE_CONFIG" > "$CLAUDE_CONFIG.tmp" && mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
+    # Update Claude Code if enabled
+    if [ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if [ -f "$CLAUDE_CONFIG" ]; then
+            # Backup current Claude config
+            cp "$CLAUDE_CONFIG" "$CLAUDE_BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+            echo -e "${BLUE}✓ Backed up Claude Code config${NC}"
+            echo "  → $CLAUDE_BACKUP_DIR/claude-backup-$TIMESTAMP.json"
 
-    echo -e "${GREEN}✓ Switched to '$PROFILE' profile${NC}"
+            # Update Claude config with new servers for current project
+            jq --arg path "$project_path" \
+               --argjson servers "$new_servers" \
+               '.projects[$path].mcpServers = $servers' \
+               "$CLAUDE_CONFIG" > "$CLAUDE_CONFIG.tmp" && mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
+
+            echo -e "${GREEN}✓ Switched Claude Code to '$PROFILE' profile${NC}"
+            echo -e "${YELLOW}  ⚠ Restart Claude Code for changes to take effect${NC}"
+        fi
+    fi
+
+    # Update Gemini CLI if enabled
+    if [ "$TOOL_TARGET" = "gemini" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if [ -f "$GEMINI_CONFIG" ] && command -v gemini &> /dev/null; then
+            # Backup current Gemini config
+            cp "$GEMINI_CONFIG" "$GEMINI_BACKUP_DIR/gemini-backup-$TIMESTAMP.json"
+            echo -e "${BLUE}✓ Backed up Gemini CLI config${NC}"
+            echo "  → $GEMINI_BACKUP_DIR/gemini-backup-$TIMESTAMP.json"
+
+            # Update Gemini config with new servers (global, not project-specific)
+            jq --argjson servers "$new_servers" \
+               '.mcpServers = $servers' \
+               "$GEMINI_CONFIG" > "$GEMINI_CONFIG.tmp" && mv "$GEMINI_CONFIG.tmp" "$GEMINI_CONFIG"
+
+            echo -e "${GREEN}✓ Switched Gemini CLI to '$PROFILE' profile${NC}"
+            echo -e "${YELLOW}  ⚠ Restart Gemini CLI for changes to take effect${NC}"
+        fi
+    fi
+
     echo ""
-    echo -e "${YELLOW}⚠  IMPORTANT: Restart Claude Code for changes to take effect${NC}"
+    echo -e "${GREEN}✓ Profile switch complete${NC}"
     echo ""
 
     # Show new status
@@ -203,16 +315,37 @@ show_backups() {
     echo -e "${BLUE}=== Recent Backups ===${NC}"
     echo ""
 
-    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
-        echo -e "${YELLOW}No backups found${NC}"
-        return
+    local has_backups=0
+
+    # Show Claude Code backups
+    if [ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if [ -d "$CLAUDE_BACKUP_DIR" ] && [ -n "$(ls -A "$CLAUDE_BACKUP_DIR" 2>/dev/null)" ]; then
+            echo -e "${CYAN}Claude Code:${NC}"
+            ls -lht "$CLAUDE_BACKUP_DIR"/*.json 2>/dev/null | head -5 | while read -r line; do
+                echo "  $line"
+            done
+            echo "  Directory: $CLAUDE_BACKUP_DIR"
+            echo ""
+            has_backups=1
+        fi
     fi
 
-    ls -lht "$BACKUP_DIR"/*.json 2>/dev/null | head -10 | while read -r line; do
-        echo "  $line"
-    done
-    echo ""
-    echo "Backup directory: $BACKUP_DIR"
+    # Show Gemini CLI backups
+    if [ "$TOOL_TARGET" = "gemini" ] || [ "$TOOL_TARGET" = "all" ]; then
+        if [ -d "$GEMINI_BACKUP_DIR" ] && [ -n "$(ls -A "$GEMINI_BACKUP_DIR" 2>/dev/null)" ]; then
+            echo -e "${CYAN}Gemini CLI:${NC}"
+            ls -lht "$GEMINI_BACKUP_DIR"/*.json 2>/dev/null | head -5 | while read -r line; do
+                echo "  $line"
+            done
+            echo "  Directory: $GEMINI_BACKUP_DIR"
+            echo ""
+            has_backups=1
+        fi
+    fi
+
+    if [ $has_backups -eq 0 ]; then
+        echo -e "${YELLOW}No backups found${NC}"
+    fi
 }
 
 # Test GitHub CLI authentication
@@ -803,6 +936,9 @@ interactive_menu() {
     done
 }
 
+# Parse tool arguments first
+parse_tool_arg "$@"
+
 # Main script logic
 case "${1:-interactive}" in
     github|hf|dev|ui|full)
@@ -823,7 +959,7 @@ case "${1:-interactive}" in
     help|--help|-h)
         echo -e "${CYAN}MCP Profile Switcher${NC}"
         echo ""
-        echo "Manages MCP server profiles for Claude Code terminal CLI"
+        echo "Manages MCP server profiles for Claude Code & Gemini CLI"
         echo ""
         echo "Commands:"
         echo "  github     - Switch to GitHub only profile"
@@ -838,21 +974,42 @@ case "${1:-interactive}" in
         echo "  help       - Show this help message"
         echo "  (no args)  - Interactive menu (default)"
         echo ""
-        echo "Configuration:"
-        echo "  Claude config: $CLAUDE_CONFIG"
-        echo "  Profiles dir:  $PROFILES_DIR"
-        echo "  Backups dir:   $BACKUP_DIR"
+        echo "Options:"
+        echo "  --tool=claude   - Manage only Claude Code"
+        echo "  --tool=gemini   - Manage only Gemini CLI"
+        echo "  --tool=all      - Manage both tools (default)"
         echo ""
-        echo "Note: Changes apply to current project: $(get_project_path)"
-        echo "      Restart Claude Code after switching profiles"
+        echo "Environment:"
+        echo "  MCP_TOOL=<claude|gemini|all>  - Set default tool target"
+        echo ""
+        echo "Configuration:"
+        echo "  Claude config:  $CLAUDE_CONFIG"
+        echo "  Gemini config:  $GEMINI_CONFIG"
+        echo "  Profiles dir:   $PROFILES_DIR"
+        echo "  Claude backups: $CLAUDE_BACKUP_DIR"
+        echo "  Gemini backups: $GEMINI_BACKUP_DIR"
+        echo ""
+        echo "Examples:"
+        echo "  mcp-profile dev                    # Switch both tools to dev profile"
+        echo "  mcp-profile full --tool=claude     # Switch only Claude Code to full"
+        echo "  MCP_TOOL=gemini mcp-profile status # Check Gemini CLI status"
+        echo ""
+        echo "Note: Claude Code changes apply to current project: $(get_project_path)"
+        echo "      Gemini CLI changes apply globally"
+        echo "      Restart tools after switching profiles"
         ;;
     interactive|"")
         interactive_menu
         ;;
     *)
-        echo -e "${RED}Unknown command: $1${NC}"
-        echo ""
-        list_profiles
-        exit 1
+        # Ignore --tool flags when checking for unknown commands
+        if [[ "$1" != --tool=* ]]; then
+            echo -e "${RED}Unknown command: $1${NC}"
+            echo ""
+            list_profiles
+            exit 1
+        fi
+        # If only --tool flag provided, show interactive menu
+        interactive_menu
         ;;
 esac
