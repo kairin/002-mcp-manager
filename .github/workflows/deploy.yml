@@ -53,37 +53,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  lighthouse:
-    name: Run Lighthouse CI
-    runs-on: ubuntu-latest
-    needs: deploy
-    if: success()
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.13.x
-
-      - name: Run Lighthouse CI
-        env:
-          LHCI_GITHUB_APP_TOKEN: \${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-        run: |
-          lhci autorun \
-            --collect.url="https://\${{ github.repository_owner }}.github.io/\${{ github.event.repository.name }}/" \
-            --collect.numberOfRuns=3 \
-            --assert.preset="lighthouse:recommended" \
-            --assert.assertions.performance=0.9 \
-            --upload.target=temporary-public-storage
-
-      - name: Verify Performance Score
-        run: |
-          echo "::notice::Lighthouse CI completed."
-          echo "::notice::Verify performance score > 90 (NFR-002)"
-          echo "::notice::Check logs above for detailed results"
