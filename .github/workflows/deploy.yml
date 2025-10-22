@@ -102,8 +102,9 @@ jobs:
             fi
 
             # Update attempts in JSON for next retry
-            jq --argjson new_attempt \$((\$attempt + 1)) \
-               '.currentDeployment.git_operations_attempts = \$new_attempt' \
+            new_attempt=$((attempt + 1))
+            jq --argjson new_attempt "$new_attempt" \
+               '.currentDeployment.git_operations_attempts = $new_attempt' \
                .github/deployment-state.json > .github/deployment-state.tmp.json
             mv .github/deployment-state.tmp.json .github/deployment-state.json
 
