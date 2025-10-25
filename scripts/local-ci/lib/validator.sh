@@ -229,6 +229,30 @@ validate_constitution_file() {
     return 0
 }
 
+# Guard: block unintended changes to scripts/mcp/mcp-profile unless commit message opts-in
+# Returns 0 if allowed or not applicable, 1 if blocked
+validate_mcp_profile_update_guard() {
+    local project_root="${1:-$(pwd)}"
+    if ! git -C "$project_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "not-a-git-repo"
+        return 0
+    fi
+    # If no commits yet, allow
+    if ! git -C "$project_root" rev-parse HEAD >/dev/null 2>&1; then
+        return 0
+    fi
+    local last_msg
+    last_msg=$(git -C "$project_root" log -1 --pretty=%B 2>/dev/null || echo "")
+    local changed
+    changed=$(git -C "$project_root" diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null | grep -E '^scripts/mcp/mcp-profile$' || true)
+    if [ -n "$changed" ]; then
+        if ! grep -qi "allow-mcp-profile-update" <<<"$last_msg"; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # Export functions for use in other scripts
 export -f validate_dependency
 export -f version_compare
@@ -241,3 +265,4 @@ export -f detect_aws_key
 export -f detect_private_key
 export -f validate_no_secrets
 export -f validate_constitution_file
+export -f validate_mcp_profile_update_guard

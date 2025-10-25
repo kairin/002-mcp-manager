@@ -31,6 +31,8 @@ fi
 
 # Default tool to manage (can be: claude, gemini, all)
 TOOL_TARGET="${MCP_TOOL:-all}"
+# Copilot MCP support flag (stub)
+COPILOT_SUPPORTED="false"
 
 # Create directories if they don't exist
 mkdir -p "$PROFILES_DIR" "$CLAUDE_BACKUP_DIR" "$GEMINI_BACKUP_DIR"
@@ -52,6 +54,19 @@ PROFILES[dev]="Minimal development|~7K"
 PROFILES[ui]="UI/Design work|~12K"
 PROFILES[full]="All servers|~12K"
 
+# Tool availability flags
+HAS_CLAUDE=false
+HAS_GEMINI=false
+HAS_GH=false
+
+# Function to detect installed tools
+detect_tools() {
+    command -v claude &>/dev/null && HAS_CLAUDE=true
+    command -v gemini &>/dev/null && HAS_GEMINI=true
+    command -v gh &>/dev/null && HAS_GH=true
+}
+
+
 # Function to get current project path
 # If in a git repo, use the git root; otherwise use pwd
 get_project_path() {
@@ -67,10 +82,24 @@ parse_tool_arg() {
     for arg in "$@"; do
         case "$arg" in
             --tool=claude)
-                TOOL_TARGET="claude"
+                if ! $HAS_CLAUDE; then
+                    echo -e "${YELLOW}Warning: --tool=claude specified, but claude CLI not found.${NC}"
+                    TOOL_TARGET="none"
+                else
+                    TOOL_TARGET="claude"
+                fi
                 ;;
             --tool=gemini)
-                TOOL_TARGET="gemini"
+                if ! $HAS_GEMINI; then
+                    echo -e "${YELLOW}Warning: --tool=gemini specified, but gemini CLI not found.${NC}"
+                    TOOL_TARGET="none"
+                else
+                    TOOL_TARGET="gemini"
+                fi
+                ;;
+            --tool=copilot)
+                echo -e "${YELLOW}Warning: Copilot CLI MCP support is not yet implemented.${NC}"
+                TOOL_TARGET="copilot"
                 ;;
             --tool=all)
                 TOOL_TARGET="all"
@@ -78,6 +107,7 @@ parse_tool_arg() {
         esac
     done
 }
+
 
 # Function to check if jq is installed
 check_dependencies() {
@@ -196,7 +226,23 @@ identify_active_profile() {
     echo "CUSTOM"
 }
 
+# Function to create a timestamped backup
+create_backup() {
+    local tool_name=$1
+    local config_path=$2
+    local backup_dir=$3
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_file="$backup_dir/${tool_name,,}-backup-$timestamp.json"
+
+    if [ -f "$config_path" ]; then
+        cp "$config_path" "$backup_file"
+        echo -e "${BLUE}✓ Backed up $tool_name config${NC}"
+        echo "  → $backup_file"
+    fi
+}
+
 show_status() {
+
     check_dependencies
 
     local project_path=$(get_project_path)
@@ -207,6 +253,9 @@ show_status() {
     echo -e "${BLUE}=== MCP Profile Status ===${NC}"
     echo ""
     echo -e "Project: ${CYAN}$project_path${NC}"
+    if [ "$TOOL_TARGET" = "copilot" ] || [ "$TOOL_TARGET" = "all" ]; then
+        echo -e "Copilot MCP: ${YELLOW}unsupported${NC}"
+    fi
     echo ""
 
     if [ "$active_profile" != "CUSTOM" ]; then
@@ -265,14 +314,16 @@ switch_profile() {
 
     # Read profile servers
     local new_servers=$(cat "$PROFILE_FILE")
+    # Validate profile JSON (must be an object)
+    if ! jq -e 'type=="object"' "$PROFILE_FILE" >/dev/null 2>&1; then
+        echo -e "${RED}Error: Invalid profile JSON (must be an object): $PROFILE_FILE${NC}"
+        exit 1
+    fi
 
     # Update Claude Code if enabled
-    if [ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]; then
+    if ([ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]) && $HAS_CLAUDE; then
         if [ -f "$CLAUDE_CONFIG" ]; then
-            # Backup current Claude config
-            cp "$CLAUDE_CONFIG" "$CLAUDE_BACKUP_DIR/claude-backup-$TIMESTAMP.json"
-            echo -e "${BLUE}✓ Backed up Claude Code config${NC}"
-            echo "  → $CLAUDE_BACKUP_DIR/claude-backup-$TIMESTAMP.json"
+            create_backup "Claude Code" "$CLAUDE_CONFIG" "$CLAUDE_BACKUP_DIR"
 
             # Update Claude config with new servers for current project
             jq --arg path "$project_path" \
@@ -286,12 +337,9 @@ switch_profile() {
     fi
 
     # Update Gemini CLI if enabled
-    if [ "$TOOL_TARGET" = "gemini" ] || [ "$TOOL_TARGET" = "all" ]; then
-        if [ -f "$GEMINI_CONFIG" ] && command -v gemini &> /dev/null; then
-            # Backup current Gemini config
-            cp "$GEMINI_CONFIG" "$GEMINI_BACKUP_DIR/gemini-backup-$TIMESTAMP.json"
-            echo -e "${BLUE}✓ Backed up Gemini CLI config${NC}"
-            echo "  → $GEMINI_BACKUP_DIR/gemini-backup-$TIMESTAMP.json"
+    if ([ "$TOOL_TARGET" = "gemini" ] || [ "$TOOL_TARGET" = "all" ]) && $HAS_GEMINI; then
+        if [ -f "$GEMINI_CONFIG" ]; then
+            create_backup "Gemini CLI" "$GEMINI_CONFIG" "$GEMINI_BACKUP_DIR"
 
             # Update Gemini config with new servers (global, not project-specific)
             jq --argjson servers "$new_servers" \
@@ -824,6 +872,46 @@ show_profile_table() {
     echo ""
 }
 
+verify_sync() {
+    check_dependencies
+    local project_path=$(get_project_path)
+    local active_profile=$(identify_active_profile)
+    if [ "$active_profile" = "CUSTOM" ]; then
+        echo -e "${YELLOW}Active profile is CUSTOM; cannot verify against a known profile${NC}"
+        return 1
+    fi
+    local profile_file="$PROFILES_DIR/$active_profile.json"
+    if [ ! -f "$profile_file" ]; then
+        echo -e "${RED}Profile file not found: $profile_file${NC}"
+        return 1
+    fi
+    echo -e "${BLUE}Verifying configs against profile: ${CYAN}$active_profile${NC}"
+    # Claude check
+    local claude_keys
+    claude_keys=$(jq -r --arg path "$project_path" '(.projects[$path].mcpServers // {}) | keys | sort | join(",")' "$CLAUDE_CONFIG" 2>/dev/null || echo "")
+    local profile_keys
+    profile_keys=$(jq -r 'keys | sort | join(",")' "$profile_file" 2>/dev/null || echo "")
+    if [ "$claude_keys" = "$profile_keys" ] && [ -n "$profile_keys" ]; then
+        echo -e "  ${GREEN}\u2713 Claude matches profile (${active_profile})${NC}"
+    else
+        echo -e "  ${RED}\u2717 Claude mismatch${NC}"
+        echo -e "    Claude:  $claude_keys"
+        echo -e "    Profile: $profile_keys"
+    fi
+    # Gemini check (if available)
+    if [ -f "$GEMINI_CONFIG" ]; then
+        local gemini_keys
+        gemini_keys=$(jq -r '(.mcpServers // {}) | keys | sort | join(",")' "$GEMINI_CONFIG" 2>/dev/null || echo "")
+        if [ "$gemini_keys" = "$profile_keys" ] && [ -n "$profile_keys" ]; then
+            echo -e "  ${GREEN}\u2713 Gemini matches profile (${active_profile})${NC}"
+        else
+            echo -e "  ${RED}\u2717 Gemini mismatch${NC}"
+            echo -e "    Gemini:  $gemini_keys"
+            echo -e "    Profile: $profile_keys"
+        fi
+    fi
+}
+
 interactive_menu() {
     check_dependencies
 
@@ -939,6 +1027,10 @@ interactive_menu() {
 # Parse tool arguments first
 parse_tool_arg "$@"
 
+# Detect available tools
+detect_tools
+
+
 # Main script logic
 case "${1:-interactive}" in
     github|hf|dev|ui|full)
@@ -952,6 +1044,9 @@ case "${1:-interactive}" in
         ;;
     test)
         test_api_keys
+        ;;
+    verify)
+        verify_sync
         ;;
     backup|backups)
         show_backups
@@ -970,14 +1065,16 @@ case "${1:-interactive}" in
         echo "  status     - Show current active profile"
         echo "  list       - List all available profiles"
         echo "  test       - Test API keys for active MCP servers"
+        echo "  verify     - Verify Claude & Gemini configs match active profile"
         echo "  backup     - Show recent backups"
         echo "  help       - Show this help message"
         echo "  (no args)  - Interactive menu (default)"
         echo ""
         echo "Options:"
-        echo "  --tool=claude   - Manage only Claude Code"
-        echo "  --tool=gemini   - Manage only Gemini CLI"
-        echo "  --tool=all      - Manage both tools (default)"
+        echo "  --tool=claude    - Manage only Claude Code"
+        echo "  --tool=gemini    - Manage only Gemini CLI"
+        echo "  --tool=copilot   - Manage only Copilot CLI (MCP unsupported; no-op)"
+        echo "  --tool=all       - Manage all supported tools (default)"
         echo ""
         echo "Environment:"
         echo "  MCP_TOOL=<claude|gemini|all>  - Set default tool target"

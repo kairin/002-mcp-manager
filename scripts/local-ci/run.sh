@@ -184,6 +184,12 @@ step_env_check() {
         log_info "env-check" "Hint: Run /speckit.constitution to create" | tee -a "$LOG_FILE"
     fi
 
+    # Drift guard: block unintended mcp-profile changes unless explicitly allowed
+    if ! validate_mcp_profile_update_guard "$PROJECT_ROOT"; then
+        log_error "env-check" "Guard: scripts/mcp/mcp-profile changed without 'allow-mcp-profile-update' in commit message" | tee -a "$LOG_FILE"
+        failed=1
+    fi
+
     local duration=$(get_duration "$step_start")
     local duration_ms=$(echo "$duration * 1000" | bc | awk '{printf "%.0f", $0}')
 

@@ -1,10 +1,10 @@
 # MCP Profile Switcher
 
-A simple shell script to switch between different MCP (Model Context Protocol) server configurations for Claude Code terminal CLI.
+A simple shell script to switch between different MCP (Model Context Protocol) server configurations for Claude Code, Gemini CLI, and other supported tools.
 
 ## What It Does
 
-Claude Code supports multiple MCP servers, but loading all of them consumes significant context tokens (~85K). This script lets you quickly switch between different profile configurations based on your current needs:
+AI tools like Claude Code and Gemini CLI support multiple MCP servers, but loading all of them can consume significant context tokens. This script lets you quickly switch between different profile configurations based on your current needs:
 
 - **dev** (~7K tokens) - Minimal profile for basic coding
 - **ui** (~12K tokens) - UI/Design work
@@ -14,13 +14,17 @@ Server lists are dynamically read from profile files and may vary based on your 
 
 ## How It Works
 
-The script manages MCP server configurations in Claude Code's terminal CLI config (`~/.claude.json`). When you switch profiles:
+The script manages MCP server configurations in:
+- Claude Code's terminal CLI config (`~/.claude.json`) on a per-project basis.
+- Gemini CLI's global config (`~/.config/gemini/settings.json`).
 
-1. Creates a timestamped backup of your entire Claude config
-2. Updates the `mcpServers` section for the current project
-3. Shows the new active configuration
+When you switch profiles:
 
-**Important:** Changes are project-specific. The script automatically detects your current project directory.
+1. Creates a timestamped backup of your configs.
+2. Updates the `mcpServers` section for the specified tools.
+3. Shows the new active configuration.
+
+**Important:** Changes for Claude Code are project-specific, while changes for Gemini CLI are global.
 
 ## Installation
 
@@ -81,16 +85,16 @@ This displays a numbered menu where you can:
 You can also use direct commands:
 
 ```bash
-# Switch to minimal profile (~7K tokens)
+# Switch both Claude and Gemini to the minimal profile
 mcp-profile dev
 
-# Switch to UI profile (~12K tokens)
-mcp-profile ui
+# Switch only Claude to the UI profile
+mcp-profile ui --tool=claude
 
-# Switch to full profile (~85K tokens)
-mcp-profile full
+# Switch only Gemini to the full profile
+mcp-profile full --tool=gemini
 
-# Check current profile
+# Check current profile status for all tools
 mcp-profile status
 
 # List all available profiles with server details
@@ -98,6 +102,9 @@ mcp-profile list
 
 # Test API keys for active MCP servers
 mcp-profile test
+
+# Verify that tool configs match the active profile
+mcp-profile verify
 
 # Show recent backups
 mcp-profile backup
@@ -108,10 +115,9 @@ mcp-profile help
 
 ## Important Notes
 
-- **Must restart Claude Code** after switching profiles for changes to take effect
-- Automatic backups are created in `~/.config/claude-code/backups/` before each switch
-- Changes apply only to the current project directory
-- Profile files are stored in `~/.config/claude-code/profiles/`
+- **Must restart tools** (Claude Code, Gemini CLI) after switching profiles for changes to take effect.
+- Automatic backups are created in `~/.config/claude-code/backups/` and `~/.config/gemini/backups/` before each switch.
+- Profile files are stored in `~/.config/mcp-profiles/`.
 
 ## Profile Details
 
@@ -149,13 +155,13 @@ Use `mcp-profile status` to see the actual servers in each profile for your inst
 
 ```
 ~/.claude.json                          # Claude Code terminal CLI config
-~/.config/claude-code/
-├── profiles/                           # Profile definitions
-│   ├── dev.json                        # Minimal profile
-│   ├── ui.json                         # UI profile
-│   └── full.json                       # Full profile
-└── backups/                            # Automatic backups
-    └── claude-backup-YYYYMMDD_HHMMSS.json
+~/.config/gemini/settings.json          # Gemini CLI global config
+~/.config/mcp-profiles/
+├── dev.json                        # Minimal profile
+├── ui.json                         # UI profile
+└── full.json                       # Full profile
+~/.config/claude-code/backups/          # Claude backups
+~/.config/gemini/backups/               # Gemini backups
 ```
 
 ## Customizing Profiles
@@ -164,13 +170,7 @@ You can edit profile files directly:
 
 ```bash
 # Edit dev profile
-vim ~/.config/claude-code/profiles/dev.json
-
-# Edit ui profile
-vim ~/.config/claude-code/profiles/ui.json
-
-# Edit full profile
-vim ~/.config/claude-code/profiles/full.json
+vim ~/.config/mcp-profiles/dev.json
 ```
 
 Each profile is a JSON object containing MCP server configurations. Example:
@@ -181,12 +181,6 @@ Each profile is a JSON object containing MCP server configurations. Example:
     "type": "stdio",
     "command": "/home/user/.local/bin/github-mcp-wrapper.sh",
     "args": [],
-    "env": {}
-  },
-  "markitdown": {
-    "type": "stdio",
-    "command": "uvx",
-    "args": ["markitdown-mcp"],
     "env": {}
   }
 }
@@ -201,46 +195,7 @@ mcp-profile dev
 
 **CRITICAL:** Never commit API keys or secrets to your repository!
 
-### Environment Variables for Sensitive Data
-
-Some MCP servers (like `context7`) require API keys. These should NEVER be hardcoded in configuration files. Instead, use environment variables:
-
-**Example: Context7 API Key**
-
-1. Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
-   ```bash
-   export CONTEXT7_API_KEY='your-api-key-here'
-   ```
-
-2. Use environment variable syntax in profile files:
-   ```json
-   {
-     "context7": {
-       "type": "http",
-       "url": "https://mcp.context7.com/mcp",
-       "headers": {
-         "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
-       }
-     }
-   }
-   ```
-
-3. Reload your shell:
-   ```bash
-   source ~/.zshrc  # or source ~/.bashrc
-   ```
-
-**Why This Matters:**
-- ✅ Profile files can be safely committed to git
-- ✅ API keys remain private and secure
-- ✅ Claude Code automatically expands `${VAR_NAME}` at runtime
-- ✅ Easy to rotate keys without touching config files
-
-**Other Examples:**
-- `shadcn-ui` already uses this pattern: `$(gh auth token)`
-- Any MCP server with authentication should follow this approach
-
-See `docs/context7-mcp-setup.md` for detailed Context7 setup instructions.
+Use environment variables for sensitive data. See the `mcp-profile help` command for more details.
 
 ### Testing API Keys
 
@@ -250,106 +205,11 @@ To verify that your API keys are properly configured and working, use the `test`
 mcp-profile test
 ```
 
-This command will:
-- Automatically detect which MCP servers in your active profile require API keys
-- Test each credential with the actual service (GitHub, HuggingFace, Context7)
-- Show real API responses and authentication status
-- Display rate limits and account information where available
-
-**Example Output:**
-```
-=== MCP API Key Testing ===
-
-Project: /home/user/Apps/my-project
-Active servers (7): github, markitdown, playwright, shadcn, shadcn-ui, hf-mcp-server, context7
-
-Testing API keys for servers that require authentication...
-
-Testing GitHub API...
-✓ GitHub authentication successful
-  ✓ Logged in to github.com account myuser
-  - Token scopes: 'repo', 'workflow', 'write:packages'
-  Rate limit: Limit: 5000/hour | Used: 10 | Remaining: 4990
-
-Testing HuggingFace MCP Server (OAuth)...
-✓ HuggingFace MCP OAuth session active
-  Status: Connected via Claude Code
-  OAuth authentication verified through MCP
-
-Testing HuggingFace CLI Token...
-✓ HuggingFace CLI token valid
-  Username: myuser
-  Organizations: 2 (org1, org2)
-  Token source: Environment variable (HF_TOKEN)
-
-Token can be used for:
-  ✓ hf CLI commands (model/dataset download, upload)
-  ✓ Python transformers/datasets libraries
-  ✓ Direct API access in scripts
-
-Testing Context7 API...
-✓ Context7 API key valid
-  HTTP Status: 200 OK
-  Connection: Successful
-
-Test Summary:
-  Profile servers tested: 4
-  Servers not requiring API keys are working automatically
-```
-
-**When to use:**
-- After setting up new API keys in your `.profile` or `.bashrc`
-- To verify credentials before starting work
-- To troubleshoot MCP server connection issues
-- To check rate limits on GitHub API
-- To verify HuggingFace authentication for both MCP OAuth and CLI token
-
-**Note:** The test command shows real API responses, not hardcoded messages. Servers like `markitdown`, `playwright`, and `shadcn` don't require external API keys and work automatically.
-
-### Setting up HuggingFace Authentication
-
-The `hf-mcp-server` uses OAuth authentication through Claude Code, but you may also want to set up CLI token authentication for direct HuggingFace CLI usage:
-
-**Option 1: Login via CLI (Recommended)**
-```bash
-# Install the HuggingFace CLI
-pip install -U huggingface_hub[cli]
-
-# Login interactively
-hf auth login
-
-# Token will be stored in ~/.cache/huggingface/token
-```
-
-**Option 2: Environment Variable**
-
-Add to your `~/.zshrc` or `~/.bashrc`:
-```bash
-export HF_TOKEN='hf_your_token_here'
-```
-
-Then reload your shell:
-```bash
-source ~/.zshrc  # or source ~/.bashrc
-```
-
-**Get your token:**
-1. Go to https://huggingface.co/settings/tokens
-2. Create a new token with at least read permissions
-3. Use it in either method above
-
-**Test your setup:**
-```bash
-# Test with the modern CLI command
-hf auth whoami
-
-# Or use the mcp-profile test command
-mcp-profile test
-```
+This command will test credentials for services like GitHub, HuggingFace, and Context7.
 
 ## Requirements
 
-- **Claude Code** - Terminal CLI must be installed
+- **Claude Code** or **Gemini CLI**
 - **Bash or Zsh** - Shell environment
 - **jq** - JSON processor (REQUIRED)
   - Ubuntu/Debian: `sudo apt install jq`
@@ -367,11 +227,11 @@ brew install jq
 ```
 
 ### Profile not switching
-1. Make sure to restart Claude Code after switching profiles
-2. Verify you're in the correct project directory
+1. Make sure to restart your AI tools after switching profiles.
+2. Verify you're in the correct project directory for Claude Code changes.
 3. Check that profile files exist:
    ```bash
-   ls -la ~/.config/claude-code/profiles/
+   ls -la ~/.config/mcp-profiles/
    ```
 
 ### Script not found
@@ -383,160 +243,31 @@ brew install jq
 
 ### View current configuration
 ```bash
-# See current project's MCP servers
+# See current project's MCP servers for Claude
 cat ~/.claude.json | jq '.projects["/path/to/project"].mcpServers'
+
+# See global MCP servers for Gemini
+cat ~/.config/gemini/settings.json | jq '.mcpServers'
 
 # Or use the script
 mcp-profile status
 ```
 
 ### Restore from backup
-Backups are stored in `~/.config/claude-code/backups/`:
+Backups are stored in `~/.config/claude-code/backups/` and `~/.config/gemini/backups/`:
 ```bash
 # List backups
 mcp-profile backup
 
 # Restore manually
-cp ~/.config/claude-code/backups/claude-backup-YYYYMMDD_HHMMSS.json ~/.claude.json
+cp <backup_file> <config_file>
 ```
-
-## Migration from Old Version
-
-If you were using the old version with `~/.config/claude-code/mcp-servers*.json`, those files are no longer needed. The new version uses:
-- `~/.claude.json` for active configuration
-- `~/.config/claude-code/profiles/` for profile storage
-
-The script automatically creates profile files on first use.
 
 ## Local CI/CD for Astro Site
 
 This project includes a complete local CI/CD pipeline for the Astro.build website, allowing you to run all checks locally before pushing to GitHub (reducing GitHub Actions costs).
 
-### Features
-
-- **Local CI/CD Execution**: Run linting, tests, and builds locally before pushing
-- **Interactive TUI**: Menu-driven interface - no need to remember CLI flags
-- **Modular Architecture**: TUI, CI/CD, and Website are completely independent modules
-- **Automatic Deployment**: GitHub Actions deploys to GitHub Pages on push to main
-- **Automatic Rollback**: Failed deployments automatically tracked with rollback guidance
-- **Lighthouse CI**: Automated performance validation (target: > 90 score)
-
-### Quick Start - TUI (Interactive Menu)
-
-The easiest way to use the local CI/CD pipeline:
-
-```bash
-# From project root
-./scripts/tui/run.sh
-```
-
-This launches an interactive menu with 9 options:
-1. **Run Full CI/CD Pipeline** - Complete validation (lint + tests + build)
-2. **Run CI/CD (Skip Tests)** - Fast mode for quick checks
-3. **Run CI/CD (Verbose Mode)** - Detailed output for debugging
-4. **Run CI/CD (No Auto-Fix)** - Validate without automatic fixes
-5. **View Recent Logs** - Browse pipeline execution logs
-6. **Check Environment** - Verify dependencies (bash, jq, node, npm)
-7. **Clean Old Logs** - Remove logs older than 30 days
-8. **Help & Documentation** - Reference and exit codes
-9. **Exit** - Return to shell
-
-### Command Line Usage (Without TUI)
-
-For automation or direct control:
-
-```bash
-# Full pipeline (lint + tests + build)
-./scripts/local-ci/run.sh
-
-# Skip tests (faster for quick checks)
-./scripts/local-ci/run.sh --skip-tests
-
-# Verbose output
-./scripts/local-ci/run.sh --verbose
-
-# Disable auto-fix for linting
-./scripts/local-ci/run.sh --no-fix
-
-# Custom log file location
-./scripts/local-ci/run.sh --log-file /path/to/logfile.log
-
-# Show all options
-./scripts/local-ci/run.sh --help
-```
-
-### CI/CD Pipeline Steps
-
-1. **Initialize**: Set up logging and environment
-2. **Environment Check**: Validate dependencies (bash ≥5.0, jq ≥1.6, node ≥18.0, npm ≥9.0)
-3. **Lint**: Prettier with auto-fix capability
-4. **Unit Tests**: Mocha unit tests
-5. **Integration Tests**: Component integration tests
-6. **E2E Tests**: Playwright end-to-end tests
-7. **Build**: Astro build with dist/ verification
-8. **Cleanup**: Remove old logs (30-day retention)
-9. **Complete**: Summary with total duration
-
-### Exit Codes
-
-- **0**: Success - All checks passed
-- **1**: Linting failed
-- **2**: Tests failed (unit, integration, or e2e)
-- **3**: Build failed
-- **4**: Environment validation failed
-
-### Module Independence (FR-006)
-
-Each module can be developed, tested, and modified independently:
-
-- **TUI** (`scripts/tui/`): Interactive menu interface
-- **CI/CD** (`scripts/local-ci/`): Pipeline orchestration and validation
-- **Website** (`web/`): Astro.build static site
-
-Changes to one module do not require changes to others. Integration tests verify this independence.
-
-### GitHub Pages Deployment
-
-When you push to main:
-
-1. **Automatic Deployment**: GitHub Actions builds and deploys to GitHub Pages
-2. **Deployment Tracking**: Each deployment recorded in `.github/deployment-state.json`
-3. **Rollback on Failure**: Failed deployments logged with manual rollback instructions
-4. **Lighthouse Validation**: Performance score checked (target: > 90)
-
-Manual deployment trigger:
-```bash
-# Via GitHub Actions workflow_dispatch
-# Go to Actions tab → Deploy to GitHub Pages → Run workflow
-```
-
-### Logs and Monitoring
-
-All pipeline runs are logged with:
-- **JSON structured output**: Machine-parseable for analysis
-- **Timestamped entries**: ISO 8601 format for precision
-- **Duration tracking**: Each step reports execution time
-- **Automatic retention**: Logs older than 30 days are cleaned up
-
-View logs:
-```bash
-# List recent logs
-ls -lht logs/
-
-# View specific log with formatting
-jq . logs/ci-20251020_183000.log
-
-# Or use TUI option 5
-./scripts/tui/run.sh
-# Select: 5) View Recent Logs
-```
-
-### Documentation
-
-- **TUI Guide**: `scripts/tui/README.md`
-- **CI/CD Guide**: `scripts/local-ci/README.md`
-- **Feature Spec**: `specs/001-local-cicd-astro-site/spec.md`
-- **Task Tracker**: `specs/001-local-cicd-astro-site/tasks.md`
+See `mcp-profile help` for more details on the local CI/CD pipeline.
 
 ## License
 
