@@ -212,6 +212,9 @@ show_status() {
     echo -e "${BLUE}=== MCP Profile Status ===${NC}"
     echo ""
     echo -e "Project: ${CYAN}$project_path${NC}"
+    if [ "$TOOL_TARGET" = "copilot" ] || [ "$TOOL_TARGET" = "all" ]; then
+        echo -e "Copilot MCP: ${YELLOW}unsupported${NC}"
+    fi
     echo ""
 
     if [ "$active_profile" != "CUSTOM" ]; then
@@ -975,6 +978,7 @@ case "${1:-interactive}" in
         echo "  status     - Show current active profile"
         echo "  list       - List all available profiles"
         echo "  test       - Test API keys for active MCP servers"
+        echo "  verify     - Verify Claude & Gemini configs match active profile"
         echo "  backup     - Show recent backups"
         echo "  help       - Show this help message"
         echo "  (no args)  - Interactive menu (default)"
