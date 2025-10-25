@@ -18,7 +18,7 @@ Ensure the same MCP servers from a single profile JSON are applied to Claude Cod
 - Source of Truth: Profile JSON at ~/.config/mcp-profiles/{github|hf|dev|ui|full}.json with per-server blocks (type, command/url).
 - Claude Code Target: ~/.claude.json at .projects[<git-root>].mcpServers (object copied verbatim from profile JSON).
 - Gemini CLI Target: ~/.config/gemini/settings.json at .mcpServers (object copied verbatim).
-- Copilot CLI Target: Detect capability; if unsupported, report "unsupported" without failing others; if supported, plan to write ~/.config/github-copilot/mcp.json (to be confirmed in Phase 0).
+- Copilot CLI Target: ~/.config/mcp-config.json (object copied verbatim from profile JSON).
 
 ## Phases
 - Phase 0: Research & Detection

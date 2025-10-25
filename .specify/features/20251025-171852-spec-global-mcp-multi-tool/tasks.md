@@ -1,43 +1,96 @@
 # Tasks: Global MCP Server Installation & Multi-Tool Sync
 
-Input: spec.md + plan.md
-Generated: 2025-10-25T09:21:56.926Z
+**Input**: Design documents from `/home/kkk/Apps/002-mcp-manager/.specify/features/20251025-171852-spec-global-mcp-multi-tool/`
+
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing.
+
+## Phase 0: Pre-Implementation
+
+- [ ] T000 [P] Verify all items in `checklists/checklist.md` are complete before release.
+
+---
 
 ## Phase 1: Setup (Shared Infrastructure)
-- [ ] T001 [P] Create global profiles dir if missing: ~/.config/mcp-profiles/
-- [ ] T002 [P] Ensure XDG dirs exist: ~/.config/claude-code/backups, ~/.config/gemini/backups
-- [ ] T003 [P] Add README note: scripts/mcp/README.md about global profile source-of-truth
 
-## Phase 2: Foundational (Blocking)
-- [ ] T010 Validate profile JSON schema via jq before writes (keys only + per-server fields)
-- [ ] T011 [P] Add health checks in check_profile_health() for stdio exec and http url (already present - verify only)
-- [ ] T012 Add --tool=copilot arg parsing stub (no-op if unsupported)
-- [ ] T013 Add safe detection for Copilot CLI MCP capability (research path, print "unsupported" if absent)
+**Purpose**: Ensure directories for profiles and backups exist.
 
-## Phase 3: US1 - One-click multi-tool profile sync (P1)
-- [ ] T020 [US1] Update switch_profile() to include copilot branch (guarded by detection)
-- [ ] T021 [US1] Back up copilot config if supported to ~/.config/github-copilot/backups/copilot-backup-TS.json
-- [ ] T022 [US1] Write copilot config from profile if supported (exact server object copy)
-- [ ] T023 [US1] Keep Claude per-project write using .projects[$git_root].mcpServers (no changes)
-- [ ] T024 [US1] Keep Gemini global write to .mcpServers (no changes)
-- [ ] T025 [US1] Status/list reflect copilot state: supported/unsupported
+- [X] T001 [P] Create global profiles directory if missing in `~/.config/mcp-profiles/`
+- [X] T002 [P] Create backup directory for Claude Code if missing in `~/.config/claude-code/backups/`
+- [X] T003 [P] Create backup directory for Gemini CLI if missing in `~/.config/gemini/backups/`
+- [X] T004 [P] Create backup directory for Copilot CLI if missing in `~/.config/mcp-manager/backups/`
 
-## Phase 4: US2 - Claude Code verification (P1)
-- [ ] T030 [US2] Add jq assertion helper: compare ~/.claude.json project servers vs profile keys
-- [ ] T031 [US2] Ensure test_api_keys shows 5 boxed sections with CLI-first order (verify greps from SPEC-KIT-SAFETY)
-- [ ] T032 [US2] Add docs snippet to README: verification commands for Claude vs profile
+---
 
-## Phase 5: US3 - Drift protection on push/pull (P2)
-- [ ] T040 [US3] Add local-ci guard: fail if scripts/mcp/mcp-profile changed without "allow-mcp-profile-update" in commit message
-- [ ] T041 [US3] Document merge strategy (PR/--no-ff) in SPEC-KIT-SAFETY.md and README.md
-- [ ] T042 [US3] Add emergency rollback snippet (reference SPEC-KIT-SAFETY.md) to scripts/mcp/README.md
+## Phase 2: Foundational (Blocking Prerequisites)
 
-## Phase 6: Polish & Cross-Cutting
-- [ ] T050 [P] Update README examples for --tool=all and copilot detection
-- [ ] T051 [P] Add quickstart.md under feature dir with commands to validate Claude/Gemini key equality
-- [ ] T052 [P] Run secret scan before commit on feature branch
+**Purpose**: Implement core logic required by all user stories.
 
-## Notes
-- Keep no hardcoded servers; always read ~/.config/mcp-profiles/<profile>.json
-- XDG compliance mandatory; do not use ~/bin or /usr/bin for user scripts
-- Copilot support must be a no-op if unsupported; do not break Claude/Gemini
+- [X] T005 Implement argument parsing for `--tool=<tool_name>` in `scripts/mcp/mcp-profile`
+- [X] T006 Implement core profile reading logic from `~/.config/mcp-profiles/` in `scripts/mcp/mcp-profile`
+- [X] T007 Implement timestamped backup creation for a given file path in `scripts/mcp/mcp-profile`
+- [X] T008 Implement tool detection logic (claude, gemini, gh) in `scripts/mcp/mcp-profile`
+
+---
+
+## Phase 3: User Story 1 - One-click multi-tool profile sync (Priority: P1) 🎯 MVP
+
+**Goal**: Apply the same MCP servers from a profile JSON across Claude Code, Gemini CLI, and Copilot CLI.
+
+**Independent Test**: Run `mcp-profile dev --tool=all` and verify `~/.claude.json`, `~/.config/gemini/settings.json`, and `~/.config/mcp-config.json` have the same server keys as the profile.
+
+### Implementation for User Story 1
+
+- [X] T009 [US1] Implement `switch_profile` function in `scripts/mcp/mcp-profile`
+- [X] T010 [P] [US1] Add logic to `switch_profile` to back up and write the Claude Code config to `~/.claude.json`
+- [X] T011 [P] [US1] Add logic to `switch_profile` to back up and write the Gemini CLI config to `~/.config/gemini/settings.json`
+- [X] T012 [P] [US1] Add logic to `switch_profile` to back up and write the Copilot CLI config to `~/.config/mcp-config.json`
+
+---
+
+## Phase 4: User Story 2 - Claude Code verification (Priority: P1)
+
+**Goal**: Verify the current project's MCP servers match the selected profile and pass health checks.
+
+**Independent Test**: Run `mcp-profile test` and see 5 boxed, colored sections with real API/CLI outputs.
+
+### Implementation for User Story 2
+
+- [X] T013 [US2] Implement `status` subcommand logic in `scripts/mcp/mcp-profile` to show active profiles and server lists.
+- [X] T014 [US2] Implement `test` subcommand logic in `scripts/mcp/mcp-profile` to run health checks.
+- [X] T015 [US2] Implement `verify` subcommand in `scripts/mcp/mcp-profile` to compare server keys.
+
+---
+
+## Phase 5: User Story 3 - Drift protection on git pull/push (Priority: P2)
+
+**Goal**: Prevent regressions where `scripts/mcp/mcp-profile` gets reverted.
+
+**Independent Test**: A CI build fails if `scripts/mcp/mcp-profile` is modified in a commit that lacks the `allow-mcp-profile-update` tag.
+
+### Implementation for User Story 3
+
+- [X] T016 [US3] Add a script to the CI workflow in `.github/workflows/deploy.yml` that fails the build if `scripts/mcp/mcp-profile` has been modified without the required commit message tag.
+
+---
+
+## Phase 6: Polish & Cross-Cutting Concerns
+
+**Purpose**: Finalize auxiliary commands and documentation.
+
+- [X] T017 [P] Implement `list` subcommand in `scripts/mcp/mcp-profile`
+- [X] T018 [P] Implement `backup` subcommand in `scripts/mcp/mcp-profile`
+- [X] T019 [P] Implement `help` subcommand in `scripts/mcp/mcp-profile`
+- [X] T020 [P] Update `README.md` with new commands and multi-tool support.
+
+---
+
+## Dependencies & Execution Order
+
+- **Foundational (Phase 2)** depends on **Setup (Phase 1)**.
+- **All User Stories (Phase 3, 4, 5)** depend on **Foundational (Phase 2)**.
+- User Stories 1 and 2 can be implemented in parallel.
+- **Polish (Phase 6)** can be done after User Stories 1 and 2 are complete.
+
+## Suggested MVP Scope
+
+- Complete Phase 1, 2, and 3 (User Story 1).

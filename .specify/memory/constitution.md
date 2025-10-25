@@ -1,50 +1,42 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# MCP-Manager Constitution
+
+**Version**: 1.0
+**Ratified**: 2025-10-25
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Simple Deployment & Verification
+The project philosophy is not about minimalism, but about **easy deployment and verification**. The core purpose is to allow a developer to install `mcp-manager` on any office computer and, with one script, ensure all dependencies are available, all supported AI tools are configured consistently with shared authentication, and the installation can be easily verified.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Multi-Tool Consistency
+The same MCP server configurations, authentication (gh CLI, API keys, OAuth), and profiles MUST be shared and work consistently across all supported AI tools (Claude Code, Gemini CLI, Copilot CLI). Profiles are tool-agnostic.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. No Hardcoded Values (NON-NEGOTIABLE)
+All dynamic data, especially MCP server lists and configurations, MUST be read dynamically from their source-of-truth JSON files (e.g., `~/.config/mcp-profiles/<profile>.json`). Hardcoding server lists, paths, or other configuration data is strictly prohibited to ensure accuracy and maintainability.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. XDG Base Directory Compliance
+The project MUST adhere to modern Linux/Unix standards (XDG Base Directory Specification).
+- **User Binaries**: `~/.local/bin/`
+- **User Configurations**: `~/.config/`
+- **Legacy directories** (`~/bin/`, `/usr/bin/` for user scripts) MUST NOT be used.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. CLI-First Interface & Verification
+All core functionality MUST be exposed and verifiable through the command-line interface. This includes profile switching, status checks, and health verification. TUI interfaces are for enhancing CLI verification, not replacing it. Health checks MUST use real API/CLI calls to provide accurate status.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Development Workflow & Quality Gates
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### I. Branch Management & Preservation
+- **Branch Naming**: All branches MUST follow the schema: `YYYYMMDD-HHMMSS-type-short-description`.
+- **Branch Preservation**: Branches MUST NEVER be deleted without explicit user permission. They contain valuable development history.
+- **Merge Strategy**: All features MUST be merged into `main` via a pull request with the `--no-ff` option to preserve history.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### II. Security (NON-NEGOTIABLE)
+- **No Secrets in Commits**: Committing API keys, tokens, personal emails, or any other credentials is a critical violation.
+- **Mandatory Scans**: A security scan for secrets MUST be performed before every commit.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Testing & Verification
+- **Test-First**: Changes should be verifiable via CLI-based tests.
+- **Accuracy**: Reported values (e.g., from `status` command) MUST be verified to match the actual configuration files.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
-
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+This constitution supersedes all other practices and documentation. All pull requests and reviews must verify compliance with these principles. Any amendment to this constitution requires documentation, team approval, and a clear migration plan.

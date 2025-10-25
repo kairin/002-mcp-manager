@@ -5,6 +5,15 @@
 **Status**: Draft
 **Input**: User description: "Also, the same MCP servers should also be installed for use globally by Copilot CLI, Gemini CLI and Claude Code. Help to verify the implementation for Claude Code so far is correct. It seems every time we git push and pull the implementation keep reverting to a broken version."
 
+## Clarifications
+
+### Session 2025-10-25
+- Q: Beyond secret scanning, what is the primary security posture for the `mcp-profile` script? → A: Minimalist: Trust the local execution environment and configuration files. The script's main security duty is to prevent accidental secret exposure.
+- Q: What is the maximum acceptable execution time for a typical `mcp-profile` command (e.g., switching a profile)? → A: 1-3 seconds: A reasonable default for a CLI tool, allowing for sequential file and network checks without feeling sluggish.
+- Q: How should the script behave if a supported tool's configuration path or format changes in a future version? → A: Resilient: Log a warning for the failed tool but continue to process other supported tools.
+- Q: Should the spec.md be updated to include the required JSON schema for a profile (e.g., type, command/url fields)? → A: Yes: Add a formal schema definition to the Key Entities section of the spec for completeness.
+- Q: The spec mentions a CI guard to prevent drift. What should be the exact behavior of this guard? → A: Strict Fail: The CI pipeline should fail immediately if scripts/mcp/mcp-profile is modified without an allow-mcp-profile-update tag in the commit message.
+
 ## User Scenarios & Testing (mandatory)
 
 ### User Story 1 - One-click multi-tool profile sync (Priority: P1)
@@ -26,12 +35,13 @@
 - Independent Test: Create feature branch, commit changes, push, merge with `--no-ff` to main, pull; file remains correct.
 - Acceptance:
   1. Given feature branch, When merged `--no-ff`, Then history preserved and no branch deletions.
-  2. Given CI, When running, Then it must not regenerate/overwrite mcp-profile unless an explicit task says so.
+  2. Given CI, When a commit modifies `scripts/mcp/mcp-profile` without the 'allow-mcp-profile-update' tag, Then the pipeline MUST fail.
 
 ### Edge Cases
 - Tools missing (claude, gemini, copilot): skip with warnings and continue for installed tools.
 - Profile JSON missing keys or invalid: show clear errors; do not write partial configs.
 - Copilot CLI MCP unsupported: detect and report status as "not supported yet" without failing other tools.
+- **Tool Incompatibility**: If a supported tool's configuration path or format is found to be incompatible, the script will log a clear warning for that tool but continue to process any other tools.
 
 ## Requirements (mandatory)
 
@@ -44,15 +54,32 @@
 - FR-006: Tests MUST be CLI-first with boxed, colored output and real API calls (gh, hf, context7, claude mcp list).
 - FR-007: Backups MUST be timestamped in XDG-compliant paths and listed by `backup`.
 
+### Non-Functional Requirements
+- **Security**: The script assumes a minimalist security posture, trusting the local execution environment and user-provided configuration files. Its primary security responsibility is to prevent the accidental leakage of secrets during its operation. It does not perform validation of commands from profile configurations.
+- **Performance**: A typical command execution (e.g., switching a profile) should complete within 1-3 seconds.
+
 ### Key Entities
-- Profile JSON: Map of MCP server configs (stdio/http), used by all tools.
-- Tool Configs: Claude project-scoped ~/.claude.json, Gemini global ~/.config/gemini/settings.json, Copilot global (TBD/Detect).
+- **Profile JSON**: A map of MCP server configurations that acts as the source of truth for all tools. It MUST conform to the following schema:
+  ```json
+  {
+    "server-name-1": {
+      "type": "stdio",
+      "command": ["command", "arg1"],
+      "description": "A brief description."
+    },
+    "server-name-2": {
+      "type": "http",
+      "url": "http://localhost:8080",
+      "description": "A brief description."
+    }
+  }
+  ```
+- **Tool Configs**: Claude project-scoped ~/.claude.json, Gemini global ~/.config/gemini/settings.json, Copilot global (TBD/Detect).
 
 ## Success Criteria (mandatory)
-- SC-001: `jq '.projects["<git-root>"].mcpServers | keys' ~/.claude.json` equals `jq 'keys' ~/.config/mcp-profiles/dev.json` after switch.
-- SC-002: `jq '.mcpServers | keys' ~/.config/gemini/settings.json` equals `jq 'keys' ~/.config/mcp-profiles/dev.json` after switch.
-- SC-003: `mcp-profile test` shows 5 boxed sections with real outputs and appropriate colors; order is CLI-first.
-- SC-004: After merge with `--no-ff`, pulling main does not revert `scripts/mcp/mcp-profile`.
+- SC-001: For any supported tool (Claude, Gemini), the MCP server keys in its configuration file MUST match the keys in the applied profile JSON after a switch.
+- SC-002: `mcp-profile test` shows 5 boxed sections with real outputs and appropriate colors; order is CLI-first.
+- SC-003: After merge with `--no-ff`, pulling main does not revert `scripts/mcp/mcp-profile`.
 
 ## Constitution Check
 - Aligns with AGENTS.md: No hardcoded values; XDG paths; multi-tool consistency; backups; CLI-first tests; branch preservation; security scans.
