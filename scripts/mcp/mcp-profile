@@ -31,6 +31,8 @@ fi
 
 # Default tool to manage (can be: claude, gemini, all)
 TOOL_TARGET="${MCP_TOOL:-all}"
+# Copilot MCP support flag (stub)
+COPILOT_SUPPORTED="false"
 
 # Create directories if they don't exist
 mkdir -p "$PROFILES_DIR" "$CLAUDE_BACKUP_DIR" "$GEMINI_BACKUP_DIR"
@@ -71,6 +73,9 @@ parse_tool_arg() {
                 ;;
             --tool=gemini)
                 TOOL_TARGET="gemini"
+                ;;
+            --tool=copilot)
+                TOOL_TARGET="copilot"
                 ;;
             --tool=all)
                 TOOL_TARGET="all"
@@ -975,9 +980,10 @@ case "${1:-interactive}" in
         echo "  (no args)  - Interactive menu (default)"
         echo ""
         echo "Options:"
-        echo "  --tool=claude   - Manage only Claude Code"
-        echo "  --tool=gemini   - Manage only Gemini CLI"
-        echo "  --tool=all      - Manage both tools (default)"
+        echo "  --tool=claude    - Manage only Claude Code"
+        echo "  --tool=gemini    - Manage only Gemini CLI"
+        echo "  --tool=copilot   - Manage only Copilot CLI (MCP unsupported; no-op)"
+        echo "  --tool=all       - Manage all supported tools (default)"
         echo ""
         echo "Environment:"
         echo "  MCP_TOOL=<claude|gemini|all>  - Set default tool target"
