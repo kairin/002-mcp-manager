@@ -189,3 +189,4 @@ secrets.json
 .config/gemini/settings.json
 **/claude.json
 **/gemini/settings.json
+gha-creds-*.json
