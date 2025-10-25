@@ -273,6 +273,11 @@ switch_profile() {
 
     # Read profile servers
     local new_servers=$(cat "$PROFILE_FILE")
+    # Validate profile JSON (must be an object)
+    if ! jq -e 'type=="object"' "$PROFILE_FILE" >/dev/null 2>&1; then
+        echo -e "${RED}Error: Invalid profile JSON (must be an object): $PROFILE_FILE${NC}"
+        exit 1
+    fi
 
     # Update Claude Code if enabled
     if [ "$TOOL_TARGET" = "claude" ] || [ "$TOOL_TARGET" = "all" ]; then
