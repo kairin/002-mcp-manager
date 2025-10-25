@@ -832,6 +832,46 @@ show_profile_table() {
     echo ""
 }
 
+verify_sync() {
+    check_dependencies
+    local project_path=$(get_project_path)
+    local active_profile=$(identify_active_profile)
+    if [ "$active_profile" = "CUSTOM" ]; then
+        echo -e "${YELLOW}Active profile is CUSTOM; cannot verify against a known profile${NC}"
+        return 1
+    fi
+    local profile_file="$PROFILES_DIR/$active_profile.json"
+    if [ ! -f "$profile_file" ]; then
+        echo -e "${RED}Profile file not found: $profile_file${NC}"
+        return 1
+    fi
+    echo -e "${BLUE}Verifying configs against profile: ${CYAN}$active_profile${NC}"
+    # Claude check
+    local claude_keys
+    claude_keys=$(jq -r --arg path "$project_path" '(.projects[$path].mcpServers // {}) | keys | sort | join(",")' "$CLAUDE_CONFIG" 2>/dev/null || echo "")
+    local profile_keys
+    profile_keys=$(jq -r 'keys | sort | join(",")' "$profile_file" 2>/dev/null || echo "")
+    if [ "$claude_keys" = "$profile_keys" ] && [ -n "$profile_keys" ]; then
+        echo -e "  ${GREEN}\u2713 Claude matches profile (${active_profile})${NC}"
+    else
+        echo -e "  ${RED}\u2717 Claude mismatch${NC}"
+        echo -e "    Claude:  $claude_keys"
+        echo -e "    Profile: $profile_keys"
+    fi
+    # Gemini check (if available)
+    if [ -f "$GEMINI_CONFIG" ]; then
+        local gemini_keys
+        gemini_keys=$(jq -r '(.mcpServers // {}) | keys | sort | join(",")' "$GEMINI_CONFIG" 2>/dev/null || echo "")
+        if [ "$gemini_keys" = "$profile_keys" ] && [ -n "$profile_keys" ]; then
+            echo -e "  ${GREEN}\u2713 Gemini matches profile (${active_profile})${NC}"
+        else
+            echo -e "  ${RED}\u2717 Gemini mismatch${NC}"
+            echo -e "    Gemini:  $gemini_keys"
+            echo -e "    Profile: $profile_keys"
+        fi
+    fi
+}
+
 interactive_menu() {
     check_dependencies
 
@@ -960,6 +1000,9 @@ case "${1:-interactive}" in
         ;;
     test)
         test_api_keys
+        ;;
+    verify)
+        verify_sync
         ;;
     backup|backups)
         show_backups
