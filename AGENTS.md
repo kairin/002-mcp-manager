@@ -1,5 +1,20 @@
 # MCP Profile Switcher - AI Agent Instructions
 
+> 🚨 **MANDATORY**: DO NOT MODIFY THIS FILE STRUCTURE. CLAUDE.md AND GEMINI.md MUST REMAIN SYMLINKS TO AGENTS.md
+>
+> ❌ **PROHIBITED ACTIONS**:
+> - DO NOT create separate CLAUDE.md or GEMINI.md files
+> - DO NOT copy content from AGENTS.md to CLAUDE.md or GEMINI.md
+> - DO NOT treat CLAUDE.md or GEMINI.md as independent files
+> - DO NOT revert symlinks back to regular files under any circumstances
+>
+> ✅ **REQUIRED**:
+> - CLAUDE.md MUST be a symbolic link to AGENTS.md (`ln -s AGENTS.md CLAUDE.md`)
+> - GEMINI.md MUST be a symbolic link to AGENTS.md (`ln -s AGENTS.md GEMINI.md`)
+> - AGENTS.md is the ONLY master instruction file for ALL AI assistants
+> - All changes to AI instructions MUST be made ONLY to AGENTS.md
+> - Symlinks ensure all LLMs (Claude, Gemini, ChatGPT, GitHub Copilot CLI) receive identical instructions
+
 > 🤖 **CRITICAL**: This file (AGENTS.md) is the PRIMARY instruction document for ALL AI assistants (Claude, Gemini, ChatGPT, etc.) working on this repository. ALL requirements in this file are NON-NEGOTIABLE and MUST be followed at ALL times.
 
 > 📝 **NOTE**: CLAUDE.md and GEMINI.md are symlinks to this AGENTS.md file to ensure consistent instructions across all AI platforms.
@@ -364,9 +379,31 @@ Before committing any changes:
 - [ ] README.md updated if functionality changed
 - [ ] Branch naming follows YYYYMMDD-HHMMSS format
 - [ ] Commit message includes co-authorship
-- [ ] Symlinks (CLAUDE.md, GEMINI.md) point to AGENTS.md
+- [ ] **CLAUDE.md and GEMINI.md remain symlinks to AGENTS.md (CRITICAL)**
+- [ ] **AGENTS.md is the ONLY master instruction file**
+- [ ] **No separate CLAUDE.md or GEMINI.md files created**
 
 ## 🚫 ABSOLUTE PROHIBITIONS
+
+### 🚨 CRITICAL: Symlink Integrity (MANDATORY)
+
+**DO NOT** modify the symlink structure under ANY circumstances:
+
+- ❌ DO NOT create separate CLAUDE.md or GEMINI.md files
+- ❌ DO NOT copy AGENTS.md content to CLAUDE.md or GEMINI.md
+- ❌ DO NOT treat CLAUDE.md or GEMINI.md as independent instruction files
+- ❌ DO NOT revert symlinks to regular files
+- ❌ DO NOT modify CLAUDE.md or GEMINI.md directly (they must be symlinks)
+- ❌ DO NOT create alternative instruction files for different AI platforms
+
+**MUST**:
+- ✅ Keep CLAUDE.md as symlink: `CLAUDE.md -> AGENTS.md`
+- ✅ Keep GEMINI.md as symlink: `GEMINI.md -> AGENTS.md`
+- ✅ Edit AGENTS.md ONLY for all AI assistant instructions
+- ✅ Treat AGENTS.md as the single source of truth
+- ✅ Ensure all AI tools read the same instructions
+
+**Reason**: Other LLMs (Claude, Gemini, ChatGPT) tend to create separate instruction files for themselves. Symlinks enforce consistency and prevent divergent instructions across AI platforms.
 
 ### DO NOT
 
@@ -386,6 +423,7 @@ Before committing any changes:
 - Branch preservation requirements
 - Multi-tool support (Claude Code + Gemini CLI)
 - Shared authentication principle
+- **Symlink requirements for CLAUDE.md and GEMINI.md**
 
 ## 📊 Success Metrics
 
