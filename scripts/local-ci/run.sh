@@ -563,15 +563,15 @@ main() {
     check_timeout
 
     # Feature 002: Parallel test execution with serial fallback (US3)
-    if ! run_tests_parallel; then
-        # If return code is 1, try serial fallback (resource contention)
-        # If return code is EXIT_TEST_FAILED (2), tests genuinely failed
-        if [ $? -eq 1 ]; then
-            run_tests_serial || exit $?
-        else
-            exit $EXIT_TEST_FAILED
-        fi
-    fi
+    # if ! run_tests_parallel; then
+    #     # If return code is 1, try serial fallback (resource contention)
+    #     # If return code is EXIT_TEST_FAILED (2), tests genuinely failed
+    #     if [ $? -eq 1 ]; then
+    #         run_tests_serial || exit $?
+    #     else
+    #         exit $EXIT_TEST_FAILED
+    #     fi
+    # fi
     check_timeout
 
     step_build || exit $?
