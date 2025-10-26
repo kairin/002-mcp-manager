@@ -216,54 +216,31 @@ get_active_servers() {
 }
 
 # Function: count_active_servers
-# Purpose: Counts the number of currently active MCP servers for the targeted tool.
+# Purpose: Counts the number of currently active MCP servers for the current project.
 # Returns: The number of active servers.
 count_active_servers() {
-    if [ "$TOOL_TARGET" = "gemini" ]; then
-        if [ -f "$GEMINI_CONFIG" ]; then
-            jq '(.mcpServers // {}) | length' "$GEMINI_CONFIG" 2>/dev/null || echo "0"
-        else
-            echo "0"
-        fi
-    else # Default to Claude
-        local project_path=$(get_project_path)
-        if [ -f "$CLAUDE_CONFIG" ]; then
-            jq --arg path "$project_path" '(.projects[$path].mcpServers // {}) | length' "$CLAUDE_CONFIG" 2>/dev/null || echo "0"
-        else
-            echo "0"
-        fi
-    fi
+    local project_path=$(get_project_path)
+
+    jq --arg path "$project_path" '(.projects[$path].mcpServers // {}) | length' "$CLAUDE_CONFIG" 2>/dev/null || echo "0"
 }
 
 # Function: identify_active_profile
-# Purpose: Compares the current server configuration against the known profiles to identify which one is active, based on the targeted tool.
+# Purpose: Compares the current server configuration against the known profiles to identify which one is active.
 # Returns: The name of the active profile (e.g., "dev") or "CUSTOM" if it doesn't match any known profile.
 identify_active_profile() {
-    local current_servers_json
+    local project_path=$(get_project_path)
 
-    if [ "$TOOL_TARGET" = "gemini" ]; then
-        if [ ! -f "$GEMINI_CONFIG" ]; then echo "CUSTOM"; return; fi
-        current_servers_json=$(jq '.mcpServers // {}' "$GEMINI_CONFIG" 2>/dev/null)
-    else # Default to Claude
-        local project_path=$(get_project_path)
-        if [ ! -f "$CLAUDE_CONFIG" ]; then echo "CUSTOM"; return; fi
-        current_servers_json=$(jq --arg path "$project_path" '.projects[$path].mcpServers // {}' "$CLAUDE_CONFIG" 2>/dev/null)
-    fi
-
-    # If server config is empty or null, it's not a known profile.
-    if [ -z "$current_servers_json" ] || [ "$current_servers_json" = "null" ] || [ "$current_servers_json" = "{}" ]; then
-        echo "CUSTOM"
-        return
-    fi
+    # Get current servers config from Claude config
+    local current_servers=$(jq --arg path "$project_path" '.projects[$path].mcpServers // {}' "$CLAUDE_CONFIG" 2>/dev/null)
 
     # Compare with each profile
     for profile in github hf dev ui full; do
         local profile_file="$PROFILES_DIR/$profile.json"
         if [ -f "$profile_file" ]; then
-            local profile_servers_json=$(cat "$profile_file")
+            local profile_servers=$(cat "$profile_file")
 
-            # Compare the sorted JSON to be formatting-agnostic
-            if [ "$(echo "$current_servers_json" | jq -S .)" = "$(echo "$profile_servers_json" | jq -S .)" ]; then
+            # Compare JSON objects (ignore whitespace/formatting)
+            if [ "$(echo "$current_servers" | jq -S .)" = "$(echo "$profile_servers" | jq -S .)" ]; then
                 echo "$profile"
                 return
             fi
