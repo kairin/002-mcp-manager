@@ -430,3 +430,10 @@ This project is successful when:
 **Status**: ACTIVE - MANDATORY COMPLIANCE
 **Project Type**: Simple shell utility
 **Review**: Required before major changes
+
+## Active Technologies
+- Bash 5.0+ (20251026-000000-feat-multi-tool-clarification)
+- Files (JSON for profiles, shell configs) (20251026-000000-feat-multi-tool-clarification)
+
+## Recent Changes
+- 20251026-000000-feat-multi-tool-clarification: Added Bash 5.0+
