@@ -1,10 +1,19 @@
-# MCP Profile Switcher
+# MCP Profile Switcher and Local CI/CD Pipeline
 
-A simple shell script to switch between different MCP (Model Context Protocol) server configurations for Claude Code, Gemini CLI, and other supported tools.
+This repository contains a suite of tools designed to streamline development workflows. It includes a powerful MCP (Model Context Protocol) Profile Switcher for managing AI tool configurations and a complete local CI/CD pipeline for running validation, testing, and builds in a local environment.
 
-## What It Does
+## Features
 
-AI tools like Claude Code and Gemini CLI support multiple MCP servers, but loading all of them can consume significant context tokens. This script lets you quickly switch between different profile configurations based on your current needs:
+- **MCP Profile Switcher**: A script to switch between different MCP server configurations for Claude Code, Gemini CLI, and other supported tools.
+- **Local CI/CD Pipeline**: A robust CI/CD pipeline that runs linting, testing, and build steps with detailed JSON logging.
+- **Interactive TUI**: A user-friendly terminal interface for executing CI/CD tasks without needing to memorize commands.
+- **Comprehensive Validation**: Scripts to validate your environment, dependencies, and to detect secrets.
+
+## MCP Profile Switcher
+
+### What It Does
+
+AI tools like Claude Code and Gemini CLI support multiple MCP servers, but loading all of them can consume significant context tokens. The `mcp-profile` script lets you quickly switch between different profile configurations based on your current needs:
 
 - **dev** (~7K tokens) - Minimal profile for basic coding
 - **ui** (~12K tokens) - UI/Design work
@@ -12,54 +21,63 @@ AI tools like Claude Code and Gemini CLI support multiple MCP servers, but loadi
 
 Server lists are dynamically read from profile files and may vary based on your setup.
 
-## How It Works
+### How It Works
 
-The script manages MCP server configurations in:
+The `mcp-profile` script manages MCP server configurations in:
 - Claude Code's terminal CLI config (`~/.claude.json`) on a per-project basis.
 - Gemini CLI's global config (`~/.config/gemini/settings.json`).
 
-When you switch profiles:
+When you switch profiles, the script:
 
-1. Creates a timestamped backup of your configs.
-2. Updates the `mcpServers` section for the specified tools.
-3. Shows the new active configuration.
+1. Creates a timestamped backup of your current configurations.
+2. Updates the `mcpServers` section in the relevant configuration files for the specified tools.
+3. Displays the new active configuration to confirm the switch.
 
 **Important:** Changes for Claude Code are project-specific, while changes for Gemini CLI are global.
 
 ## Installation
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/kairin/002-mcp-manager.git ~/Apps/002-mcp-manager
-cd ~/Apps/002-mcp-manager
-```
+1.  **Clone the Repository**
 
-### 2. Add to your PATH
-Add this to your `~/.zshrc` or `~/.bashrc`:
-```bash
-export PATH="$HOME/Apps/002-mcp-manager/scripts/mcp:$PATH"
-```
+    ```bash
+    git clone https://github.com/kairin/002-mcp-manager.git ~/Apps/002-mcp-manager
+    cd ~/Apps/002-mcp-manager
+    ```
 
-### 3. Reload your shell
-```bash
-source ~/.zshrc  # or source ~/.bashrc
-```
+2.  **Add Scripts to Your PATH**
 
-### 4. Verify installation
-```bash
-mcp-profile status
-```
+    Add the following lines to your `~/.zshrc` or `~/.bashrc` file to make the scripts accessible from anywhere in your terminal:
+
+    ```bash
+    export PATH="$HOME/Apps/002-mcp-manager/scripts/mcp:$PATH"
+    export PATH="$HOME/Apps/002-mcp-manager/scripts/tui:$PATH"
+    export PATH="$HOME/Apps/002-mcp-manager/scripts/local-ci:$PATH"
+    ```
+
+3.  **Reload Your Shell**
+
+    ```bash
+    source ~/.zshrc  # or source ~/.bashrc
+    ```
+
+4.  **Verify Installation**
+
+    You can verify that the `mcp-profile` script is installed correctly by running:
+
+    ```bash
+    mcp-profile status
+    ```
 
 The script will automatically create profile files if they don't exist. Default profiles include:
 - **dev**: github, markitdown
 - **ui**: github, markitdown, playwright, shadcn, shadcn-ui
 - **full**: all 6 servers (adds hf-mcp-server)
 
-## Usage
+## MCP Profile Switcher Usage
 
 ### Interactive Mode (Default)
 
-Simply run the command without arguments to launch an interactive menu:
+For an easy-to-use interface, run the `mcp-profile` command without any arguments:
 
 ```bash
 mcp-profile
@@ -281,3 +299,46 @@ Mister K ([@kairin](https://github.com/kairin))
 
 - **Repository**: https://github.com/kairin/002-mcp-manager
 - **Issues**: https://github.com/kairin/002-mcp-manager/issues
+<br>
+
+## Local CI/CD Pipeline and TUI
+
+This repository also includes a powerful local CI/CD pipeline that allows you to run linting, tests, and builds on your local machine. This is particularly useful for validating changes before pushing them to a remote repository.
+
+### Interactive TUI
+
+The easiest way to use the CI/CD pipeline is through the interactive TUI. To launch it, run:
+
+```bash
+run.sh
+```
+
+This will open a menu where you can:
+
+-   Run the full CI/CD pipeline.
+-   Run the pipeline with tests skipped for a faster execution.
+-   Run in verbose mode for detailed output.
+-   View recent logs.
+-   Check your environment for required dependencies.
+-   Clean up old log files.
+
+### Direct CLI Usage
+
+You can also run the CI/CD pipeline directly from the command line:
+
+```bash
+# Run the full pipeline
+run.sh
+
+# Run without tests
+run.sh --skip-tests
+
+# Run with verbose output
+run.sh --verbose
+
+# Run without auto-fixing lint errors
+run.sh --no-fix
+
+# Show the help message
+run.sh --help
+```

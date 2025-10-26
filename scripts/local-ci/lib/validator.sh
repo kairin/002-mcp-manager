@@ -5,11 +5,14 @@
 
 set -euo pipefail
 
-# validate_dependency: Check if a command exists and meets version requirements
-# Args:
-#   $1 - command name
-#   $2 - minimum version (optional, format: "X.Y" or "X.Y.Z")
-# Returns: 0 if valid, 1 if invalid
+# --- Functions ---
+
+# Function: validate_dependency
+# Purpose: Checks if a command exists and meets a minimum version requirement.
+# Arguments:
+#   $1 - command_name: The name of the command to validate.
+#   $2 - minimum_version (optional): The minimum required version (e.g., "18.0").
+# Returns: 0 if the dependency is valid, 1 otherwise.
 validate_dependency() {
     local cmd="$1"
     local min_version="${2:-}"
@@ -49,11 +52,12 @@ validate_dependency() {
     return 0
 }
 
-# version_compare: Compare two version strings
-# Args:
-#   $1 - current version (e.g., "18.16.0")
-#   $2 - minimum version (e.g., "18.0")
-# Returns: 0 if current >= minimum, 1 otherwise
+# Function: version_compare
+# Purpose: Compares two version strings to see if the current version meets the minimum requirement.
+# Arguments:
+#   $1 - current_version: The version to check (e.g., "18.16.0").
+#   $2 - minimum_version: The minimum required version (e.g., "18.0").
+# Returns: 0 if the current version is greater than or equal to the minimum, 1 otherwise.
 version_compare() {
     local current="$1"
     local minimum="$2"
@@ -77,11 +81,12 @@ version_compare() {
     return 0
 }
 
-# validate_env: Check if required environment variables are set
-# Args:
-#   $1 - variable name
-#   $2 - allowed values (comma-separated, optional)
-# Returns: 0 if valid, 1 if invalid
+# Function: validate_env
+# Purpose: Checks if a required environment variable is set and optionally validates its value.
+# Arguments:
+#   $1 - variable_name: The name of the environment variable.
+#   $2 - allowed_values (optional): A comma-separated string of allowed values.
+# Returns: 0 if the environment variable is valid, 1 otherwise.
 validate_env() {
     local var_name="$1"
     local allowed_values="${2:-}"
@@ -102,10 +107,11 @@ validate_env() {
     return 0
 }
 
-# validate_file_exists: Check if file exists
-# Args:
-#   $1 - file path
-# Returns: 0 if exists, 1 if not
+# Function: validate_file_exists
+# Purpose: Checks if a file exists at the given path.
+# Arguments:
+#   $1 - file_path: The path to the file.
+# Returns: 0 if the file exists, 1 otherwise.
 validate_file_exists() {
     local file_path="$1"
 
@@ -117,10 +123,11 @@ validate_file_exists() {
     return 0
 }
 
-# validate_directory_exists: Check if directory exists
-# Args:
-#   $1 - directory path
-# Returns: 0 if exists, 1 if not
+# Function: validate_directory_exists
+# Purpose: Checks if a directory exists at the given path.
+# Arguments:
+#   $1 - directory_path: The path to the directory.
+# Returns: 0 if the directory exists, 1 otherwise.
 validate_directory_exists() {
     local dir_path="$1"
 
@@ -132,13 +139,15 @@ validate_directory_exists() {
     return 0
 }
 
-# Secret detection patterns from data-model.md Entity 2
-# These are basic patterns - Gitleaks provides comprehensive detection
+# --- Secret Detection Functions ---
+# These functions provide basic secret detection. For comprehensive scanning,
+# a dedicated tool like Gitleaks is recommended.
 
-# detect_github_token: Check for GitHub token patterns
-# Args:
-#   $1 - string to check
-# Returns: 0 if no token found, 1 if token detected
+# Function: detect_github_token
+# Purpose: Checks for a GitHub token pattern in a given string.
+# Arguments:
+#   $1 - text: The string to check.
+# Returns: 0 if no token is found, 1 otherwise.
 detect_github_token() {
     local text="$1"
 
@@ -150,10 +159,11 @@ detect_github_token() {
     return 0
 }
 
-# detect_api_key: Check for generic API key patterns
-# Args:
-#   $1 - string to check
-# Returns: 0 if no key found, 1 if key detected
+# Function: detect_api_key
+# Purpose: Checks for a generic API key pattern in a given string.
+# Arguments:
+#   $1 - text: The string to check.
+# Returns: 0 if no key is found, 1 otherwise.
 detect_api_key() {
     local text="$1"
 
@@ -165,10 +175,11 @@ detect_api_key() {
     return 0
 }
 
-# detect_aws_key: Check for AWS secret key patterns
-# Args:
-#   $1 - string to check
-# Returns: 0 if no key found, 1 if key detected
+# Function: detect_aws_key
+# Purpose: Checks for an AWS secret key pattern in a given string.
+# Arguments:
+#   $1 - text: The string to check.
+# Returns: 0 if no key is found, 1 otherwise.
 detect_aws_key() {
     local text="$1"
 
@@ -180,10 +191,11 @@ detect_aws_key() {
     return 0
 }
 
-# detect_private_key: Check for private key patterns
-# Args:
-#   $1 - string to check
-# Returns: 0 if no key found, 1 if key detected
+# Function: detect_private_key
+# Purpose: Checks for a private key pattern in a given string.
+# Arguments:
+#   $1 - text: The string to check.
+# Returns: 0 if no key is found, 1 otherwise.
 detect_private_key() {
     local text="$1"
 
@@ -195,10 +207,11 @@ detect_private_key() {
     return 0
 }
 
-# validate_no_secrets: Run all secret detection checks
-# Args:
-#   $1 - string to check
-# Returns: 0 if no secrets found, 1 if secrets detected
+# Function: validate_no_secrets
+# Purpose: Runs all secret detection checks on a given string.
+# Arguments:
+#   $1 - text: The string to check.
+# Returns: 0 if no secrets are found, 1 otherwise.
 validate_no_secrets() {
     local text="$1"
     local secrets_found=0
@@ -211,11 +224,14 @@ validate_no_secrets() {
     return $secrets_found
 }
 
-# Feature 002 - US8: Validate constitution file exists (T051)
-# Check if .specify/memory/constitution.md exists (optional check for SpecKit projects)
-# Args:
-#   $1 - project root path
-# Returns: 0 always (non-blocking check), prints status to stdout
+# --- Project-Specific Validations ---
+
+# Function: validate_constitution_file
+# Purpose: Checks for the existence of the constitution.md file in SpecKit projects.
+#          This is an optional, non-blocking check.
+# Arguments:
+#   $1 - project_root: The root directory of the project.
+# Returns: 0 always. Prints "found" or "missing" to stdout.
 validate_constitution_file() {
     local project_root="$1"
     local constitution_file="$project_root/.specify/memory/constitution.md"
@@ -229,8 +245,10 @@ validate_constitution_file() {
     return 0
 }
 
-# Guard: block unintended changes to scripts/mcp/mcp-profile unless commit message opts-in
-# Returns 0 if allowed or not applicable, 1 if blocked
+# Function: validate_mcp_profile_update_guard
+# Purpose: Prevents unintended changes to the mcp-profile script unless
+#          the commit message includes a specific opt-in flag.
+# Returns: 0 if the update is allowed, 1 if it is blocked.
 validate_mcp_profile_update_guard() {
     local project_root="${1:-$(pwd)}"
     if ! git -C "$project_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -253,7 +271,8 @@ validate_mcp_profile_update_guard() {
     return 0
 }
 
-# Export functions for use in other scripts
+# --- Exports ---
+# Export functions for use in other scripts.
 export -f validate_dependency
 export -f version_compare
 export -f validate_env

@@ -5,13 +5,15 @@
 
 set -euo pipefail
 
+# --- Configuration and Global Variables ---
+
 # Get script directory (works even if called from elsewhere)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CI_SCRIPT="$PROJECT_ROOT/scripts/local-ci/run.sh"
-LOGS_DIR="$PROJECT_ROOT/logs"
+CI_SCRIPT="$PROJECT_ROOT/scripts/local-ci/run.sh" # Path to the main CI/CD script
+LOGS_DIR="$PROJECT_ROOT/logs" # Path to the directory where logs are stored
 
-# Colors for output
+# Colors for styled output in the terminal.
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -25,7 +27,10 @@ if [ ! -f "$CI_SCRIPT" ]; then
     exit 1
 fi
 
-# Main menu loop
+# --- Functions ---
+
+# Function: main_menu
+# Purpose: Displays the main interactive menu and handles user input.
 main_menu() {
     while true; do
         clear
@@ -89,7 +94,8 @@ main_menu() {
     done
 }
 
-# Option 1: Run Full CI/CD Pipeline
+# Function: run_full_pipeline
+# Purpose: Executes the full CI/CD pipeline, including linting, all tests, and the build process.
 run_full_pipeline() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Running Full CI/CD Pipeline${NC}                                  ${CYAN}║${NC}"
@@ -125,7 +131,8 @@ run_full_pipeline() {
     pause
 }
 
-# Option 2: Run CI/CD (Skip Tests)
+# Function: run_skip_tests
+# Purpose: Executes the CI/CD pipeline without running any tests, making for a faster run.
 run_skip_tests() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Running CI/CD (Skip Tests)${NC}                                    ${CYAN}║${NC}"
@@ -147,7 +154,8 @@ run_skip_tests() {
     pause
 }
 
-# Option 3: Run CI/CD (Verbose Mode)
+# Function: run_verbose
+# Purpose: Executes the CI/CD pipeline in verbose mode, showing detailed output for each step.
 run_verbose() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Running CI/CD (Verbose Mode)${NC}                                  ${CYAN}║${NC}"
@@ -169,7 +177,8 @@ run_verbose() {
     pause
 }
 
-# Option 4: Run CI/CD (No Auto-Fix)
+# Function: run_no_fix
+# Purpose: Executes the CI/CD pipeline without auto-fixing linting errors.
 run_no_fix() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Running CI/CD (No Auto-Fix)${NC}                                   ${CYAN}║${NC}"
@@ -194,7 +203,8 @@ run_no_fix() {
     pause
 }
 
-# Option 5: View Recent Logs
+# Function: view_logs
+# Purpose: Displays a list of recent log files and provides an option to view the latest log.
 view_logs() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Recent CI/CD Logs${NC}                                             ${CYAN}║${NC}"
@@ -232,7 +242,8 @@ view_logs() {
     pause
 }
 
-# Option 6: Check Environment
+# Function: check_environment
+# Purpose: Checks the development environment for required dependencies and their versions.
 check_environment() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Environment Check${NC}                                             ${CYAN}║${NC}"
@@ -291,7 +302,8 @@ check_environment() {
     pause
 }
 
-# Option 7: Clean Old Logs
+# Function: clean_logs
+# Purpose: Cleans up old log files, keeping the last 30 days of logs.
 clean_logs() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Clean Old Logs${NC}                                                ${CYAN}║${NC}"
@@ -331,7 +343,8 @@ clean_logs() {
     pause
 }
 
-# Option 8: Help & Documentation
+# Function: show_help
+# Purpose: Displays a help screen with information about the TUI and the CI/CD script.
 show_help() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}  ${BLUE}Help & Documentation${NC}                                          ${CYAN}║${NC}"
@@ -375,7 +388,8 @@ show_help() {
     pause
 }
 
-# Helper function: pause until user presses Enter
+# Function: pause
+# Purpose: A helper function that pauses the script until the user presses the Enter key.
 pause() {
     echo ""
     read -p "$(echo -e ${CYAN}Press Enter to continue...${NC})"

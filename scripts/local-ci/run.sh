@@ -5,16 +5,18 @@
 
 set -euo pipefail
 
+# --- Configuration and Global Variables ---
+
 # Get script directory (works even if called from elsewhere)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WEB_DIR="$PROJECT_ROOT/web"
 
 # Source libraries
-source "$SCRIPT_DIR/lib/logger.sh"
-source "$SCRIPT_DIR/lib/validator.sh"
+source "$SCRIPT_DIR/lib/logger.sh" # For structured JSON logging
+source "$SCRIPT_DIR/lib/validator.sh" # For environment and dependency validation
 
-# Exit codes
+# --- Exit Codes ---
 readonly EXIT_SUCCESS=0
 readonly EXIT_LINT_FAILED=1
 readonly EXIT_TEST_FAILED=2
@@ -22,21 +24,25 @@ readonly EXIT_BUILD_FAILED=3
 readonly EXIT_ENV_FAILED=4
 readonly EXIT_TIMEOUT=5  # Feature 002: NFR-003 timeout enforcement
 
-# Default options
-NO_FIX=false
-VERBOSE=false
-SKIP_TESTS=false
+# --- Command-line Options and Flags ---
+NO_FIX=false # If true, disables auto-fixing of lint errors
+VERBOSE=false # If true, enables detailed output for each step
+SKIP_TESTS=false # If true, skips all testing steps
 LOG_FILE=""
 PIPELINE_START=$(date +%s.%N)
 
 # Feature 002: Timeout enforcement (NFR-003)
-START_TIME=$SECONDS  # Bash builtin for elapsed time tracking
-TIMEOUT_SECONDS=300  # 5-minute hard limit
+START_TIME=$SECONDS  # Bash builtin for tracking elapsed time
+TIMEOUT_SECONDS=300  # 5-minute hard limit for the pipeline
 
 # Feature 002: Pipeline Run Correlation (US6)
-RUN_ID=""  # Will be generated in step_init
+RUN_ID=""  # A unique ID for this pipeline run, generated in step_init
 
-# Parse command-line arguments
+# --- Functions ---
+
+# Function: parse_args
+# Purpose: Parses command-line arguments and sets corresponding flags.
+# Arguments: Command-line arguments passed to the script.
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -69,7 +75,8 @@ parse_args() {
     done
 }
 
-# Show help message
+# Function: show_help
+# Purpose: Displays a help message with usage instructions and available options.
 show_help() {
     cat <<EOF
 Local CI/CD Pipeline Script
@@ -99,7 +106,8 @@ Examples:
 EOF
 }
 
-# Feature 002 - US6: Generate unique correlation ID for this pipeline run
+# Function: generate_correlation_id
+# Purpose: Generates a unique correlation ID for a pipeline run.
 # Format: run-YYYYMMDD-HHMMSS-{6char}
 # Example: run-20251021-143045-k8m3q2
 generate_correlation_id() {
@@ -108,7 +116,10 @@ generate_correlation_id() {
     echo "run-${timestamp}-${random_suffix}"
 }
 
-# Step 1: Initialize
+# --- Pipeline Steps ---
+
+# Function: step_init
+# Purpose: Initializes the pipeline, sets up logging, and generates a run ID.
 step_init() {
     local step_start=$(date +%s.%N)
 
@@ -137,7 +148,9 @@ step_init() {
     log_success "init" "Initialization complete" "" "$duration_ms" | tee -a "$LOG_FILE"
 }
 
-# Step 2: Environment validation
+# Function: step_env_check
+# Purpose: Validates the environment, checking for required dependencies and versions.
+# Exits with a non-zero status code if validation fails.
 step_env_check() {
     local step_start=$(date +%s.%N)
 
@@ -202,7 +215,9 @@ step_env_check() {
     fi
 }
 
-# Step 3: Lint
+# Function: step_lint
+# Purpose: Runs the Prettier linter to check for code formatting issues.
+#          Attempts to auto-fix errors unless the --no-fix flag is provided.
 step_lint() {
     local step_start=$(date +%s.%N)
 
@@ -245,7 +260,9 @@ step_lint() {
     return $EXIT_LINT_FAILED
 }
 
-# Step 4: Unit tests
+# Function: step_test_unit
+# Purpose: Runs unit tests using Mocha.
+#          Skips execution if the --skip-tests flag is provided.
 step_test_unit() {
     local step_start=$(date +%s.%N)
 
@@ -272,7 +289,9 @@ step_test_unit() {
     fi
 }
 
-# Step 5: Integration tests
+# Function: step_test_integration
+# Purpose: Runs integration tests using Mocha.
+#          Skips execution if the --skip-tests flag is provided.
 step_test_integration() {
     local step_start=$(date +%s.%N)
 
@@ -299,8 +318,11 @@ step_test_integration() {
     fi
 }
 
-# Feature 002 - US7: E2E test retry wrapper (T045-T050)
-# Retries E2E tests once if first attempt fails (only on test failure, not timeout)
+# Function: run_e2e_tests_with_retry
+# Purpose: A wrapper for running E2E tests that includes a retry mechanism.
+#          Retries E2E tests once if the first attempt fails.
+# Arguments:
+#   $1 - The start time of the step, used for duration calculation.
 run_e2e_tests_with_retry() {
     local step_start="$1"
     local max_attempts=2
@@ -336,7 +358,10 @@ run_e2e_tests_with_retry() {
     return $EXIT_TEST_FAILED
 }
 
-# Step 6: E2E tests
+# Function: step_test_e2e
+# Purpose: Runs end-to-end tests using Playwright.
+#          Skips execution if the --skip-tests flag is provided.
+#          Uses a retry wrapper to handle flaky tests.
 step_test_e2e() {
     local step_start=$(date +%s.%N)
 
@@ -355,7 +380,9 @@ step_test_e2e() {
     return 0
 }
 
-# Step 7: Build
+# Function: step_build
+# Purpose: Builds the project using "npm run build".
+#          Verifies that the "dist" directory is created.
 step_build() {
     local step_start=$(date +%s.%N)
 
@@ -386,7 +413,8 @@ step_build() {
     fi
 }
 
-# Step 8: Cleanup
+# Function: step_cleanup
+# Purpose: Runs cleanup tasks, such as deleting old log files.
 step_cleanup() {
     local step_start=$(date +%s.%N)
 
@@ -408,7 +436,9 @@ step_cleanup() {
     fi
 }
 
-# Feature 002: Timeout check function (US1 - FR-001, FR-002)
+# Function: check_timeout
+# Purpose: Checks if the pipeline has exceeded its maximum allowed duration.
+#          Exits with a timeout error code if the time limit is reached.
 check_timeout() {
     local elapsed=$((SECONDS - START_TIME))
     if (( elapsed >= TIMEOUT_SECONDS )); then
@@ -419,7 +449,9 @@ check_timeout() {
     fi
 }
 
-# Feature 002: Parallel test execution (US3 - FR-005, FR-006)
+# Function: run_tests_parallel
+# Purpose: Runs unit, integration, and E2E tests in parallel to save time.
+#          Falls back to serial execution if resource contention is detected.
 run_tests_parallel() {
     if [ "$SKIP_TESTS" = true ]; then
         log_info "test-parallel" "Skipping all tests (--skip-tests flag)" | tee -a "$LOG_FILE"
@@ -502,7 +534,9 @@ run_tests_parallel() {
     fi
 }
 
-# Feature 002: Serial test fallback (US3 - FR-017)
+# Function: run_tests_serial
+# Purpose: Runs all test suites sequentially.
+#          Used as a fallback if parallel execution fails due to resource contention.
 run_tests_serial() {
     log_info "test-serial" "Running tests in serial mode" | tee -a "$LOG_FILE"
 
@@ -515,7 +549,8 @@ run_tests_serial() {
     return 0
 }
 
-# Step 9: Complete
+# Function: step_complete
+# Purpose: Finalizes the pipeline run, calculates the total duration, and logs a success message.
 step_complete() {
     local pipeline_end=$(date +%s.%N)
     local total_duration=$(get_duration "$PIPELINE_START" "$pipeline_end")
@@ -548,7 +583,11 @@ step_complete() {
         }' | tee -a "$LOG_FILE"
 }
 
-# Main execution
+# --- Main Execution ---
+
+# Function: main
+# Purpose: The main entry point of the script.
+#          Parses arguments and executes the pipeline steps in order.
 main() {
     parse_args "$@"
 
