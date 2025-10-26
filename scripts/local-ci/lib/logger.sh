@@ -11,13 +11,19 @@ if ! command -v jq &> /dev/null; then
     exit 4
 fi
 
-# Feature 002: Get repository root for relative paths
+# --- Functions ---
+
+# Function: get_repo_root
+# Purpose: Gets the root directory of the Git repository.
+# Returns: The absolute path to the repository root.
 get_repo_root() {
     git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Apps/002-mcp-manager"
 }
 
-# Feature 002: Extract source context from bash call stack
-# Returns: source_file|line_number|function_name
+# Function: get_source_context
+# Purpose: Extracts the source file, line number, and function name from the Bash call stack.
+#          This provides context for log messages.
+# Returns: A string in the format "source_file|line_number|function_name".
 get_source_context() {
     local repo_root
     repo_root=$(get_repo_root)
@@ -48,15 +54,16 @@ get_source_context() {
     echo "${source_file}|${line_number}|${function_name}"
 }
 
-# log_json: Output structured JSON log entry with source context (Feature 002: US4)
-# Args:
-#   $1 - level: info|success|warn|error
-#   $2 - step_name: init|env-check|lint|test-unit|test-integration|test-e2e|build|cleanup|complete
-#   $3 - message: Human-readable description
-#   $4 - run_id (optional): Correlation ID (format: run-YYYYMMDD-HHMMSS-{6char})
-#   $5 - duration_ms (optional): Duration in milliseconds
-#   $6 - exitCode (optional): Command exit code
-#   $7 - error (optional): JSON string with error details
+# Function: log_json
+# Purpose: Outputs a structured JSON log entry. This is the core logging function.
+# Arguments:
+#   $1 - level: The log level (info, success, warn, error).
+#   $2 - step_name: The name of the pipeline step.
+#   $3 - message: A human-readable log message.
+#   $4 - run_id (optional): The unique ID for the pipeline run.
+#   $5 - duration_ms (optional): The duration of the step in milliseconds.
+#   $6 - exitCode (optional): The exit code of a command.
+#   $7 - error (optional): A JSON string with error details.
 log_json() {
     local level="$1"
     local step_name="$2"
@@ -103,42 +110,48 @@ log_json() {
         (if $error != "" then {error: ($error | fromjson)} else {} end)'
 }
 
-# log_info: Convenience function for info level (Feature 002: US6 - Auto-inject RUN_ID)
-# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# Function: log_info
+# Purpose: A convenience function for logging informational messages.
+# Arguments: See log_json for argument details.
 log_info() {
     log_json "info" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_success: Convenience function for success level (Feature 002: US6 - Auto-inject RUN_ID)
-# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# Function: log_success
+# Purpose: A convenience function for logging success messages.
+# Arguments: See log_json for argument details.
 log_success() {
     log_json "success" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_warn: Convenience function for warn level (Feature 002: US6 - Auto-inject RUN_ID)
-# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# Function: log_warn
+# Purpose: A convenience function for logging warning messages.
+# Arguments: See log_json for argument details.
 log_warn() {
     log_json "warn" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# log_error: Convenience function for error level (Feature 002: US6 - Auto-inject RUN_ID)
-# Args: $1=step_name, $2=message, $3=run_id (opt, defaults to $RUN_ID), $4=duration_ms (opt), $5=exitCode (opt), $6=error (opt)
+# Function: log_error
+# Purpose: A convenience function for logging error messages.
+# Arguments: See log_json for argument details.
 log_error() {
     log_json "error" "$1" "$2" "${3:-${RUN_ID:-}}" "${4:-}" "${5:-}" "${6:-}"
 }
 
-# get_duration: Calculate duration between two timestamps
-# Args:
-#   $1 - start time (seconds since epoch)
-#   $2 - end time (seconds since epoch, defaults to now)
-# Returns: Duration in seconds (float)
+# Function: get_duration
+# Purpose: Calculates the duration between two timestamps.
+# Arguments:
+#   $1 - start_time: The start time in seconds since the epoch.
+#   $2 - end_time (optional): The end time in seconds since the epoch. Defaults to the current time.
+# Returns: The duration in seconds as a float.
 get_duration() {
     local start="$1"
     local end="${2:-$(date +%s.%N)}"
     echo "$end - $start" | bc -l | awk '{printf "%.1f", $0}'
 }
 
-# Export functions for use in other scripts (Feature 002: Added new functions)
+# --- Exports ---
+# Export functions for use in other scripts.
 export -f get_repo_root
 export -f get_source_context
 export -f log_json

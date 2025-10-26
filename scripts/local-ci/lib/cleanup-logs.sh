@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+# --- Configuration and Global Variables ---
+
 # Get script directory and repository root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -12,6 +14,8 @@ LOG_DIR="$REPO_ROOT/logs"
 
 # Retention period in days
 RETENTION_DAYS=30
+
+# --- Script Logic ---
 
 # Source logger if available (for structured logging)
 if [ -f "$SCRIPT_DIR/logger.sh" ]; then
@@ -21,7 +25,7 @@ else
     USE_LOGGER=0
 fi
 
-# Check if logs directory exists
+# Check if the logs directory exists. If not, exit gracefully.
 if [ ! -d "$LOG_DIR" ]; then
     if [ "$USE_LOGGER" -eq 1 ]; then
         log_warn "cleanup" "Log directory not found: $LOG_DIR"
@@ -31,7 +35,7 @@ if [ ! -d "$LOG_DIR" ]; then
     exit 0
 fi
 
-# Count files before cleanup
+# Count files before cleanup to provide a summary of the operation.
 FILES_BEFORE=$(find "$LOG_DIR" -name "ci-*.json" -type f 2>/dev/null | wc -l)
 
 if [ "$USE_LOGGER" -eq 1 ]; then
@@ -39,7 +43,7 @@ if [ "$USE_LOGGER" -eq 1 ]; then
     log_info "cleanup" "Log files before cleanup: $FILES_BEFORE"
 fi
 
-# Find and delete log files older than retention period
+# Find and delete log files older than the defined retention period.
 DELETED_FILES=0
 while IFS= read -r -d '' file; do
     if [ "$USE_LOGGER" -eq 1 ]; then
@@ -49,7 +53,7 @@ while IFS= read -r -d '' file; do
     DELETED_FILES=$((DELETED_FILES + 1))
 done < <(find "$LOG_DIR" -name "ci-*.json" -type f -mtime +${RETENTION_DAYS} -print0 2>/dev/null)
 
-# Count files after cleanup
+# Count files after cleanup to report the result.
 FILES_AFTER=$(find "$LOG_DIR" -name "ci-*.json" -type f 2>/dev/null | wc -l)
 
 if [ "$USE_LOGGER" -eq 1 ]; then
